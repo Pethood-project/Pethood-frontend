@@ -1,6 +1,6 @@
 import { TextInput } from 'react-native';
 import type { TextInputProps } from 'react-native';
-import { claseValor, FormField } from './FormField';
+import { claseValor, FormField, type VarianteCampo } from './FormField';
 import { PALETA } from '@/constants/theme';
 
 interface TextFieldProps extends Omit<TextInputProps, 'className'> {
@@ -8,6 +8,7 @@ interface TextFieldProps extends Omit<TextInputProps, 'className'> {
   obligatorio?: boolean;
   error?: string;
   ayuda?: string;
+  variante?: VarianteCampo;
 }
 
 export function TextField({
@@ -15,11 +16,18 @@ export function TextField({
   obligatorio,
   error,
   ayuda,
+  variante,
   value,
   ...inputProps
 }: TextFieldProps) {
   return (
-    <FormField label={label} obligatorio={obligatorio} error={error} ayuda={ayuda}>
+    <FormField
+      label={label}
+      obligatorio={obligatorio}
+      error={error}
+      ayuda={ayuda}
+      variante={variante}
+    >
       <TextInput
         className={`${claseValor(Boolean(error), !value)} p-0`}
         placeholderTextColor={PALETA.gris[400]}

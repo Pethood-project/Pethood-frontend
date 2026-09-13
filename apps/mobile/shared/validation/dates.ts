@@ -44,6 +44,11 @@ export function esFutura(fecha: Date, hoy: Date = new Date()): boolean {
   return fecha.getTime() > finDelDia(hoy).getTime();
 }
 
+/** Compara contra el inicio del día de hoy, así una fecha de hoy no cuenta como pasada. */
+export function esPasada(fecha: Date, hoy: Date = new Date()): boolean {
+  return fecha.getTime() < inicioDelDia(hoy).getTime();
+}
+
 export function esAnteriorAlAnioMinimo(
   fecha: Date,
   anioMinimo: number = LIMITES.fecha.anioMinimo,
@@ -71,6 +76,30 @@ export function edadEnTexto(fechaNacimiento: Date, hoy: Date = new Date()): stri
 
   const anios = Math.floor(meses / 12);
   return `${anios} ${anios === 1 ? 'año' : 'años'}`;
+}
+
+/**
+ * Largo de un período en texto: "3 meses", "20 días", "1 año y 2 meses". Para mostrar de
+ * un vistazo cuánto dura un tránsito sin obligar a restar dos fechas mentalmente.
+ */
+export function duracionEnTexto(desde: Date, hasta: Date): string {
+  const meses =
+    (hasta.getFullYear() - desde.getFullYear()) * 12 +
+    (hasta.getMonth() - desde.getMonth()) -
+    (hasta.getDate() < desde.getDate() ? 1 : 0);
+
+  if (meses < 1) {
+    const dias = Math.max(1, diasCalendarioEntre(desde, hasta));
+    return `${dias} ${dias === 1 ? 'día' : 'días'}`;
+  }
+
+  if (meses < 12) return `${meses} ${meses === 1 ? 'mes' : 'meses'}`;
+
+  const anios = Math.floor(meses / 12);
+  const resto = meses % 12;
+  const enAnios = `${anios} ${anios === 1 ? 'año' : 'años'}`;
+
+  return resto === 0 ? enAnios : `${enAnios} y ${resto} ${resto === 1 ? 'mes' : 'meses'}`;
 }
 
 const UN_MINUTO = 60_000;

@@ -18,6 +18,13 @@ export interface MascotaFavorita {
   raza: { id: number; nombre: string };
   /** Estado actual de la mascota. Viene con guión bajo (`En_Transito`). */
   estado: { id: number; nombre: string };
+  /**
+   * Publicación activa de la mascota, o null si ya no está publicada. Sin publicación no
+   * hay nada que solicitar y la tarjeta no muestra el botón (HU-7.1).
+   */
+  publicacionId: number | null;
+  /** Solicitud viva propia sobre esa publicación: la tarjeta pasa a "Solicitud enviada". */
+  solicitudAbiertaId: number | null;
   fechaAgregado: string;
 }
 

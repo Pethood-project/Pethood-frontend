@@ -56,6 +56,9 @@ export const ACCESOS_ADOPTANTE: AccesoHome[] = [
     fondo: PALETA.calido.amarillo,
     texto: TEXTO_OSCURO,
     marco: PALETA.calido.amarilloClaro,
+    // Misma pantalla que la del refugio, abierta del otro lado: el adoptante entra a lo
+    // que pidió (HU-7.3) y el refugio a lo que le llegó (HU-7.5).
+    destino: { pathname: '/solicitudes', params: { vista: 'enviadas' } },
   },
   {
     titulo: 'Campañas activas',
@@ -75,6 +78,7 @@ export const ACCESOS_REFUGIO: AccesoHome[] = [
     fondo: PALETA.accent[600],
     texto: TEXTO_CLARO,
     marco: PALETA.accent[300],
+    destino: { pathname: '/solicitudes', params: { vista: 'recibidas' } },
   },
   {
     titulo: 'Gestionar mis mascotas',

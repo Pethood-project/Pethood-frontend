@@ -4,6 +4,9 @@
  * Pantalla de consulta y de quitar. El alta la hace el swipe de HU-6.5, todavía sin
  * implementar; acá el `POST` se usa únicamente para el "Deshacer" del toast.
  *
+ * Cada tarjeta lleva además el botón de solicitar adopción o tránsito (HU-7.1): es el
+ * lugar natural para pedir, porque el feed de Adoptar ya descarta lo que está guardado acá.
+ *
  * Es una ruta del stack raíz y no una tab a propósito: se entra desde la Home y desde el
  * Perfil, así que el botón de retroceso tiene que volver al origen real (`router.back()`)
  * y no a una ruta fija.
@@ -17,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
+import { BotonSolicitar } from '@/components/solicitudes/BotonSolicitar';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
@@ -67,9 +71,10 @@ function conRellenoDeFila(favoritos: MascotaFavorita[]): ItemGrilla[] {
 interface TarjetaFavoritoProps {
   mascota: MascotaFavorita;
   onQuitar: () => void;
+  onSolicitada: () => void;
 }
 
-function TarjetaFavorito({ mascota, onQuitar }: TarjetaFavoritoProps) {
+function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoProps) {
   const foto = urlAbsoluta(mascota.imagenUrl);
   const edadTexto = edad(mascota.fechaNacimiento);
 
@@ -116,6 +121,23 @@ function TarjetaFavorito({ mascota, onQuitar }: TarjetaFavoritoProps) {
           <View className="mt-1.5">
             <EstadoMascotaBadge estado={mascota.estado.nombre} />
           </View>
+
+          {/* Sin publicación viva no hay nada que solicitar: la mascota sigue guardada, pero
+              ya no está ofrecida en adopción. */}
+          {mascota.publicacionId !== null ? (
+            <View className="mt-2">
+              <BotonSolicitar
+                variante="tarjeta"
+                mascota={{
+                  publicacionId: mascota.publicacionId,
+                  nombre: mascota.nombre,
+                  imagenUrl: mascota.imagenUrl,
+                }}
+                solicitudAbiertaId={mascota.solicitudAbiertaId}
+                onCreada={onSolicitada}
+              />
+            </View>
+          ) : null}
         </View>
       </View>
     </Animated.View>
@@ -292,7 +314,11 @@ export default function FavoritosScreen() {
               item === RELLENO ? (
                 <View className="flex-1" />
               ) : (
-                <TarjetaFavorito mascota={item} onQuitar={() => quitar(item)} />
+                <TarjetaFavorito
+                  mascota={item}
+                  onQuitar={() => quitar(item)}
+                  onSolicitada={() => void cargar()}
+                />
               )
             }
             ListEmptyComponent={ListaVacia}

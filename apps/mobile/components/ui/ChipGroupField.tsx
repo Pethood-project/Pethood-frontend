@@ -1,7 +1,7 @@
 /** Opciones visibles como pastillas, todas a la vista y de selección única. */
 import { View } from 'react-native';
 import { Chip } from './Chip';
-import { FormField } from './FormField';
+import { FormField, type VarianteCampo } from './FormField';
 
 export interface OpcionChip<T> {
   valor: T;
@@ -15,6 +15,7 @@ interface ChipGroupFieldProps<T> {
   onChange: (valor: T) => void;
   obligatorio?: boolean;
   error?: string;
+  variante?: VarianteCampo;
 }
 
 export function ChipGroupField<T extends string | number>({
@@ -24,9 +25,18 @@ export function ChipGroupField<T extends string | number>({
   onChange,
   obligatorio,
   error,
+  variante,
 }: ChipGroupFieldProps<T>) {
   return (
-    <FormField label={label} obligatorio={obligatorio} error={error}>
+    // Las pastillas ya traen su propio contorno: la caja de la variante "pregunta" les
+    // sumaría un borde alrededor de otro borde.
+    <FormField
+      label={label}
+      obligatorio={obligatorio}
+      error={error}
+      variante={variante}
+      conCaja={false}
+    >
       <View className="mt-1 flex-row flex-wrap gap-2">
         {opciones.map((opcion) => (
           <Chip

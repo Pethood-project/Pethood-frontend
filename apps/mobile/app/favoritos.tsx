@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
 import { BotonSolicitar } from '@/components/solicitudes/BotonSolicitar';
+import { BotonCircular } from '@/components/ui/BotonCircular';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
@@ -78,6 +79,13 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
   const foto = urlAbsoluta(mascota.imagenUrl);
   const edadTexto = edad(mascota.fechaNacimiento);
 
+  const router = useRouter();
+
+  const irADetalle = (): void => {
+    if (mascota.publicacionId === null) return;
+    router.push({ pathname: '/publicaciones/[id]', params: { id: mascota.publicacionId } });
+  };
+
   return (
     <Animated.View
       entering={FadeIn.duration(180)}
@@ -85,16 +93,18 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
       layout={LinearTransition.duration(220)}
       className="flex-1"
     >
-      {/* TODO(GUI-10): cuando exista la ficha de animal, envolver en un Pressable que
-          navegue al detalle. No se cablea a `mascotas/[id]/editar` porque esa pantalla
-          exige ser el dueño y un favorito nunca es una mascota propia. */}
-      <View className="overflow-hidden rounded-2xl bg-white shadow-sm">
-        <View className="w-full bg-gray-100" style={{ aspectRatio: 4 / 3 }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Ver a ${mascota.nombre ?? 'esta mascota'}`}
+        disabled={mascota.publicacionId === null}
+        onPress={irADetalle}
+        className="overflow-hidden rounded-2xl bg-organic-surface shadow-sm active:opacity-90">
+        <View className="w-full bg-organic-neutral-200" style={{ aspectRatio: 4 / 3 }}>
           {foto ? (
             <Image source={{ uri: foto }} className="h-full w-full" resizeMode="cover" />
           ) : (
             <View className="h-full w-full items-center justify-center">
-              <Ionicons name="paw-outline" size={28} color={PALETA.gris[400]} />
+              <Ionicons name="paw-outline" size={28} color={PALETA.neutral[400]} />
             </View>
           )}
 
@@ -108,15 +118,19 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
             hitSlop={10}
             className="absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/90 active:opacity-70"
           >
-            <Ionicons name="heart" size={15} color={PALETA.pethood.naranja} />
+            <Ionicons name="heart" size={15} color={PALETA.accent[600]} />
           </Pressable>
         </View>
 
         <View className="p-2.5">
-          <Text numberOfLines={1} className="text-sm font-semibold text-gray-900">
+          <Text numberOfLines={1} className="font-cuerpo-bold text-sm text-organic-neutral-900">
             {mascota.nombre ?? 'Sin nombre'}
           </Text>
-          {edadTexto ? <Text className="mt-0.5 text-xs text-gray-500">{edadTexto}</Text> : null}
+          {edadTexto ? (
+            <Text className="mt-0.5 font-cuerpo text-xs text-organic-neutral-600">
+              {edadTexto}
+            </Text>
+          ) : null}
 
           <View className="mt-1.5">
             <EstadoMascotaBadge estado={mascota.estado.nombre} />
@@ -139,7 +153,7 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
             </View>
           ) : null}
         </View>
-      </View>
+      </Pressable>
     </Animated.View>
   );
 }
@@ -272,22 +286,16 @@ export default function FavoritosScreen() {
   }, [router]);
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-2.5 border-b border-gray-200 bg-white/85 px-3.5 py-2.5">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-            onPress={volver}
-            hitSlop={10}
-            className="h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white active:opacity-70"
-          >
-            <Ionicons name="arrow-back" size={18} color={PALETA.grisCalido[700]} />
-          </Pressable>
+        <View className="flex-row items-center gap-3 px-[22px] pb-3.5 pt-2">
+          <BotonCircular icono="arrow-back" etiqueta="Volver" onPress={volver} />
 
           <View>
-            <Text className="text-xl font-bold text-pethood-orange">Favoritos</Text>
-            <Text className="mt-0.5 text-xs text-gray-500">
+            <Text className="font-titulo text-[22px] leading-[22px] text-organic-accent-600">
+              Favoritos
+            </Text>
+            <Text className="mt-1 font-cuerpo text-[13px] text-organic-neutral-700">
               {cargando ? 'Cargando…' : subtituloContador(favoritos.length)}
             </Text>
           </View>
@@ -331,7 +339,7 @@ export default function FavoritosScreen() {
                   setRefrescando(true);
                   void cargar();
                 }}
-                tintColor={PALETA.pethood.naranja}
+                tintColor={PALETA.accent[600]}
               />
             }
           />

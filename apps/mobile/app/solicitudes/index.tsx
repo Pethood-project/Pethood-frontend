@@ -18,19 +18,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
+import { FiltrosSolicitudesModal } from '@/components/solicitudes/FiltrosSolicitudesModal';
+import { ProgresoSolicitud } from '@/components/solicitudes/ProgresoSolicitud';
 import { ResolverSolicitudModal } from '@/components/solicitudes/ResolverSolicitudModal';
+import { BotonCircular } from '@/components/ui/BotonCircular';
 import { EstadoSolicitudBadge } from '@/components/ui/EstadoSolicitudBadge';
+import { Nota } from '@/components/ui/Nota';
 import { Segmentado } from '@/components/ui/Segmentado';
-import { SelectorChips } from '@/components/ui/SelectorChips';
 import { etiquetaTipoSolicitud } from '@/constants/Solicitudes';
 import { PALETA } from '@/constants/theme';
 import { ApiError, urlAbsoluta } from '@/services/api';
 import {
+  contarFiltrosActivosSolicitudes,
   listarMias,
   listarRecibidas,
   resolverSolicitud,
   type EstadoResolucion,
   type EstadoSolicitudNombre,
+  type FiltrosSolicitudes,
   type SolicitudResumen,
 } from '@/services/solicitudes';
 import { aFechaVisible, parsearFecha } from '@/shared/validation/dates';
@@ -41,14 +46,6 @@ type Vista = 'enviadas' | 'recibidas';
 const OPCIONES_VISTA = [
   { valor: 'enviadas' as const, etiqueta: 'Enviadas' },
   { valor: 'recibidas' as const, etiqueta: 'Recibidas' },
-];
-
-const OPCIONES_ESTADO: { valor: EstadoSolicitudNombre; etiqueta: string }[] = [
-  { valor: 'Pendiente', etiqueta: 'Pendientes' },
-  { valor: 'En_Revision', etiqueta: 'En revisión' },
-  { valor: 'Aprobada', etiqueta: 'Aprobadas' },
-  { valor: 'Rechazada', etiqueta: 'Rechazadas' },
-  { valor: 'Cancelada', etiqueta: 'Canceladas' },
 ];
 
 function subtitulo(total: number, filtro: EstadoSolicitudNombre | undefined): string {
@@ -83,32 +80,33 @@ function TarjetaSolicitud({ solicitud, vista, onVerDetalle, onResolver }: Tarjet
     <Pressable
       accessibilityRole="button"
       onPress={onVerDetalle}
-      className="mb-3 overflow-hidden rounded-2xl bg-white shadow-sm active:opacity-90"
+      className="mb-3 overflow-hidden rounded-2xl bg-organic-surface shadow-sm active:opacity-90"
     >
       <View className="flex-row items-center gap-3 p-3">
         {foto ? (
           <Image source={{ uri: foto }} className="h-12 w-12 rounded-xl" />
         ) : (
-          <View className="h-12 w-12 items-center justify-center rounded-xl bg-orange-50">
-            <Ionicons name="paw-outline" size={20} color={PALETA.pethood.naranja} />
+          <View className="h-12 w-12 items-center justify-center rounded-xl bg-organic-accent-100">
+            <Ionicons name="paw-outline" size={20} color={PALETA.accent[600]} />
           </View>
         )}
 
         <View className="flex-1">
-          <Text className="text-sm font-bold text-gray-900">
+          <Text className="font-cuerpo-bold text-sm text-organic-neutral-900">
             {solicitud.mascota.nombre ?? 'Sin nombre'}
           </Text>
-          <Text className="mt-0.5 text-xs text-gray-500">
+          <Text className="mt-0.5 font-cuerpo text-xs text-organic-neutral-600">
             {referencia}
             {fecha ? ` · ${aFechaVisible(fecha)}` : ''}
           </Text>
+          <ProgresoSolicitud estado={solicitud.estado.nombre} />
         </View>
 
         <EstadoSolicitudBadge estado={solicitud.estado.nombre} />
       </View>
 
       {sePuedeResolver ? (
-        <View className="flex-row gap-2 border-t border-gray-100 px-3 pb-3 pt-2.5">
+        <View className="flex-row gap-2 border-t border-organic-neutral-200 px-3 pb-3 pt-2.5">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Aceptar la solicitud de ${solicitud.solicitante.nombre}`}
@@ -116,16 +114,16 @@ function TarjetaSolicitud({ solicitud, vista, onVerDetalle, onResolver }: Tarjet
             className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2.5 active:opacity-90"
           >
             <Ionicons name="checkmark" size={15} color={PALETA.blanco} />
-            <Text className="text-sm font-semibold text-white">Aceptar</Text>
+            <Text className="font-cuerpo-semi text-sm text-white">Aceptar</Text>
           </Pressable>
 
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Rechazar la solicitud de ${solicitud.solicitante.nombre}`}
             onPress={() => onResolver('Rechazada')}
-            className="flex-1 items-center justify-center rounded-xl bg-gray-100 py-2.5 active:opacity-80"
+            className="flex-1 items-center justify-center rounded-xl bg-organic-neutral-200 py-2.5 active:opacity-80"
           >
-            <Text className="text-sm font-semibold text-gray-600">Rechazar</Text>
+            <Text className="font-cuerpo-semi text-sm text-organic-neutral-700">Rechazar</Text>
           </Pressable>
         </View>
       ) : null}
@@ -136,12 +134,14 @@ function TarjetaSolicitud({ solicitud, vista, onVerDetalle, onResolver }: Tarjet
 /** Qué decir cuando no hay nada que listar, según el lado y el filtro. */
 function textosVacio(
   vista: Vista,
-  filtro: EstadoSolicitudNombre | undefined,
+  filtros: FiltrosSolicitudes,
 ): { titulo: string; descripcion: string } {
-  if (filtro !== undefined && filtro !== 'Pendiente') {
+  const soloElDefault = filtros.estado === 'Pendiente' && !filtros.fechaDesde && !filtros.fechaHasta;
+
+  if (contarFiltrosActivosSolicitudes(filtros) > 0 && !soloElDefault) {
     return {
       titulo: 'No hay solicitudes',
-      descripcion: 'Probá con otro estado en los filtros de arriba.',
+      descripcion: 'Probá con otro filtro tocando el ícono de arriba.',
     };
   }
 
@@ -164,7 +164,8 @@ export default function SolicitudesScreen() {
   const { vista: vistaInicial } = useLocalSearchParams<{ vista?: string }>();
 
   const [vista, setVista] = useState<Vista>(vistaInicial === 'enviadas' ? 'enviadas' : 'recibidas');
-  const [filtro, setFiltro] = useState<EstadoSolicitudNombre | undefined>('Pendiente');
+  const [filtros, setFiltros] = useState<FiltrosSolicitudes>({ estado: 'Pendiente' });
+  const [modalFiltros, setModalFiltros] = useState(false);
   const [solicitudes, setSolicitudes] = useState<SolicitudResumen[]>([]);
   const [total, setTotal] = useState(0);
   const [cargando, setCargando] = useState(true);
@@ -182,7 +183,7 @@ export default function SolicitudesScreen() {
     try {
       setError(null);
       const respuesta =
-        vista === 'enviadas' ? await listarMias(filtro) : await listarRecibidas(filtro);
+        vista === 'enviadas' ? await listarMias(filtros) : await listarRecibidas(filtros);
       setSolicitudes(respuesta.solicitudes);
       setTotal(respuesta.total);
     } catch (err) {
@@ -191,7 +192,7 @@ export default function SolicitudesScreen() {
       setCargando(false);
       setRefrescando(false);
     }
-  }, [filtro, vista]);
+  }, [filtros, vista]);
 
   useFocusEffect(
     useCallback(() => {
@@ -242,45 +243,43 @@ export default function SolicitudesScreen() {
     setCargando(true);
   }, []);
 
-  const vacio = textosVacio(vista, filtro);
+  const vacio = textosVacio(vista, filtros);
+  const filtrosActivos = contarFiltrosActivosSolicitudes(filtros);
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="border-b border-gray-200 bg-white/85 px-3.5 py-2.5">
-          <View className="flex-row items-center gap-2.5">
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Volver"
-              onPress={() =>
-                router.canGoBack() ? router.back() : router.replace('/(tabs)/perfil')
-              }
-              hitSlop={10}
-              className="h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white active:opacity-70"
-            >
-              <Ionicons name="arrow-back" size={18} color={PALETA.grisCalido[700]} />
-            </Pressable>
+        <View className="px-[22px] pb-3.5 pt-2">
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="flex-row items-center gap-3">
+              <BotonCircular
+                icono="arrow-back"
+                etiqueta="Volver"
+                onPress={() =>
+                  router.canGoBack() ? router.back() : router.replace('/(tabs)/perfil')
+                }
+              />
 
-            <View>
-              <Text className="text-xl font-bold text-pethood-orange">Solicitudes</Text>
-              <Text className="mt-0.5 text-xs text-gray-500">
-                {cargando ? 'Cargando…' : subtitulo(total, filtro)}
-              </Text>
+              <View>
+                <Text className="font-titulo text-[22px] leading-[22px] text-organic-accent-600">
+                  Solicitudes
+                </Text>
+                <Text className="mt-1 font-cuerpo text-[13px] text-organic-neutral-700">
+                  {cargando ? 'Cargando…' : subtitulo(total, filtros.estado)}
+                </Text>
+              </View>
             </View>
-          </View>
 
-          <View className="mt-3">
-            <Segmentado opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
-          </View>
-
-          <View className="mt-2.5">
-            <SelectorChips
-              prefijo="estado-solicitud"
-              opciones={OPCIONES_ESTADO}
-              valor={filtro}
-              etiquetaSinFiltro="Todas"
-              onChange={setFiltro}
+            <BotonCircular
+              icono="options-outline"
+              etiqueta="Filtros"
+              contador={filtrosActivos}
+              onPress={() => setModalFiltros(true)}
             />
+          </View>
+
+          <View className="mt-3.5">
+            <Segmentado opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
           </View>
         </View>
 
@@ -315,6 +314,11 @@ export default function SolicitudesScreen() {
                 descripcion={vacio.descripcion}
               />
             }
+            ListFooterComponent={
+              solicitudes.length > 0 ? (
+                <Nota texto="Tocá una solicitud para ver el estado del proceso paso a paso." />
+              ) : null
+            }
             contentContainerClassName="px-3.5 py-3.5 pb-10"
             refreshControl={
               <RefreshControl
@@ -323,7 +327,7 @@ export default function SolicitudesScreen() {
                   setRefrescando(true);
                   void cargar();
                 }}
-                tintColor={PALETA.pethood.naranja}
+                tintColor={PALETA.accent[600]}
               />
             }
           />
@@ -337,6 +341,17 @@ export default function SolicitudesScreen() {
         cargando={resolviendo}
         onConfirmar={(comentario) => void confirmarResolucion(comentario)}
         onCerrar={() => setAResolver(null)}
+      />
+
+      <FiltrosSolicitudesModal
+        visible={modalFiltros}
+        filtros={filtros}
+        onAplicar={(nuevos) => {
+          setModalFiltros(false);
+          setCargando(true);
+          setFiltros(nuevos);
+        }}
+        onCerrar={() => setModalFiltros(false)}
       />
     </View>
   );

@@ -25,6 +25,7 @@ import { resumenMascota } from '@/constants/Mascotas';
 import { PALETA } from '@/constants/theme';
 import { agregarFavorito, quitarFavorito } from '@/services/favoritos';
 import { obtenerPublicacion, type PublicacionFeed } from '@/services/publicaciones';
+import { obtenerElegibilidad } from '@/services/solicitudes';
 
 /** Ítem de una lista con viñeta, para requisitos y vacunas. */
 function Vinieta({ texto, icono }: { texto: string; icono: 'checkmark-circle' | 'ellipse' }) {
@@ -61,6 +62,8 @@ export default function FichaPublicacionScreen() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+  /** Solicitud viva del usuario sobre esta publicación, si tiene. Ver `BotonSolicitar`. */
+  const [solicitudAbiertaId, setSolicitudAbiertaId] = useState<number | null>(null);
 
   const publicacionId = Number(id);
 
@@ -79,6 +82,18 @@ export default function FichaPublicacionScreen() {
     } finally {
       setCargando(false);
     }
+
+    // Aparte y sin bloquear la ficha: si falla (por ejemplo, sin verificar) el botón
+    // simplemente arranca en "Solicitar" y resuelve la precondición al tocarlo, como
+    // siempre. Es la única pantalla que lo consulta al montar: acá hay una sola ficha, no
+    // una grilla con una tarjeta por publicación.
+    obtenerElegibilidad(publicacionId)
+      .then((elegibilidad) => {
+        setSolicitudAbiertaId(
+          elegibilidad.motivo === 'YA_SOLICITADA' ? elegibilidad.solicitudAbiertaId : null,
+        );
+      })
+      .catch(() => undefined);
   }, [publicacionId]);
 
   useEffect(() => {
@@ -297,6 +312,7 @@ export default function FichaPublicacionScreen() {
             subtitulo: procedencia,
             destinatario: publicacion.refugio?.nombre ?? null,
           }}
+          solicitudAbiertaId={solicitudAbiertaId}
         />
       </View>
     </View>

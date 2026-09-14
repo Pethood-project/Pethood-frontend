@@ -7,6 +7,7 @@
  * `pethood-backend/docs/specs/003-adopcion-favoritos.md`.
  */
 import { get, patch, post } from './api';
+import { aFechaISO } from '../shared/validation/dates';
 
 /** Nombres reales del catálogo EstadoSolicitud (prisma/seed.ts del backend). */
 export type EstadoSolicitudNombre =
@@ -151,23 +152,49 @@ export interface ListaSolicitudesRecibidas {
 /** Tope de página que acepta el backend (`filtrosRecibidasSchema`). */
 const LIMITE_MAXIMO = 50;
 
+/** Recorte por estado y por `fechaAlta` (las dos puntas inclusive). */
+export interface FiltrosSolicitudes {
+  estado?: EstadoSolicitudNombre;
+  fechaDesde?: Date;
+  fechaHasta?: Date;
+}
+
+export const SIN_FILTROS_SOLICITUDES: FiltrosSolicitudes = {};
+
+/** Para el contador del ícono de filtros ("options-outline") y el botón "Aplicar (N)". */
+export function contarFiltrosActivosSolicitudes(filtros: FiltrosSolicitudes): number {
+  let activos = 0;
+
+  if (filtros.estado !== undefined) activos += 1;
+  // El rango de fecha es una sola elección del usuario aunque viaje en dos campos.
+  if (filtros.fechaDesde !== undefined || filtros.fechaHasta !== undefined) activos += 1;
+
+  return activos;
+}
+
+function queryDeFiltros(filtros: FiltrosSolicitudes): string {
+  const params = new URLSearchParams({ limite: String(LIMITE_MAXIMO) });
+  if (filtros.estado) params.set('estado', filtros.estado);
+  if (filtros.fechaDesde) params.set('fechaDesde', aFechaISO(filtros.fechaDesde));
+  if (filtros.fechaHasta) params.set('fechaHasta', aFechaISO(filtros.fechaHasta));
+  return `?${params.toString()}`;
+}
+
 /**
  * Sin paginación en la UI: una sola página al tope permitido por el backend.
  * ponytail: si algún refugio supera las 50 solicitudes recibidas en un mismo estado, sumar
  * "cargar más" acá y en la pantalla.
  */
-export function listarRecibidas(estado?: EstadoSolicitudNombre): Promise<ListaSolicitudesRecibidas> {
-  const query = estado ? `?estado=${estado}&limite=${LIMITE_MAXIMO}` : `?limite=${LIMITE_MAXIMO}`;
-  return get(`/solicitudes/recibidas${query}`);
+export function listarRecibidas(filtros: FiltrosSolicitudes = {}): Promise<ListaSolicitudesRecibidas> {
+  return get(`/solicitudes/recibidas${queryDeFiltros(filtros)}`);
 }
 
 /**
  * Historial propio del solicitante (HU-7.3). Mismo contrato que `listarRecibidas`: la
  * pantalla de Solicitudes usa la misma tarjeta para las dos pestañas.
  */
-export function listarMias(estado?: EstadoSolicitudNombre): Promise<ListaSolicitudesRecibidas> {
-  const query = estado ? `?estado=${estado}&limite=${LIMITE_MAXIMO}` : `?limite=${LIMITE_MAXIMO}`;
-  return get(`/solicitudes/mias${query}`);
+export function listarMias(filtros: FiltrosSolicitudes = {}): Promise<ListaSolicitudesRecibidas> {
+  return get(`/solicitudes/mias${queryDeFiltros(filtros)}`);
 }
 
 /**

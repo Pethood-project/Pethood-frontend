@@ -6,9 +6,12 @@
  * la paleta ni la tipografía de PetHood. Se sigue usando `Alert.alert` para lo accesorio,
  * como la elección de cámara o galería en PhotoPicker.
  *
- * Dos modos según se pase o no `onConfirmar`:
+ * Tres modos:
  * - con `onConfirmar`: Cancelar + acción, para confirmar algo irreversible.
- * - sin `onConfirmar`: un único "Entendido", para informar un bloqueo sin salida.
+ * - con `accionPrincipal`: la salida del bloqueo a ancho completo y el descarte debajo,
+ *   como texto. Es el cartel que frena una acción pero deja algo por hacer (GUI-7.1:
+ *   "Tenés que verificarte" → "Verificar mi cuenta").
+ * - sin ninguno de los dos: un único "Entendido", para informar un bloqueo sin salida.
  */
 import { Ionicons } from '@expo/vector-icons';
 import type { ReactNode } from 'react';
@@ -16,7 +19,7 @@ import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
 
 import { PALETA } from '@/constants/theme';
 
-export type TonoDialogo = 'peligro' | 'advertencia' | 'exito';
+export type TonoDialogo = 'peligro' | 'advertencia' | 'exito' | 'bloqueo';
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -29,6 +32,15 @@ interface ConfirmDialogProps {
   textoCancelar?: string;
   /** Sin este handler el diálogo es informativo y muestra un solo botón. */
   onConfirmar?: () => void;
+  /**
+   * Salida del bloqueo, a ancho completo, con el descarte como texto debajo. Se ignora si
+   * hay `onConfirmar`: son dos formas distintas de cerrar el mismo diálogo.
+   */
+  accionPrincipal?: { etiqueta: string; onPress: () => void };
+  /** Texto del descarte cuando hay `accionPrincipal`. */
+  textoDescartar?: string;
+  /** Pisa el ícono del tono, para cuando el cartel habla de algo más específico. */
+  icono?: keyof typeof Ionicons.glyphMap;
   onCerrar: () => void;
   cargando?: boolean;
   /** Contenido extra entre el detalle y los botones, por ejemplo un campo de comentario. */
@@ -54,6 +66,12 @@ const ESTILOS: Record<TonoDialogo, { icono: keyof typeof Ionicons.glyphMap; colo
     fondo: 'bg-emerald-50',
     boton: 'bg-emerald-600',
   },
+  bloqueo: {
+    icono: 'alert-circle-outline',
+    color: PALETA.accent[700],
+    fondo: 'bg-organic-accent-200',
+    boton: 'bg-organic-accent-600',
+  },
 };
 
 export function ConfirmDialog({
@@ -65,12 +83,16 @@ export function ConfirmDialog({
   textoConfirmar = 'Confirmar',
   textoCancelar = 'Cancelar',
   onConfirmar,
+  accionPrincipal,
+  textoDescartar = 'Entendido',
+  icono,
   onCerrar,
   cargando = false,
   children,
 }: ConfirmDialogProps) {
   const estilo = ESTILOS[tono];
-  const esInformativo = onConfirmar === undefined;
+  const esConfirmacion = onConfirmar !== undefined;
+  const esBloqueo = !esConfirmacion && accionPrincipal !== undefined;
 
   // Mientras la acción está en curso el diálogo no se puede cerrar por atrás ni por el fondo,
   // para no dejar una petición huérfana sin feedback.
@@ -92,7 +114,7 @@ export function ConfirmDialog({
           accessibilityViewIsModal
         >
           <View className={`mb-4 h-14 w-14 items-center justify-center self-center rounded-full ${estilo.fondo}`}>
-            <Ionicons name={estilo.icono} size={28} color={estilo.color} />
+            <Ionicons name={icono ?? estilo.icono} size={28} color={estilo.color} />
           </View>
 
           <Text className="text-center text-lg font-bold text-gray-900">{titulo}</Text>
@@ -104,8 +126,28 @@ export function ConfirmDialog({
 
           {children ? <View className="mt-4">{children}</View> : null}
 
-          <View className={`mt-6 gap-3 ${esInformativo ? '' : 'flex-row'}`}>
-            {esInformativo ? (
+          <View className={`mt-6 gap-3 ${esConfirmacion ? 'flex-row' : ''}`}>
+            {esBloqueo ? (
+              <>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={accionPrincipal!.onPress}
+                  className={`items-center justify-center rounded-2xl py-3.5 active:opacity-90 ${estilo.boton}`}
+                >
+                  <Text className="text-base font-semibold text-white">
+                    {accionPrincipal!.etiqueta}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={onCerrar}
+                  className="items-center justify-center py-1 active:opacity-60"
+                >
+                  <Text className="text-[15px] text-organic-neutral-600">{textoDescartar}</Text>
+                </Pressable>
+              </>
+            ) : !esConfirmacion ? (
               <Pressable
                 accessibilityRole="button"
                 onPress={onCerrar}

@@ -4,8 +4,9 @@
  * Se abre tocando una tarjeta del mazo de Adoptar. La mascota NO se descarta de la pila al
  * entrar acá: esa pantalla conserva su estado y el back devuelve a la misma tarjeta.
  *
- * El corazón guarda y quita de favoritos. Todavía no hay botón de solicitar adopción: ese
- * flujo no tiene endpoint.
+ * El corazón guarda y quita de favoritos, y el pie tiene el CTA de solicitar adopción o
+ * tránsito (HU-7.1). El botón resuelve solo las precondiciones y el formulario: acá solo se
+ * le pasa la mascota y se refresca la ficha cuando la solicitud queda creada.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -16,6 +17,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GaleriaFotos } from '@/components/adoptar/GaleriaFotos';
 import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
+import { BotonSolicitar } from '@/components/solicitudes/BotonSolicitar';
 import { Chip } from '@/components/ui/Chip';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { SeccionTitulada } from '@/components/ui/SeccionTitulada';
@@ -23,6 +25,7 @@ import { resumenMascota } from '@/constants/Mascotas';
 import { PALETA } from '@/constants/theme';
 import { agregarFavorito, quitarFavorito } from '@/services/favoritos';
 import { obtenerPublicacion, type PublicacionFeed } from '@/services/publicaciones';
+import { obtenerElegibilidad } from '@/services/solicitudes';
 
 /** Ítem de una lista con viñeta, para requisitos y vacunas. */
 function Vinieta({ texto, icono }: { texto: string; icono: 'checkmark-circle' | 'ellipse' }) {
@@ -59,6 +62,8 @@ export default function FichaPublicacionScreen() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
+  /** Solicitud viva del usuario sobre esta publicación, si tiene. Ver `BotonSolicitar`. */
+  const [solicitudAbiertaId, setSolicitudAbiertaId] = useState<number | null>(null);
 
   const publicacionId = Number(id);
 
@@ -77,6 +82,18 @@ export default function FichaPublicacionScreen() {
     } finally {
       setCargando(false);
     }
+
+    // Aparte y sin bloquear la ficha: si falla (por ejemplo, sin verificar) el botón
+    // simplemente arranca en "Solicitar" y resuelve la precondición al tocarlo, como
+    // siempre. Es la única pantalla que lo consulta al montar: acá hay una sola ficha, no
+    // una grilla con una tarjeta por publicación.
+    obtenerElegibilidad(publicacionId)
+      .then((elegibilidad) => {
+        setSolicitudAbiertaId(
+          elegibilidad.motivo === 'YA_SOLICITADA' ? elegibilidad.solicitudAbiertaId : null,
+        );
+      })
+      .catch(() => undefined);
   }, [publicacionId]);
 
   useEffect(() => {
@@ -149,10 +166,16 @@ export default function FichaPublicacionScreen() {
   const { mascota } = publicacion;
   const vacunas = publicacion.vacunas?.trim();
 
+  // Renglón de la tarjeta del formulario: quién publica y desde dónde, lo que ya se ve
+  // arriba de la ficha.
+  const procedencia =
+    [publicacion.refugio?.nombre, publicacion.ubicacion].filter(Boolean).join(' · ') || null;
+
   return (
     <View className="flex-1 bg-pethood-beige">
       {/* Se suma el inset inferior para que el último bloque no quede debajo de la barra
-          del sistema cuando esta se muestra. */}
+          del sistema cuando esta se muestra. Con el CTA fijo abajo, el hueco además tiene
+          que dejar pasar el alto del pie. */}
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <GaleriaFotos imagenes={publicacion.imagenes} />
 
@@ -272,6 +295,26 @@ export default function FichaPublicacionScreen() {
           ) : null}
         </View>
       </ScrollView>
+
+      {/* Pie fijo: el CTA no se scrollea, así está siempre a un toque. */}
+      <View
+        className="border-t border-organic-neutral-200 bg-organic-bg px-4 pt-3"
+        style={{ paddingBottom: 12 + insets.bottom }}
+      >
+        {/* El hogar precargado del paso 2 no sale de acá: lo trae `/elegibilidad`, que
+            `BotonSolicitar` consulta al tocar. Es el hogar del USUARIO, no la ubicación de
+            esta mascota — antes se pasaba por error `publicacion.ubicacion`. */}
+        <BotonSolicitar
+          mascota={{
+            publicacionId: publicacion.id,
+            nombre: mascota.nombre,
+            imagenUrl: mascota.imagenUrl,
+            subtitulo: procedencia,
+            destinatario: publicacion.refugio?.nombre ?? null,
+          }}
+          solicitudAbiertaId={solicitudAbiertaId}
+        />
+      </View>
     </View>
   );
 }

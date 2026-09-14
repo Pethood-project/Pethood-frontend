@@ -19,7 +19,7 @@ import {
 import { urlAbsoluta } from '@/services/api';
 
 /** Alto del carrusel como fracción del alto de pantalla, para que entre el texto debajo. */
-const PROPORCION_ALTO = 0.42;
+const PROPORCION_ALTO = 0.48;
 
 interface GaleriaFotosProps {
   imagenes: string[];

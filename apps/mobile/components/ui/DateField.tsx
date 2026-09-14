@@ -6,7 +6,7 @@
  */
 import { aFechaISO, edadEnTexto, parsearFecha } from '../../shared/validation/dates';
 import { LIMITES } from '../../shared/validation/limits';
-import { FormField } from './FormField';
+import { FormField, type VarianteCampo } from './FormField';
 
 interface DateFieldProps {
   label: string;
@@ -22,6 +22,7 @@ interface DateFieldProps {
   fechaMinima?: Date;
   /** Solo tiene sentido para fecha de nacimiento; el resto de los campos de fecha no la muestran. */
   mostrarEdad?: boolean;
+  variante?: VarianteCampo;
 }
 
 export function DateField({
@@ -35,6 +36,7 @@ export function DateField({
   fechaMaxima = new Date(),
   fechaMinima = new Date(LIMITES.fecha.anioMinimo, 0, 1),
   mostrarEdad = true,
+  variante,
 }: DateFieldProps) {
   return (
     <FormField
@@ -42,6 +44,7 @@ export function DateField({
       obligatorio={obligatorio}
       error={error}
       ayuda={mostrarEdad && valor ? edadEnTexto(valor) : undefined}
+      variante={variante}
     >
       <input
         type="date"

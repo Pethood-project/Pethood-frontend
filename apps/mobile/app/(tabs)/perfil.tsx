@@ -32,11 +32,17 @@ type NombreIcono = keyof typeof Ionicons.glyphMap;
 /** Sin `ruta`, la fila queda visible pero desactivada: esa sección todavía no existe. */
 const MENU: { icono: NombreIcono; label: string; ruta?: Href }[] = [
   { icono: 'paw-outline', label: 'Mis mascotas', ruta: '/(tabs)/mis-mascotas' },
-  { icono: 'document-text-outline', label: 'Mis solicitudes' },
+  // Las dos abren la misma pantalla del otro lado: lo que pedí (HU-7.3) y lo que me llegó
+  // sobre mis mascotas publicadas (HU-7.5).
+  {
+    icono: 'document-text-outline',
+    label: 'Mis solicitudes',
+    ruta: { pathname: '/solicitudes', params: { vista: 'enviadas' } },
+  },
   {
     icono: 'file-tray-full-outline',
     label: 'Solicitudes recibidas',
-    ruta: '/solicitudes',
+    ruta: { pathname: '/solicitudes', params: { vista: 'recibidas' } },
   },
   { icono: 'footsteps-outline', label: 'Seguimientos', ruta: '/seguimientos' },
   { icono: 'heart-outline', label: 'Favoritos', ruta: '/favoritos' },

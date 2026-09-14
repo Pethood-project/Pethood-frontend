@@ -8,7 +8,7 @@ import { useState } from 'react';
 import { Platform, Pressable, Text } from 'react-native';
 import { aFechaVisible, edadEnTexto } from '../../shared/validation/dates';
 import { LIMITES } from '../../shared/validation/limits';
-import { claseValor, FormField } from './FormField';
+import { claseValor, FormField, type VarianteCampo } from './FormField';
 import { PALETA } from '@/constants/theme';
 
 interface DateFieldProps {
@@ -26,6 +26,7 @@ interface DateFieldProps {
   fechaMinima?: Date;
   /** Solo tiene sentido para fecha de nacimiento; el resto de los campos de fecha no la muestran. */
   mostrarEdad?: boolean;
+  variante?: VarianteCampo;
 }
 
 export function DateField({
@@ -39,6 +40,7 @@ export function DateField({
   fechaMaxima = new Date(),
   fechaMinima = new Date(LIMITES.fecha.anioMinimo, 0, 1),
   mostrarEdad = true,
+  variante,
 }: DateFieldProps) {
   const [abierto, setAbierto] = useState(false);
   // Fecha con la que arranca el calendario si todavía no hay valor: hoy cuando entra en el
@@ -57,6 +59,7 @@ export function DateField({
       obligatorio={obligatorio}
       error={error}
       ayuda={mostrarEdad && valor ? edadEnTexto(valor) : undefined}
+      variante={variante}
     >
       <Pressable
         accessibilityRole="button"

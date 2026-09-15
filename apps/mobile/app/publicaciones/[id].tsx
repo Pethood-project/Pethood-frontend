@@ -11,7 +11,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GaleriaFotos } from '@/components/adoptar/GaleriaFotos';
@@ -307,7 +307,7 @@ export default function FichaPublicacionScreen() {
         hitSlop={12}
         className="h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
         style={{
-          position: Platform.OS === 'web' ? 'fixed' : 'absolute',
+          position: 'absolute',
           top: insets.top + 8,
           left: 12,
           zIndex: 9999,
@@ -324,7 +324,7 @@ export default function FichaPublicacionScreen() {
         hitSlop={12}
         className="h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
         style={{
-          position: Platform.OS === 'web' ? 'fixed' : 'absolute',
+          position: 'absolute',
           top: insets.top + 8,
           right: 12,
           zIndex: 9999,

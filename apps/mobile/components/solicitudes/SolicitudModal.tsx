@@ -256,14 +256,14 @@ export function SolicitudModal({
   );
 
   // En web no se usa `Modal`: al cerrarlo, RN-web saca un portal del `document.body` y
-  // Expo remonta la ficha, que vuelve a pintar "Solicitar adopción". Un overlay `fixed`
+  // Expo remonta la ficha, que vuelve a pintar "Solicitar adopción". Un overlay absoluto
   // se oculta sin desmontarse. El portal evita que el pie de la ficha recorte el overlay.
   if (Platform.OS === 'web') {
     const overlay = (
       <View
         pointerEvents={visible ? 'auto' : 'none'}
         style={{
-          position: 'fixed',
+          position: 'absolute',
           top: 0,
           left: 0,
           right: 0,

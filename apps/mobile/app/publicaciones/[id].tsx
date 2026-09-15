@@ -9,15 +9,15 @@
  * le pasa la mascota y se refresca la ficha cuando la solicitud queda creada.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GaleriaFotos } from '@/components/adoptar/GaleriaFotos';
 import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
-import { BotonSolicitar } from '@/components/solicitudes/BotonSolicitar';
+import { BotonSolicitar, solicitudEnviadaDe } from '@/components/solicitudes/BotonSolicitar';
 import { Chip } from '@/components/ui/Chip';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { SeccionTitulada } from '@/components/ui/SeccionTitulada';
@@ -55,17 +55,20 @@ function Dato({ etiqueta, valor }: { etiqueta: string; valor: string }) {
 export default function FichaPublicacionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
   const toast = useToast();
   const insets = useSafeAreaInsets();
+
+  const publicacionId = Number(Array.isArray(id) ? id[0] : id);
 
   const [publicacion, setPublicacion] = useState<PublicacionFeed | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
   /** Solicitud viva del usuario sobre esta publicación, si tiene. Ver `BotonSolicitar`. */
-  const [solicitudAbiertaId, setSolicitudAbiertaId] = useState<number | null>(null);
-
-  const publicacionId = Number(id);
+  const [solicitudAbiertaId, setSolicitudAbiertaId] = useState<number | null>(() =>
+    Number.isInteger(publicacionId) ? (solicitudEnviadaDe(publicacionId) ?? null) : null,
+  );
 
   const cargar = useCallback(async (): Promise<void> => {
     if (!Number.isInteger(publicacionId) || publicacionId <= 0) {
@@ -89,9 +92,11 @@ export default function FichaPublicacionScreen() {
     // una grilla con una tarjeta por publicación.
     obtenerElegibilidad(publicacionId)
       .then((elegibilidad) => {
-        setSolicitudAbiertaId(
-          elegibilidad.motivo === 'YA_SOLICITADA' ? elegibilidad.solicitudAbiertaId : null,
-        );
+        // El id manda, no el motivo: si la cuenta no está verificada el backend puede
+        // devolver otro código y aún así traer la solicitud ya mandada.
+        if (elegibilidad.solicitudAbiertaId != null) {
+          setSolicitudAbiertaId(elegibilidad.solicitudAbiertaId);
+        }
       })
       .catch(() => undefined);
   }, [publicacionId]);
@@ -134,14 +139,20 @@ export default function FichaPublicacionScreen() {
   }, [guardando, publicacion, toast]);
 
   const volver = useCallback((): void => {
-    if (router.canGoBack()) {
-      router.back();
+    // `dismiss` saca esta ficha del stack. `canGoBack` del history se ensucia con el
+    // modal de solicitud y en web deja la flecha sin efecto.
+    if (router.canDismiss()) {
+      router.dismiss();
+      return;
+    }
+    if (navigation.canGoBack()) {
+      navigation.goBack();
       return;
     }
     router.replace('/(tabs)/adoptar');
-  }, [router]);
+  }, [navigation, router]);
 
-  if (cargando) {
+  if (cargando && !publicacion) {
     return (
       <View className="flex-1 bg-pethood-beige">
         <EstadoCargando />
@@ -176,40 +187,9 @@ export default function FichaPublicacionScreen() {
       {/* Se suma el inset inferior para que el último bloque no quede debajo de la barra
           del sistema cuando esta se muestra. Con el CTA fijo abajo, el hueco además tiene
           que dejar pasar el alto del pie. */}
+      <View className="flex-1">
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <GaleriaFotos imagenes={publicacion.imagenes} />
-
-        {/* Los controles flotan sobre la galería, como en el diseño. El SafeAreaView los
-            baja lo justo para no quedar bajo la barra de estado. */}
-        <SafeAreaView className="absolute left-0 right-0 top-0" edges={['top']}>
-          <View className="flex-row items-center justify-between px-3 pt-2">
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Volver"
-              onPress={volver}
-              hitSlop={10}
-              className="h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
-            >
-              <Ionicons name="arrow-back" size={20} color={PALETA.grisCalido[900]} />
-            </Pressable>
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={
-                publicacion.enFavoritos ? 'Quitar de favoritos' : 'Guardar en favoritos'
-              }
-              onPress={alternarFavorito}
-              hitSlop={10}
-              className="h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
-            >
-              <Ionicons
-                name={publicacion.enFavoritos ? 'heart' : 'heart-outline'}
-                size={20}
-                color={PALETA.pethood.naranja}
-              />
-            </Pressable>
-          </View>
-        </SafeAreaView>
 
         <View className="px-4 pt-4">
           <View className="flex-row items-start justify-between gap-3">
@@ -295,6 +275,7 @@ export default function FichaPublicacionScreen() {
           ) : null}
         </View>
       </ScrollView>
+      </View>
 
       {/* Pie fijo: el CTA no se scrollea, así está siempre a un toque. */}
       <View
@@ -313,8 +294,49 @@ export default function FichaPublicacionScreen() {
             destinatario: publicacion.refugio?.nombre ?? null,
           }}
           solicitudAbiertaId={solicitudAbiertaId}
+          onCreada={(solicitud) => setSolicitudAbiertaId(solicitud.id)}
         />
       </View>
+
+      {/* Últimos hijos del root y zIndex alto: en web la galería (transform) pintaba
+          encima de un overlay hermano del ScrollView y se comía la flecha. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Volver"
+        onPress={volver}
+        hitSlop={12}
+        className="h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
+        style={{
+          position: Platform.OS === 'web' ? 'fixed' : 'absolute',
+          top: insets.top + 8,
+          left: 12,
+          zIndex: 9999,
+          elevation: 9999,
+        }}
+      >
+        <Ionicons name="arrow-back" size={20} color={PALETA.grisCalido[900]} />
+      </Pressable>
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={publicacion.enFavoritos ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+        onPress={alternarFavorito}
+        hitSlop={12}
+        className="h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
+        style={{
+          position: Platform.OS === 'web' ? 'fixed' : 'absolute',
+          top: insets.top + 8,
+          right: 12,
+          zIndex: 9999,
+          elevation: 9999,
+        }}
+      >
+        <Ionicons
+          name={publicacion.enFavoritos ? 'heart' : 'heart-outline'}
+          size={20}
+          color={PALETA.pethood.naranja}
+        />
+      </Pressable>
     </View>
   );
 }

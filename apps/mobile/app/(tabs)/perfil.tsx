@@ -1,5 +1,6 @@
 /**
- * GUI-09 Mi Perfil — HU-1.3 visualizar, HU-1.5 completar, HU-1.7 cierre de sesión.
+ * GUI-09 Mi Perfil — HU-1.3 visualizar, HU-1.5 completar, HU-1.7 cierre de sesión,
+ * HU-1.8 dar de baja cuenta.
  * El engranaje abre la edición. Las filas del menú solo navegan cuando su sección ya
  * existe; el resto se muestra desactivado hasta que se implemente.
  */
@@ -8,7 +9,6 @@ import { useFocusEffect, useRouter, type Href } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
-  Linking,
   Pressable,
   ScrollView,
   Text,
@@ -20,11 +20,12 @@ import { useToast } from '@/components/feedback/Toast';
 import { Avatar } from '@/components/ui/Avatar';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { Chip } from '@/components/ui/Chip';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { SwitchRefugio } from '@/components/ui/SwitchRefugio';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
 import { ApiError, urlAbsoluta } from '@/services/api';
-import { obtenerPerfil } from '@/services/usuarios';
+import { darDeBajaCuenta, obtenerPerfil } from '@/services/usuarios';
 import type { Perfil } from '@/types/auth';
 
 type NombreIcono = keyof typeof Ionicons.glyphMap;
@@ -75,6 +76,8 @@ export default function PerfilScreen() {
 
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [confirmarBaja, setConfirmarBaja] = useState(false);
+  const [dandoDeBaja, setDandoDeBaja] = useState(false);
 
   const cargar = useCallback(async (): Promise<void> => {
     if (!token) return;
@@ -109,6 +112,26 @@ export default function PerfilScreen() {
   const salir = async (): Promise<void> => {
     await cerrarSesion();
     router.replace('/login');
+  };
+
+  const confirmarDarDeBaja = async (): Promise<void> => {
+    if (!token) return;
+    setDandoDeBaja(true);
+    try {
+      await darDeBajaCuenta(token);
+      setConfirmarBaja(false);
+      toast.mostrarExito('Tu cuenta fue dada de baja');
+      await cerrarSesion();
+      router.replace('/login');
+    } catch (error) {
+      const mensaje =
+        error instanceof ApiError
+          ? error.mensaje
+          : 'No pudimos dar de baja tu cuenta. Intentalo de nuevo.';
+      toast.mostrarError(mensaje);
+    } finally {
+      setDandoDeBaja(false);
+    }
   };
 
   const visible = perfil ?? usuario;
@@ -162,11 +185,7 @@ export default function PerfilScreen() {
                     {visible?.nombre} {visible?.apellido}
                   </Text>
                   {visible?.email ? (
-                    <Pressable onPress={() => void Linking.openURL(`mailto:${visible.email}`)}>
-                      <Text className="mt-0.5 text-sm text-violet-700 underline">
-                        {visible.email}
-                      </Text>
-                    </Pressable>
+                    <Text className="mt-0.5 text-sm text-gray-500">{visible.email}</Text>
                   ) : null}
                   <View className="mt-2">
                     <Chip etiqueta={etiquetaRol(visible?.roles ?? [], esRefugio)} />
@@ -231,9 +250,34 @@ export default function PerfilScreen() {
               <Ionicons name="log-out-outline" size={20} color={PALETA.estado.error} />
               <Text className="text-base font-semibold text-red-600">Cerrar sesión</Text>
             </Pressable>
+
+            {!(visible?.roles ?? []).includes('ADMIN') ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setConfirmarBaja(true)}
+                className="mt-3 items-center py-3 active:opacity-70"
+              >
+                <Text className="text-sm font-medium text-red-500">Dar de baja mi cuenta</Text>
+              </Pressable>
+            ) : null}
           </ScrollView>
         )}
       </SafeAreaView>
+
+      <ConfirmDialog
+        visible={confirmarBaja}
+        tono="peligro"
+        titulo="¿Dar de baja tu cuenta?"
+        mensaje="Se van a cerrar tus solicitudes y publicaciones en curso, y tu perfil deja de ser visible para el resto."
+        detalle="No vas a poder volver a entrar con este correo. Esta acción no se puede deshacer desde la app."
+        textoConfirmar="Dar de baja"
+        textoCancelar="Cancelar"
+        cargando={dandoDeBaja}
+        onConfirmar={() => void confirmarDarDeBaja()}
+        onCerrar={() => {
+          if (!dandoDeBaja) setConfirmarBaja(false);
+        }}
+      />
     </View>
   );
 }

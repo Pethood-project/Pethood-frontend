@@ -88,6 +88,18 @@ export default function RegisterScreen() {
   const fechaMinima = useMemo(() => fechaNacimientoMinima(), []);
   const fechaMaxima = useMemo(() => fechaNacimientoMaxima(), []);
 
+  const formularioListo = useMemo(
+    () =>
+      !validarNombrePersona(form.firstName, 'nombre') &&
+      !validarNombrePersona(form.lastName, 'apellido') &&
+      !validarEmail(form.email) &&
+      !validarTelefono(form.phone) &&
+      !validarFechaNacimiento(form.birthDate) &&
+      !validarPassword(form.password) &&
+      !validarConfirmacionPassword(form.password, form.confirmPassword),
+    [form],
+  );
+
   const setFieldError = (field: keyof RegisterErrors, message?: string): void => {
     setErrors((prev) => {
       if (prev[field] === message) return prev;
@@ -199,6 +211,11 @@ export default function RegisterScreen() {
 
     setErrors((prev) => ({ ...nextErrors, foto: prev.foto }));
     return !Object.values(nextErrors).some(Boolean);
+  };
+
+  const explicarQueFalta = (): void => {
+    validateForm();
+    toast.mostrarAdvertencia('Completá todos los campos obligatorios.');
   };
 
   const handleRegister = async (): Promise<void> => {
@@ -434,7 +451,13 @@ export default function RegisterScreen() {
             {formError ? <Text className="mb-3 text-sm text-red-500">{formError}</Text> : null}
 
             <View className="mt-4">
-              <CustomButton title="Registrarme" loading={loading} onPress={handleRegister} />
+              <CustomButton
+                title="Registrarme"
+                loading={loading}
+                disabled={!formularioListo}
+                onPress={handleRegister}
+                onPressDeshabilitado={explicarQueFalta}
+              />
             </View>
 
             <View className="mt-6 items-center">

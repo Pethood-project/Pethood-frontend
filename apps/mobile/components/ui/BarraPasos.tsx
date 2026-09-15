@@ -15,29 +15,36 @@ interface BarraPasosProps {
   paso: number;
   total: number;
   titulo: string;
-  /** Sin handler, la flecha de volver no se muestra (estás en el primer paso). */
+  /** Sin handler, la flecha de volver no se muestra. */
   onVolver?: () => void;
   onCerrar: () => void;
 }
 
 export function BarraPasos({ paso, total, titulo, onVolver, onCerrar }: BarraPasosProps) {
   return (
-    <View className="border-b border-organic-neutral-200 bg-organic-bg px-4 pb-3 pt-2">
+    // zIndex: en web todos los View nacen con z-index 0 y el ScrollView del paso
+    // (una adopción no tiene período y el contenido es más corto) pinta encima
+    // y se come los toques de la flecha.
+    <View
+      className="border-b border-organic-neutral-200 bg-organic-bg px-4 pb-3 pt-2"
+      style={{ zIndex: 2 }}
+    >
       <View className="flex-row items-center gap-2.5">
         {onVolver ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Volver al paso anterior"
+            accessibilityLabel="Volver"
             onPress={onVolver}
-            hitSlop={10}
-            className="active:opacity-60"
+            hitSlop={12}
+            pointerEvents="auto"
+            className="h-10 w-10 items-center justify-center active:opacity-60"
           >
             <Ionicons name="arrow-back" size={20} color={PALETA.accent[700]} />
           </Pressable>
         ) : (
           // Hueco del mismo ancho que la flecha: sin esto el título salta al pasar del
           // primer paso al segundo.
-          <View className="w-5" />
+          <View className="h-10 w-10" />
         )}
 
         <View className="flex-1">

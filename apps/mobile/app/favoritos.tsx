@@ -93,24 +93,27 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
       layout={LinearTransition.duration(220)}
       className="flex-1"
     >
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Ver a ${mascota.nombre ?? 'esta mascota'}`}
-        disabled={mascota.publicacionId === null}
-        onPress={irADetalle}
-        className="overflow-hidden rounded-2xl bg-organic-surface shadow-sm active:opacity-90">
+      {/* La tarjeta, el corazón y el CTA son hermanos: un Pressable dentro de otro en web
+          (React 19) dispara onPress al renderizar y tira el árbol, incluso con la ficha
+          de una publicación abierta encima. */}
+      <View className="overflow-hidden rounded-2xl bg-organic-surface shadow-sm">
         <View className="w-full bg-organic-neutral-200" style={{ aspectRatio: 4 / 3 }}>
-          {foto ? (
-            <Image source={{ uri: foto }} className="h-full w-full" resizeMode="cover" />
-          ) : (
-            <View className="h-full w-full items-center justify-center">
-              <Ionicons name="paw-outline" size={28} color={PALETA.neutral[400]} />
-            </View>
-          )}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Ver a ${mascota.nombre ?? 'esta mascota'}`}
+            disabled={mascota.publicacionId === null}
+            onPress={irADetalle}
+            className="h-full w-full active:opacity-90"
+          >
+            {foto ? (
+              <Image source={{ uri: foto }} className="h-full w-full" resizeMode="cover" />
+            ) : (
+              <View className="h-full w-full items-center justify-center">
+                <Ionicons name="paw-outline" size={28} color={PALETA.neutral[400]} />
+              </View>
+            )}
+          </Pressable>
 
-          {/* Corazón activo de GUI-12. Mide 28px pero el hitSlop lo lleva a ~44px, que es
-              el mínimo cómodo para el pulgar. Al ser un Pressable anidado captura el
-              toque y no lo propaga a la tarjeta. */}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Quitar a ${mascota.nombre ?? 'esta mascota'} de favoritos`}
@@ -122,7 +125,13 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
           </Pressable>
         </View>
 
-        <View className="p-2.5">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Ver a ${mascota.nombre ?? 'esta mascota'}`}
+          disabled={mascota.publicacionId === null}
+          onPress={irADetalle}
+          className="p-2.5 active:opacity-90"
+        >
           <Text numberOfLines={1} className="font-cuerpo-bold text-sm text-organic-neutral-900">
             {mascota.nombre ?? 'Sin nombre'}
           </Text>
@@ -135,25 +144,23 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
           <View className="mt-1.5">
             <EstadoMascotaBadge estado={mascota.estado.nombre} />
           </View>
+        </Pressable>
 
-          {/* Sin publicación viva no hay nada que solicitar: la mascota sigue guardada, pero
-              ya no está ofrecida en adopción. */}
-          {mascota.publicacionId !== null ? (
-            <View className="mt-2">
-              <BotonSolicitar
-                variante="tarjeta"
-                mascota={{
-                  publicacionId: mascota.publicacionId,
-                  nombre: mascota.nombre,
-                  imagenUrl: mascota.imagenUrl,
-                }}
-                solicitudAbiertaId={mascota.solicitudAbiertaId}
-                onCreada={onSolicitada}
-              />
-            </View>
-          ) : null}
-        </View>
-      </Pressable>
+        {mascota.publicacionId !== null ? (
+          <View className="px-2.5 pb-2.5">
+            <BotonSolicitar
+              variante="tarjeta"
+              mascota={{
+                publicacionId: mascota.publicacionId,
+                nombre: mascota.nombre,
+                imagenUrl: mascota.imagenUrl,
+              }}
+              solicitudAbiertaId={mascota.solicitudAbiertaId}
+              onCreada={onSolicitada}
+            />
+          </View>
+        ) : null}
+      </View>
     </Animated.View>
   );
 }

@@ -12,12 +12,13 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { CustomButton } from '@/components/CustomButton';
 import { useToast } from '@/components/feedback/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { FLAGS } from '@/constants/flags';
 import { PALETA } from '@/constants/theme';
 import {
   obtenerElegibilidad,
@@ -29,6 +30,50 @@ import {
 
 import { SolicitudModal } from './SolicitudModal';
 import type { MascotaDeSolicitud } from './borrador';
+
+const CLAVE_ENVIADAS = 'pethood.solicitudesEnviadas';
+
+/** En memoria: native no tiene sessionStorage. Se hidrata una vez desde la sesión web. */
+const enviadasEnMemoria = new Map<number, number>();
+let hidratado = false;
+
+function hidratarEnviadas(): void {
+  if (hidratado) return;
+  hidratado = true;
+  try {
+    if (typeof sessionStorage === 'undefined') return;
+    const crudo = sessionStorage.getItem(CLAVE_ENVIADAS);
+    if (!crudo) return;
+    for (const [publicacionId, solicitudId] of JSON.parse(crudo) as [number, number][]) {
+      enviadasEnMemoria.set(Number(publicacionId), Number(solicitudId));
+    }
+  } catch {
+    // Sesión corrupta: se arranca vacío.
+  }
+}
+
+/** Lo que esta sesión ya mandó para esa publicación, si hay. */
+export function solicitudEnviadaDe(publicacionId: number): number | undefined {
+  hidratarEnviadas();
+  return enviadasEnMemoria.get(Number(publicacionId));
+}
+
+function recordarEnviada(publicacionId: number, solicitudId: number): void {
+  hidratarEnviadas();
+  const publicacion = Number(publicacionId);
+  const solicitud = Number(solicitudId);
+  if (!Number.isInteger(publicacion) || publicacion <= 0) return;
+  if (!Number.isInteger(solicitud) || solicitud <= 0) return;
+
+  enviadasEnMemoria.set(publicacion, solicitud);
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(CLAVE_ENVIADAS, JSON.stringify([...enviadasEnMemoria.entries()]));
+    }
+  } catch {
+    // Native: alcanza la memoria del módulo.
+  }
+}
 
 /**
  * El cartel de cada bloqueo. El `mensaje` NO se escribe acá: lo manda el backend con el
@@ -97,8 +142,32 @@ export function BotonSolicitar({
    * grilla, `FlatList` reusa el componente entre refrescos y un `useState(prop)` se
    * quedaría con el valor de la primera vez.
    */
-  const [enviadaLocal, setEnviadaLocal] = useState<number | null>(null);
-  const enviadaId = enviadaLocal ?? solicitudAbiertaId;
+  const [enviadaLocal, setEnviadaLocal] = useState<number | null>(
+    () => solicitudEnviadaDe(mascota.publicacionId) ?? solicitudAbiertaId ?? null,
+  );
+  const enviadaId =
+    solicitudAbiertaId ??
+    enviadaLocal ??
+    solicitudEnviadaDe(mascota.publicacionId) ??
+    null;
+
+  /** Una vez abierto, el modal se deja montado: desmontarlo en web remonta la ficha. */
+  const [modalMontado, setModalMontado] = useState(false);
+
+  const marcarEnviada = useCallback(
+    (solicitud: Pick<SolicitudDetalle, 'id'>): void => {
+      recordarEnviada(mascota.publicacionId, solicitud.id);
+      setEnviadaLocal(solicitud.id);
+      onCreada?.(solicitud as SolicitudDetalle);
+    },
+    [mascota.publicacionId, onCreada],
+  );
+
+  useEffect(() => {
+    if (solicitudAbiertaId == null) return;
+    recordarEnviada(mascota.publicacionId, solicitudAbiertaId);
+    setEnviadaLocal((actual) => actual ?? solicitudAbiertaId);
+  }, [mascota.publicacionId, solicitudAbiertaId]);
 
   /** Sin id se va al listado propio; con id, directo al detalle de esa solicitud. */
   const irASolicitud = useCallback(
@@ -118,16 +187,21 @@ export function BotonSolicitar({
     try {
       const elegibilidad = await obtenerElegibilidad(mascota.publicacionId);
 
-      if (elegibilidad.puedeSolicitar) {
-        setHogarPrecargado(elegibilidad.hogar);
-        setAbierto(true);
+      // Primero la solicitud ya mandada: si no está verificada, el backend puede devolver
+      // otro motivo y aún así traer el id. Sin este orden se reabre el formulario.
+      if (elegibilidad.solicitudAbiertaId != null) {
+        marcarEnviada({ id: elegibilidad.solicitudAbiertaId });
         return;
       }
 
-      // "Ya solicitaste esta mascota" no es un bloqueo que haya que explicar con un cartel
-      // si la pantalla ya lo sabía: se refleja en el botón y listo.
-      if (elegibilidad.motivo === 'YA_SOLICITADA') {
-        setEnviadaLocal(elegibilidad.solicitudAbiertaId);
+      const ignorarVerificacion =
+        !FLAGS.EXIGIR_VERIFICACION_PARA_SOLICITAR && elegibilidad.motivo === 'NO_VERIFICADO';
+
+      if (elegibilidad.puedeSolicitar || ignorarVerificacion) {
+        setHogarPrecargado(elegibilidad.hogar);
+        setModalMontado(true);
+        setAbierto(true);
+        return;
       }
 
       setBloqueo(elegibilidad);
@@ -138,7 +212,7 @@ export function BotonSolicitar({
     } finally {
       setVerificando(false);
     }
-  }, [mascota.publicacionId, toast]);
+  }, [marcarEnviada, mascota.publicacionId, toast]);
 
   const resolverBloqueo = useCallback((): void => {
     const motivo = bloqueo?.motivo;
@@ -160,7 +234,7 @@ export function BotonSolicitar({
 
   return (
     <>
-      {enviadaId === null ? (
+      {enviadaId == null ? (
         <BotonAbrir variante={variante} cargando={verificando} onPress={() => void intentar()} />
       ) : (
         <EstadoEnviada variante={variante} onVer={() => irASolicitud(enviadaId)} />
@@ -182,17 +256,21 @@ export function BotonSolicitar({
 
       {/* Solo se monta al abrirlo: en la grilla de Favoritos habría un formulario entero
           por tarjeta, todos invisibles y con su propio estado. */}
-      {abierto ? (
+      {modalMontado ? (
         <SolicitudModal
-          visible
+          visible={abierto}
           mascota={mascota}
           hogarPrecargado={hogarPrecargado}
-          onCerrar={() => setAbierto(false)}
-          onCreada={(solicitud) => {
-            setEnviadaLocal(solicitud.id);
-            onCreada?.(solicitud);
+          onCerrar={(solicitudCreada) => {
+            if (solicitudCreada) marcarEnviada(solicitudCreada);
+            setAbierto(false);
           }}
-          onVerSolicitud={(solicitud) => irASolicitud(solicitud.id)}
+          onCreada={marcarEnviada}
+          onVerSolicitud={(solicitud) => {
+            marcarEnviada(solicitud);
+            setAbierto(false);
+            irASolicitud(solicitud.id);
+          }}
         />
       ) : null}
     </>

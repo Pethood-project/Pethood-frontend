@@ -46,3 +46,10 @@ export function cambiarPassword(
     },
   });
 }
+
+export function darDeBajaCuenta(token: string): Promise<void> {
+  return apiFetch<void>('/usuarios/me', {
+    method: 'DELETE',
+    token,
+  });
+}

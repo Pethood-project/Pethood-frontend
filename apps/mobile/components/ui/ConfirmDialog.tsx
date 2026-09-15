@@ -102,17 +102,16 @@ export function ConfirmDialog({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={cerrarSiSePuede}>
-      <Pressable
-        className="flex-1 items-center justify-center bg-black/40 px-8"
-        onPress={cerrarSiSePuede}
-        accessibilityRole="button"
-        accessibilityLabel="Cerrar"
-      >
+      {/* Fondo y tarjeta son hermanos: un Pressable dentro de otro en web (React 19)
+          dispara onPress al renderizar y tira el handler de cerrar. */}
+      <View className="flex-1 items-center justify-center bg-black/40 px-8">
         <Pressable
-          className="w-full rounded-3xl bg-white p-6"
-          onPress={() => undefined}
-          accessibilityViewIsModal
-        >
+          accessibilityRole="button"
+          accessibilityLabel="Cerrar"
+          onPress={cerrarSiSePuede}
+          className="absolute inset-0"
+        />
+        <View className="z-10 w-full rounded-3xl bg-white p-6" accessibilityViewIsModal>
           <View className={`mb-4 h-14 w-14 items-center justify-center self-center rounded-full ${estilo.fondo}`}>
             <Ionicons name={icono ?? estilo.icono} size={28} color={estilo.color} />
           </View>
@@ -182,8 +181,8 @@ export function ConfirmDialog({
               </>
             )}
           </View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }

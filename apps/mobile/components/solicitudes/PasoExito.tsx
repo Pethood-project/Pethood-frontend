@@ -7,7 +7,7 @@
  * dos cosas por hacer (ver la solicitud o volver al listado).
  */
 import { Ionicons } from '@expo/vector-icons';
-import { Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { CustomButton } from '@/components/CustomButton';
 import { PALETA } from '@/constants/theme';
@@ -35,6 +35,16 @@ export function PasoExito({ solicitud, mascota, onVerSolicitud, onVolver }: Paso
 
   return (
     <View className="flex-1 px-6 pb-4">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Volver"
+        onPress={onVolver}
+        hitSlop={12}
+        className="mt-2 h-10 w-10 items-center justify-center self-start active:opacity-60"
+      >
+        <Ionicons name="arrow-back" size={22} color={PALETA.accent[700]} />
+      </Pressable>
+
       <View className="flex-1 items-center justify-center gap-5">
         {/* Halo claro alrededor del disco. El color va por `style` y no por clase: los
             tintes `calido` de la paleta tienen claves camelCase. */}

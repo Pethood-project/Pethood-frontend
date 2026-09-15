@@ -5,7 +5,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ImagePickerAsset } from 'expo-image-picker';
 import { useNavigation, useRouter, type Href } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -21,6 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomButton } from '@/components/CustomButton';
 import { useToast } from '@/components/feedback/Toast';
 import { Avatar } from '@/components/ui/Avatar';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { TextField } from '@/components/ui/TextField';
 import { PALETA } from '@/constants/theme';
@@ -78,8 +79,20 @@ export default function EditarPerfilScreen() {
   const [guardando, setGuardando] = useState(false);
   const permitirSalir = useRef(false);
 
+  const [confirmarSalida, setConfirmarSalida] = useState(false);
+
   const hayCambios =
     JSON.stringify(form) !== JSON.stringify(inicial) || Boolean(fotoNueva);
+
+  const formularioValido = useMemo(
+    () =>
+      !validarNombrePersona(form.nombre, 'nombre') &&
+      !validarNombrePersona(form.apellido, 'apellido') &&
+      !validarEmail(form.email) &&
+      !validarTelefono(form.telefono) &&
+      !validarUbicacion(form.ubicacion),
+    [form],
+  );
 
   useEffect(() => {
     if (!token) return;
@@ -106,30 +119,34 @@ export default function EditarPerfilScreen() {
       .finally(() => setCargando(false));
   }, [token, toast]);
 
+  // En web `Alert.alert` no muestra los botones: el `preventDefault` dejaba el volver
+  // colgado. El diálogo propio sí funciona, y cubre también el atrás del sistema.
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (evento) => {
       if (permitirSalir.current || !hayCambios) return;
+      // Ir a cambiar contraseña no descarta el formulario: solo se pide confirmación al volver.
+      if (evento.data.action.type !== 'GO_BACK' && evento.data.action.type !== 'POP') return;
 
       evento.preventDefault();
-      Alert.alert(
-        'Descartar cambios',
-        'Tenés cambios sin guardar. ¿Querés salir igual?',
-        [
-          { text: 'Seguir editando', style: 'cancel' },
-          {
-            text: 'Descartar',
-            style: 'destructive',
-            onPress: () => {
-              permitirSalir.current = true;
-              navigation.dispatch(evento.data.action);
-            },
-          },
-        ],
-      );
+      setConfirmarSalida(true);
     });
 
     return unsubscribe;
   }, [hayCambios, navigation]);
+
+  const salirSinGuardar = (): void => {
+    permitirSalir.current = true;
+    setConfirmarSalida(false);
+    router.back();
+  };
+
+  const volver = (): void => {
+    if (hayCambios) {
+      setConfirmarSalida(true);
+      return;
+    }
+    router.back();
+  };
 
   const setCampo = useCallback((campo: keyof Formulario, valor: string) => {
     setForm((prev) => ({ ...prev, [campo]: valor }));
@@ -204,8 +221,18 @@ export default function EditarPerfilScreen() {
     return !Object.values(next).some(Boolean);
   };
 
+  const explicarQueFalta = (): void => {
+    if (!hayCambios) {
+      toast.mostrarAdvertencia('Todavía no cambiaste nada.');
+      return;
+    }
+
+    validar();
+    toast.mostrarAdvertencia('Revisá los campos marcados en rojo.');
+  };
+
   const guardar = async (): Promise<void> => {
-    if (!validar() || !token) return;
+    if (!hayCambios || !validar() || !token) return;
 
     setGuardando(true);
     setFormError(undefined);
@@ -243,7 +270,7 @@ export default function EditarPerfilScreen() {
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
         <View className="flex-row items-center px-5 pb-2 pt-2">
           <Pressable
-            onPress={() => router.back()}
+            onPress={volver}
             className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-white"
             accessibilityRole="button"
             accessibilityLabel="Volver"
@@ -380,13 +407,26 @@ export default function EditarPerfilScreen() {
                 <CustomButton
                   title="Guardar cambios"
                   loading={guardando}
+                  disabled={!formularioValido || !hayCambios}
                   onPress={() => void guardar()}
+                  onPressDeshabilitado={explicarQueFalta}
                 />
               </View>
             </ScrollView>
           </KeyboardAvoidingView>
         )}
       </SafeAreaView>
+
+      <ConfirmDialog
+        visible={confirmarSalida}
+        tono="advertencia"
+        titulo="¿Descartar los cambios?"
+        mensaje="Si salís ahora vas a perder lo que editaste."
+        textoConfirmar="Descartar"
+        textoCancelar="Seguir editando"
+        onConfirmar={salirSinGuardar}
+        onCerrar={() => setConfirmarSalida(false)}
+      />
     </View>
   );
 }

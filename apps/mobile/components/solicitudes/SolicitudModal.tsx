@@ -57,7 +57,11 @@ interface SolicitudModalProps {
   mascota: MascotaDeSolicitud;
   /** Lo que el usuario ya declaró antes, si tiene. Viene de `/elegibilidad`. */
   hogarPrecargado: HogarSolicitante | null;
-  onCerrar: () => void;
+  /**
+   * Al cerrar se manda la solicitud si ya se creó: el "Volver" del éxito tiene que
+   * dejarla en el botón de atrás, no solo desmontar el modal.
+   */
+  onCerrar: (solicitudCreada?: SolicitudDetalle | null) => void;
   /** Se avisa con la solicitud creada, para refrescar la pantalla de atrás. */
   onCreada: (solicitud: SolicitudDetalle) => void;
   /** Salida a "Mi solicitud" desde la pantalla de éxito; la navegación la hace la pantalla. */
@@ -99,23 +103,11 @@ export function SolicitudModal({
     });
   }, []);
 
-  /** Vuelve todo a cero: el modal se reusa entre mascotas y no puede arrastrar respuestas. */
-  const reiniciar = useCallback((): void => {
-    setPaso(1);
-    setBorrador(borradorInicial(hogarPrecargado));
-    setErrores({});
-    setErrorEnvio(null);
-    setCreada(null);
-    setEditandoHogar(false);
-    setAdvirtiendoCambioHogar(false);
-  }, [hogarPrecargado]);
-
   const cerrar = useCallback((): void => {
     // Mientras la solicitud está viajando no se cierra: quedaría una petición sin feedback.
     if (enviando) return;
-    reiniciar();
-    onCerrar();
-  }, [enviando, onCerrar, reiniciar]);
+    onCerrar(creada);
+  }, [creada, enviando, onCerrar]);
 
   const enviar = useCallback(async (): Promise<void> => {
     setEnviando(true);
@@ -170,8 +162,8 @@ export function SolicitudModal({
 
   const PasoActual = PASOS[paso - 1]!;
 
-  return (
-    <Modal visible={visible} animationType="slide" onRequestClose={cerrar}>
+  const cuerpo = (
+    <>
       <View className="flex-1 bg-organic-bg">
         <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
           {creada ? (
@@ -191,13 +183,14 @@ export function SolicitudModal({
                 paso={paso}
                 total={TOTAL_PASOS}
                 titulo={TITULOS_PASOS[paso - 1]!}
-                onVolver={paso > 1 ? () => setPaso(paso - 1) : undefined}
+                onVolver={paso > 1 ? () => setPaso(paso - 1) : cerrar}
                 onCerrar={cerrar}
               />
 
               <KeyboardAvoidingView
                 className="flex-1"
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                style={{ zIndex: 0, overflow: 'hidden' }}
               >
                 <ScrollView
                   className="flex-1"
@@ -220,7 +213,10 @@ export function SolicitudModal({
                 </ScrollView>
               </KeyboardAvoidingView>
 
-              <View className="flex-row gap-2.5 border-t border-organic-neutral-200 px-4 pb-2 pt-3">
+              <View
+                className="flex-row gap-2.5 border-t border-organic-neutral-200 px-4 pb-2 pt-3"
+                style={{ zIndex: 2 }}
+              >
                 {paso > 1 ? (
                   <View className="w-[112px]">
                     <CustomButton
@@ -256,6 +252,37 @@ export function SolicitudModal({
         onConfirmar={confirmarCambioHogar}
         onCerrar={() => setAdvirtiendoCambioHogar(false)}
       />
+    </>
+  );
+
+  // En web no se usa `Modal`: al cerrarlo, RN-web saca un portal del `document.body` y
+  // Expo remonta la ficha, que vuelve a pintar "Solicitar adopción". Un overlay absoluto
+  // se oculta sin desmontarse. El portal evita que el pie de la ficha recorte el overlay.
+  if (Platform.OS === 'web') {
+    const overlay = (
+      <View
+        pointerEvents={visible ? 'auto' : 'none'}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 10000,
+          display: visible ? 'flex' : 'none',
+        }}
+      >
+        {cuerpo}
+      </View>
+    );
+
+    const { createPortal } = require('react-dom') as typeof import('react-dom');
+    return createPortal(overlay, document.body);
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={cerrar}>
+      {cuerpo}
     </Modal>
   );
 }

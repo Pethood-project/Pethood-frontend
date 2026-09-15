@@ -1,18 +1,20 @@
 import { cookies } from "next/headers";
-import { HeartHandshake, ClipboardList, PawPrint } from "lucide-react";
+import { HeartHandshake, ClipboardList, PawPrint, AlertTriangle } from "lucide-react";
 import { AUTH_COOKIE } from "@/lib/auth";
 import { obtenerDashboardRefugio, esDashboardRefugioVacio } from "@/services/dashboard";
 import { periodoPorDefecto, etiquetaPeriodo } from "@/lib/periodo";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { DonutChart } from "@/components/dashboard/DonutChart";
+import { BarList } from "@/components/dashboard/BarList";
 import { DonacionesChart } from "@/components/dashboard/DonacionesChart";
+import { AlertasSolicitudes } from "@/components/dashboard/AlertasSolicitudes";
+import { PublicacionesAntiguas } from "@/components/dashboard/PublicacionesAntiguas";
 import { PeriodoSelector } from "@/components/dashboard/PeriodoSelector";
 import { ExportacionRefugio } from "@/components/dashboard/ExportacionRefugio";
 import { DashboardVacio } from "@/components/dashboard/DashboardVacio";
 import type { MesISO } from "@/types/dashboard";
 
-// GUI-38 — Dashboard Refugio (HU-14.2). Contrato de API propuesto, no confirmado por spec
-// (ver nota en types/dashboard.ts y services/dashboard.ts).
+// GUI-38 — Dashboard Refugio (HU-14.2). Contrato de spec 010 (APROBADA, ver types/dashboard.ts).
 export default async function DashboardRefugioPage({
   searchParams,
 }: {
@@ -54,17 +56,40 @@ export default async function DashboardRefugioPage({
           destacado
           nota={`Objetivo: $${dashboard.kpis.objetivoDonaciones.toLocaleString("es-AR")}`}
         />
+        <KpiCard
+          etiqueta="Solicitudes demoradas"
+          valor={dashboard.kpis.solicitudesDemoradas}
+          icono={AlertTriangle}
+          color={dashboard.kpis.solicitudesDemoradas > 0 ? "rojo" : "verde"}
+          nota="Más de 5 días sin respuesta"
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="md:col-span-1">
+        <div className="flex flex-col gap-4 md:col-span-1">
           <DonutChart
             titulo="Solicitudes recibidas"
             items={dashboard.solicitudesPorEstado.map((s) => ({ etiqueta: s.estado, valor: s.cantidad }))}
           />
+          <BarList
+            titulo="Mascotas por estado"
+            items={Object.entries(dashboard.mascotasPorEstado).map(([etiqueta, valor]) => ({
+              etiqueta: etiqueta.replace(/_/g, " "),
+              valor,
+            }))}
+          />
+          <BarList
+            titulo="Publicaciones por antigüedad"
+            items={Object.entries(dashboard.publicacionesPorAntiguedad).map(([etiqueta, valor]) => ({
+              etiqueta,
+              valor,
+            }))}
+          />
         </div>
-        <div className="md:col-span-2">
+        <div className="flex flex-col gap-4 md:col-span-2">
           <DonacionesChart items={dashboard.donacionesPorMes} />
+          <AlertasSolicitudes items={dashboard.solicitudesDemoradasDetalle} />
+          <PublicacionesAntiguas items={dashboard.publicacionesDemasiadoAntiguas} />
         </div>
       </div>
     </div>

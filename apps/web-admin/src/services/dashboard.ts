@@ -26,8 +26,8 @@ export async function descargarExportacion(entidad: EntidadExportable, token: st
 }
 
 // --- Dashboard Refugio (GUI-38, HU-14.2) --------------------------------------------------
-// Endpoints propuestos, no confirmados por spec (ver nota en types/dashboard.ts): el back
-// scopea por refugioId a partir del JWT, así que solo viajan desde/hasta como query params.
+// Contrato de spec 010 aprobada (ver nota en types/dashboard.ts): el back scopea por refugioId
+// a partir del JWT, así que solo viajan desde/hasta como query params.
 
 export function obtenerDashboardRefugio(token: string, periodo: PeriodoDashboard): Promise<DashboardRefugio> {
   return apiFetch<DashboardRefugio>(`/refugio/dashboard?desde=${periodo.desde}&hasta=${periodo.hasta}`, { token });

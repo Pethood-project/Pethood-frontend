@@ -7,6 +7,7 @@
  * pintar. Las transformaciones de la lista son funciones puras en `lib/mensajesChat.ts`.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 import {
   aItems,
@@ -141,13 +142,33 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
   }, [cargar]);
 
   /**
-   * Marca la sala como leída al abrirla (criterio del contrato: al abrir, no al renderizar
-   * cada mensaje). Si falla no se le dice nada al usuario: el badge se corrige solo la
-   * próxima vez que entre, y un toast por esto sería ruido sobre algo que él no pidió.
+   * Marca la sala como leída. Si falla no se le dice nada al usuario: el badge se corrige
+   * solo la próxima vez que entre, y un toast por esto sería ruido sobre algo que él no
+   * pidió.
+   *
+   * Se llama en los momentos que fija el contrato (al abrir, no al renderizar cada
+   * mensaje): al montar, cuando la app vuelve al frente con la sala abierta, al reconectar
+   * el socket y cuando llega un mensaje ajeno mientras la pantalla está a la vista. Sin este
+   * último caso, un mensaje recibido con la sala abierta quedaba sin leer hasta salir y
+   * volver a entrar, y el emisor no veía el doble check.
    */
-  useEffect(() => {
+  const marcarLeido = useCallback((): void => {
     void marcarChatLeido(chatId).catch(() => undefined);
   }, [chatId]);
+
+  useEffect(() => {
+    marcarLeido();
+  }, [marcarLeido]);
+
+  // Con la app en segundo plano el socket puede seguir vivo y entregar mensajes que el
+  // usuario todavía no vio: esos se marcan recién cuando vuelve al frente.
+  useEffect(() => {
+    const suscripcion = AppState.addEventListener('change', (estado) => {
+      if (estado === 'active') marcarLeido();
+    });
+
+    return () => suscripcion.remove();
+  }, [marcarLeido]);
 
   /** Página anterior en el tiempo. La `FlatList` invertida la pide al llegar al tope. */
   const cargarMasViejos = useCallback((): void => {
@@ -253,9 +274,11 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
       if (!montado.current) return;
       setDesconectado(false);
       // Socket.io reconecta solo pero NO rejoinea las salas, y el server no encola nada
-      // de lo que pasó mientras tanto: hay que volver a entrar y traer lo perdido.
+      // de lo que pasó mientras tanto: hay que volver a entrar, traer lo perdido y marcarlo
+      // como leído, que es lo que el usuario está viendo.
       unirse();
       void cargar({ silencioso: true });
+      marcarLeido();
     };
 
     const alDesconectar = (): void => {
@@ -271,7 +294,14 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
       // sin esto la burbuja se vería dos veces hasta que el POST conteste.
       if (mensaje.usuarioId === miUsuarioId) {
         setPendientes((actuales) => quitarPendienteConfirmado(actuales, mensaje));
+        return;
       }
+
+      // Un mensaje ajeno que llega con la sala a la vista ya está leído: se avisa al
+      // servidor para que el badge del listado y el doble check del otro se actualicen sin
+      // tener que cerrar y reabrir la conversación. Si la app está en segundo plano no se
+      // marca: lo hará el listener de `AppState` cuando el usuario vuelva.
+      if (AppState.currentState === 'active') marcarLeido();
     };
 
     const alLeido = ({ chatId: sala, usuarioId }: EventoLeido): void => {
@@ -318,7 +348,7 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
 
       liberar();
     };
-  }, [chatId, miUsuarioId, token, cargar]);
+  }, [chatId, miUsuarioId, token, cargar, marcarLeido]);
 
   const items = useMemo(
     () => aItems(confirmados, pendientes, miUsuarioId),

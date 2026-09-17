@@ -6,9 +6,12 @@
  * ese bloque; la lista, la fila y los estados son los mismos.
  *
  * Sólo lectura: abrir una conversación y enviar mensajes es HU-5.2, y filtrar es HU-5.3.
+ *
+ * El estado de la lista (carga, refresco y tiempo real) vive en `useListaChats`; acá sólo se
+ * pinta.
  */
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,15 +19,15 @@ import { FilaConversacion } from '@/components/chat/FilaConversacion';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { BarraBusqueda } from '@/components/ui/BarraBusqueda';
 import { PALETA } from '@/constants/theme';
+import { useListaChats } from '@/hooks/useListaChats';
 import { useSesion } from '@/hooks/useSesion';
-import { listarChats, type Conversacion } from '@/services/chats';
 
 /**
  * Cada cuánto se recalculan los textos relativos ("Hace 5 min").
  *
  * Es un re-render local, sin pedirle nada al servidor: el minuto es la unidad más chica del
  * criterio 6, así que con este intervalo ningún texto queda viejo. El listado en sí se
- * recarga al enfocar la pantalla — esta HU no pide tiempo real.
+ * recarga al enfocar la pantalla y se actualiza por socket cuando llega un mensaje.
  */
 const REFRESCO_TEXTOS_MS = 60_000;
 
@@ -53,10 +56,7 @@ export default function ChatScreen() {
   const { esRefugio } = useSesion();
   const router = useRouter();
 
-  const [chats, setChats] = useState<Conversacion[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [refrescando, setRefrescando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { chats, cargando, refrescando, error, recargar, refrescar } = useListaChats();
 
   /**
    * Instante contra el que las filas calculan su texto relativo. Avanza solo cada minuto
@@ -69,28 +69,11 @@ export default function ChatScreen() {
     return () => clearInterval(id);
   }, []);
 
-  const cargar = useCallback(async (): Promise<void> => {
-    try {
-      setError(null);
-      setChats((await listarChats()).chats);
-      // Al traer datos nuevos el reloj también se pone al día, para que un mensaje recién
-      // llegado no aparezca con la marca del tick anterior.
-      setAhora(new Date());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No pudimos cargar tus conversaciones.');
-    } finally {
-      setCargando(false);
-      setRefrescando(false);
-    }
-  }, []);
-
-  // Al volver de una conversación cambiaron los no leídos y el último mensaje, así que se
-  // recarga cada vez que la pantalla toma el foco y no sólo al montarla.
-  useFocusEffect(
-    useCallback(() => {
-      void cargar();
-    }, [cargar]),
-  );
+  // Cada vez que la lista cambia (recarga o mensaje por socket) el reloj también se pone al
+  // día, para que un mensaje recién llegado no aparezca con la marca del tick anterior.
+  useEffect(() => {
+    setAhora(new Date());
+  }, [chats]);
 
   const sinLeer = useMemo(
     () => chats.reduce((total, chat) => total + chat.noLeidos, 0),
@@ -127,13 +110,7 @@ export default function ChatScreen() {
         {cargando ? (
           <EstadoCargando />
         ) : error ? (
-          <EstadoError
-            mensaje={error}
-            onAccion={() => {
-              setCargando(true);
-              void cargar();
-            }}
-          />
+          <EstadoError mensaje={error} onAccion={recargar} />
         ) : (
           <FlatList
             data={chats}
@@ -153,10 +130,7 @@ export default function ChatScreen() {
             refreshControl={
               <RefreshControl
                 refreshing={refrescando}
-                onRefresh={() => {
-                  setRefrescando(true);
-                  void cargar();
-                }}
+                onRefresh={refrescar}
                 tintColor={PALETA.pethood.naranja}
               />
             }

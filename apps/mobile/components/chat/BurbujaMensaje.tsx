@@ -12,7 +12,14 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ActivityIndicator, Image, Pressable, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Pressable,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
 
 import { PALETA } from '@/constants/theme';
 import type { ItemChat } from '@/lib/mensajesChat';
@@ -31,8 +38,20 @@ const RADIO_COLA = 5;
  */
 const RELLENO = { paddingHorizontal: 14, paddingVertical: 10 };
 
-/** Alto de la foto dentro de la burbuja. El ancho lo fija el 80% de la burbuja. */
+/** Alto de la foto dentro de la burbuja. */
 const ALTO_IMAGEN = 180;
+
+/**
+ * Tope del ancho de la foto. En pantallas anchas la burbuja no tiene por qué crecer hasta
+ * el 80%: una foto de chat más grande que esto ya se abre con el visor.
+ */
+const ANCHO_MAX_IMAGEN = 260;
+
+/** Fracción de la pantalla que ocupa la burbuja como máximo (el `max-w-[80%]` de abajo). */
+const FRACCION_BURBUJA = 0.8;
+
+/** El padding horizontal de la lista en la pantalla de conversación. */
+const MARGEN_LISTA = 16 * 2;
 
 /** Sombra del artboard: `0 2px 8px rgba(150,120,80,.10)`. Sólo la lleva la burbuja recibida. */
 const SOMBRA = {
@@ -98,7 +117,14 @@ function PieBurbuja({ item }: { item: ItemChat }) {
   );
 }
 
-/** Foto del mensaje, con su lugar reservado mientras carga para que la lista no salte. */
+/**
+ * Foto del mensaje, con su lugar reservado mientras carga para que la lista no salte.
+ *
+ * El ancho va EXPLÍCITO y no como `w-full`: la burbuja se ajusta a su contenido (no tiene
+ * ancho propio, sólo un máximo), así que un `100%` no tiene contra qué medirse y la foto
+ * colapsaba a una franja angosta. Se calcula desde el ancho de la pantalla para que en un
+ * celular chico siga entrando dentro del 80% de la burbuja.
+ */
 function ImagenMensaje({
   uri,
   subiendo,
@@ -108,6 +134,15 @@ function ImagenMensaje({
   subiendo: boolean;
   onAbrir?: () => void;
 }) {
+  const { width: anchoPantalla } = useWindowDimensions();
+
+  const ancho = Math.floor(
+    Math.min(
+      ANCHO_MAX_IMAGEN,
+      (anchoPantalla - MARGEN_LISTA) * FRACCION_BURBUJA - RELLENO.paddingHorizontal * 2,
+    ),
+  );
+
   return (
     <Pressable
       accessibilityRole="imagebutton"
@@ -116,8 +151,8 @@ function ImagenMensaje({
       // el archivo local, no lo que quedó guardado.
       onPress={subiendo ? undefined : onAbrir}
       disabled={subiendo || !onAbrir}
-      style={{ height: ALTO_IMAGEN, borderRadius: RADIO - 6 }}
-      className="mb-1.5 w-full overflow-hidden bg-pethood-beige-dark active:opacity-90"
+      style={{ width: ancho, height: ALTO_IMAGEN, borderRadius: RADIO - 6 }}
+      className="mb-1.5 overflow-hidden bg-pethood-beige-dark active:opacity-90"
     >
       <Image
         source={{ uri }}

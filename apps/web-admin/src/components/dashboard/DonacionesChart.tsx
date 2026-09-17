@@ -18,10 +18,10 @@ export function DonacionesChart({ items }: { items: DonacionPorMes[] }) {
   return (
     <Card className="flex h-full flex-col">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-neutral-900">Flujo de donaciones</h2>
-        <div className="flex shrink-0 items-center gap-3 text-xs font-medium text-neutral-700">
+        <h2 className="text-lg font-semibold text-neutral-900">Flujo de donaciones</h2>
+        <div className="flex shrink-0 items-center gap-3 text-sm font-medium text-neutral-700">
           <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full" style={{ background: COLOR_BARRA_ULTIMO_MES }} />
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: COLOR_BARRA_ULTIMO_MES }} />
             Recaudado
           </span>
           <span className="flex items-center gap-1.5">
@@ -33,7 +33,7 @@ export function DonacionesChart({ items }: { items: DonacionPorMes[] }) {
       <div className="mt-6 flex flex-1 justify-between gap-2">
         {items.map((item) => (
           <div key={item.mes} className="flex flex-1 flex-col items-center gap-2">
-            <span className="text-xs font-semibold text-neutral-900">{formatoMoneda(item.monto)}</span>
+            <span className="text-sm font-semibold text-neutral-900">{formatoMoneda(item.monto)}</span>
             <div className="relative w-full flex-1">
               <div
                 className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-14 rounded-t-sm transition-[height] duration-500 ease-out"
@@ -49,7 +49,7 @@ export function DonacionesChart({ items }: { items: DonacionPorMes[] }) {
                 title={`Objetivo: ${formatoMoneda(item.objetivo)}`}
               />
             </div>
-            <span className="text-xs font-medium text-neutral-700">{item.mes}</span>
+            <span className="text-sm font-medium text-neutral-700">{item.mes}</span>
           </div>
         ))}
       </div>

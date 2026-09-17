@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
-const BASE = "rounded-xl p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md";
-const SUPERFICIE_DEFECTO = "border border-pethood-beige-dark bg-white";
+// Radio, borde y sombra tomados de GUI-15.1.1 (pantallas/PetHood App (standalone).html): radio
+// 16px, borde neutral-300 y sombra tintada cálida (no gris) en vez del shadow-sm/md por defecto.
+const BASE =
+  "rounded-2xl p-6 shadow-[0_1px_5px_rgba(150,120,80,0.10)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_4px_14px_rgba(150,120,80,0.16)]";
+const SUPERFICIE_DEFECTO = "border border-neutral-300 bg-neutral-100";
 
 interface CardProps {
   className?: string;

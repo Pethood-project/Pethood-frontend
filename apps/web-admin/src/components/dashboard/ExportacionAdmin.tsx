@@ -37,9 +37,9 @@ export function ExportacionAdmin({ token }: { token: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-neutral-200 bg-white p-6">
-        <h1 className="text-lg font-semibold text-neutral-900">Exportar datos</h1>
-        <p className="mt-1 text-sm text-neutral-700">Descarga un CSV por entidad, sin dados de baja.</p>
+      <div className="rounded-2xl border border-neutral-300 bg-neutral-100 p-6">
+        <h1 className="font-heading text-xl text-neutral-900">Exportar datos</h1>
+        <p className="mt-1 text-base text-neutral-700">Descarga un CSV por entidad, sin dados de baja.</p>
 
         <div className="mt-4 flex flex-wrap gap-3">
           {ENTIDADES_EXPORTABLES.map((entidad) => (
@@ -52,7 +52,7 @@ export function ExportacionAdmin({ token }: { token: string }) {
 
       {/* GUI-41 — error de exportación */}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-base text-red-700">{error}</div>
       )}
     </div>
   );

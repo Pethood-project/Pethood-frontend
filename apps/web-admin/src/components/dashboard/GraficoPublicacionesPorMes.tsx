@@ -1,8 +1,8 @@
 import { Card } from "@/components/ui/Card";
 import type { PublicacionPorMes } from "@/types/dashboard";
 
-const COLOR_PUBLICACIONES = "var(--color-pethood-orange)";
-const COLOR_ADOPCIONES = "var(--color-green-600)";
+const COLOR_PUBLICACIONES = "var(--color-pethood-accent-600)";
+const COLOR_ADOPCIONES = "var(--color-pethood-success-600)";
 
 // Barras verticales agrupadas en CSS puro — mismo criterio que BarList/DonutChart:
 // spec 009 no pide interactividad, así que no suma una librería de gráficos para esto.
@@ -19,20 +19,20 @@ export function GraficoPublicacionesPorMes({
   return (
     <Card className="flex h-full flex-col">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold text-neutral-900">
+        <h2 className="text-lg font-semibold text-neutral-900">
           Publicaciones y adopciones (últimos 6 meses)
         </h2>
-        <div className="flex shrink-0 items-center gap-3 text-xs font-medium text-neutral-700">
+        <div className="flex shrink-0 items-center gap-3 text-sm font-medium text-neutral-700">
           <span className="flex items-center gap-1.5">
             <span
-              className="h-2 w-2 rounded-full"
+              className="h-2.5 w-2.5 rounded-full"
               style={{ background: COLOR_PUBLICACIONES }}
             />
             Publicaciones
           </span>
           <span className="flex items-center gap-1.5">
             <span
-              className="h-2 w-2 rounded-full"
+              className="h-2.5 w-2.5 rounded-full"
               style={{ background: COLOR_ADOPCIONES }}
             />
             Adopciones
@@ -63,7 +63,7 @@ export function GraficoPublicacionesPorMes({
                 title={`Adopciones: ${item.adopciones}`}
               />
             </div>
-            <span className="text-xs font-medium text-neutral-700">{item.mes}</span>
+            <span className="text-sm font-medium text-neutral-700">{item.mes}</span>
           </div>
         ))}
       </div>

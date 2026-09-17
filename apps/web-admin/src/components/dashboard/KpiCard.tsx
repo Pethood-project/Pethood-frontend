@@ -1,12 +1,14 @@
 import type { LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 
-// Pasteles suaves para no desentonar con la paleta cálida de PetHood.
+// Mismos tonos que los íconos de KPI de GUI-15.1.1: círculo amarillo pálido + marrón/naranja
+// para métricas de crecimiento, gris cálido para conteos simples, verde oliva para positivas,
+// rojo para alertas (único frío que se conserva, para que siga leyendo como "peligro").
 const COLORES_BADGE = {
-  naranja: "bg-orange-50 text-pethood-orange-dark",
-  verde: "bg-green-50 text-green-600",
-  celeste: "bg-sky-50 text-sky-600",
-  rojo: "bg-red-50 text-red-500",
+  naranja: "bg-pethood-badge text-pethood-accent-700",
+  verde: "bg-pethood-success-100 text-pethood-success-700",
+  celeste: "bg-neutral-200 text-neutral-700",
+  rojo: "bg-red-50 text-red-600",
 } as const;
 
 interface KpiCardProps {
@@ -30,13 +32,13 @@ export function KpiCard({ etiqueta, valor, icono: Icono, color, href, destacado 
         className="text-white"
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-white/90">{etiqueta}</p>
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15">
-            <Icono className="h-4 w-4" strokeWidth={2} />
+          <p className="text-sm font-semibold uppercase tracking-wide text-white/90">{etiqueta}</p>
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white/15">
+            <Icono className="h-6 w-6" strokeWidth={2} />
           </span>
         </div>
-        <p className="mt-2 text-3xl font-semibold tracking-tight">{valor}</p>
-        {nota && <p className="mt-1 text-xs font-medium text-white/90">{nota}</p>}
+        <p className="mt-2 font-heading text-5xl tracking-tight">{valor}</p>
+        {nota && <p className="mt-1 text-sm font-medium text-white/90">{nota}</p>}
       </Card>
     );
   }
@@ -44,13 +46,13 @@ export function KpiCard({ etiqueta, valor, icono: Icono, color, href, destacado 
   return (
     <Card href={href}>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-700">{etiqueta}</p>
-        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${COLORES_BADGE[color]}`}>
-          <Icono className="h-4 w-4" strokeWidth={2} />
+        <p className="text-sm font-semibold uppercase tracking-wide text-neutral-600">{etiqueta}</p>
+        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${COLORES_BADGE[color]}`}>
+          <Icono className="h-6 w-6" strokeWidth={2} />
         </span>
       </div>
-      <p className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900">{valor}</p>
-      {nota && <p className="mt-1 text-xs font-medium text-neutral-600">{nota}</p>}
+      <p className="mt-2 font-heading text-5xl tracking-tight text-neutral-900">{valor}</p>
+      {nota && <p className="mt-1 text-sm font-medium text-neutral-600">{nota}</p>}
     </Card>
   );
 }

@@ -1,5 +1,11 @@
 import { apiFetch, API_URL, forzarLogoutSiNoAutenticado } from "./api";
-import type { DashboardAdmin, DashboardRefugio, EntidadExportable, PeriodoDashboard } from "@/types/dashboard";
+import type {
+  DashboardAdmin,
+  DashboardRefugio,
+  EntidadExportable,
+  EntidadExportableRefugio,
+  PeriodoDashboard,
+} from "@/types/dashboard";
 import type { ApiErrorBody } from "@/types/api";
 
 export function obtenerDashboard(token: string): Promise<DashboardAdmin> {
@@ -43,10 +49,15 @@ export function esDashboardRefugioVacio(dashboard: DashboardRefugio): boolean {
 }
 
 // Igual que descargarExportacion: no pasa por apiFetch porque la respuesta no es JSON.
-export async function descargarExportacionRefugio(periodo: PeriodoDashboard, token: string): Promise<Blob> {
-  const res = await fetch(`${API_URL}/refugio/dashboard/exportar?desde=${periodo.desde}&hasta=${periodo.hasta}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export async function descargarExportacionRefugio(
+  entidad: EntidadExportableRefugio,
+  periodo: PeriodoDashboard,
+  token: string,
+): Promise<Blob> {
+  const res = await fetch(
+    `${API_URL}/refugio/dashboard/exportar/${entidad}?desde=${periodo.desde}&hasta=${periodo.hasta}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
 
   if (!res.ok) {
     const body = (await res.json().catch(() => null)) as ApiErrorBody | null;

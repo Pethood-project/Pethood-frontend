@@ -97,3 +97,8 @@ export interface DashboardRefugio {
   // spec 010 §7.8 — publicaciones con 60+ días publicadas, como máximo 10, más antigua primero.
   publicacionesDemasiadoAntiguas: PublicacionDemasiadoAntigua[];
 }
+
+// spec 010 §5 (2026-09-17) — export por entidad, scopeado a refugioId (mismo patrón que admin).
+export const ENTIDADES_EXPORTABLES_REFUGIO = ["mascotas", "solicitudes", "donaciones"] as const;
+
+export type EntidadExportableRefugio = (typeof ENTIDADES_EXPORTABLES_REFUGIO)[number];

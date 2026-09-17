@@ -12,12 +12,12 @@ interface DonutChartProps {
 // en español, porque "En_Revision" es un valor técnico, no un texto para mostrar.
 const CONFIG_ESTADO: Record<string, { etiqueta: string; color: string }> = {
   Pendiente: { etiqueta: "Pendiente", color: "var(--color-pethood-orange-dark)" },
-  En_Revision: { etiqueta: "En revisión", color: "var(--color-sky-600)" },
-  Aprobada: { etiqueta: "Aprobada", color: "var(--color-green-600)" },
+  En_Revision: { etiqueta: "En revisión", color: "var(--color-pethood-gold)" },
+  Aprobada: { etiqueta: "Aprobada", color: "var(--color-pethood-success-600)" },
   Rechazada: { etiqueta: "Rechazada", color: "var(--color-red-500)" },
   Cancelada: { etiqueta: "Cancelada", color: "var(--color-neutral-400)" },
 };
-const CONFIG_RESERVA = { color: "var(--color-sky-600)" };
+const CONFIG_RESERVA = { color: "var(--color-pethood-accent-500)" };
 
 function configDe(estado: string) {
   return CONFIG_ESTADO[estado] ?? { etiqueta: estado.replace(/_/g, " "), ...CONFIG_RESERVA };
@@ -62,22 +62,22 @@ export function DonutChart({ titulo, items }: DonutChartProps) {
 
   return (
     <Card>
-      <h2 className="text-sm font-semibold text-neutral-900">{titulo}</h2>
+      <h2 className="text-lg font-semibold text-neutral-900">{titulo}</h2>
       <div className="mt-4 flex items-center gap-6">
-        <div className="relative h-24 w-24 shrink-0">
-          <svg viewBox="0 0 36 36" className="h-24 w-24 -rotate-90">
+        <div className="relative h-28 w-28 shrink-0">
+          <svg viewBox="0 0 36 36" className="h-28 w-28 -rotate-90">
             {segmentos.partes}
           </svg>
           <div className="absolute inset-3 flex flex-col items-center justify-center rounded-full bg-white">
-            <span className="text-base font-semibold leading-none text-neutral-900">{total}</span>
-            <span className="mt-1 text-[10px] leading-none text-neutral-500">total</span>
+            <span className="text-xl font-semibold leading-none text-neutral-900">{total}</span>
+            <span className="mt-1 text-xs leading-none text-neutral-500">total</span>
           </div>
         </div>
-        <ul className="w-full space-y-2 text-sm">
+        <ul className="w-full space-y-2.5 text-base">
           {items.map((item) => (
             <li key={item.etiqueta} className="flex items-center gap-2">
               <span
-                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                className="h-3 w-3 shrink-0 rounded-full"
                 style={{ background: configDe(item.etiqueta).color }}
               />
               <span className="text-neutral-800">{configDe(item.etiqueta).etiqueta}</span>

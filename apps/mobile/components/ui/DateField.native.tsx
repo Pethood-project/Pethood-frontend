@@ -27,6 +27,8 @@ interface DateFieldProps {
   /** Solo tiene sentido para fecha de nacimiento; el resto de los campos de fecha no la muestran. */
   mostrarEdad?: boolean;
   variante?: VarianteCampo;
+  /** Letra más grande de etiqueta y valor, para el alta y la publicación de mascota. */
+  grande?: boolean;
 }
 
 export function DateField({
@@ -41,6 +43,7 @@ export function DateField({
   fechaMinima = new Date(LIMITES.fecha.anioMinimo, 0, 1),
   mostrarEdad = true,
   variante,
+  grande,
 }: DateFieldProps) {
   const [abierto, setAbierto] = useState(false);
   // Fecha con la que arranca el calendario si todavía no hay valor: hoy cuando entra en el
@@ -60,6 +63,7 @@ export function DateField({
       error={error}
       ayuda={mostrarEdad && valor ? edadEnTexto(valor) : undefined}
       variante={variante}
+      grande={grande}
     >
       <Pressable
         accessibilityRole="button"
@@ -67,7 +71,7 @@ export function DateField({
         onPress={() => setAbierto(true)}
         className="flex-row items-center"
       >
-        <Text className={`flex-1 ${claseValor(Boolean(error), !valor)}`}>
+        <Text className={`flex-1 ${claseValor(Boolean(error), !valor, grande)}`}>
           {valor ? aFechaVisible(valor) : placeholder}
         </Text>
         <Ionicons name="calendar-outline" size={18} color={PALETA.gris[400]} />

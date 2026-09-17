@@ -1,7 +1,7 @@
 /** Selector cerrado: abre una hoja con las opciones y no admite texto libre. */
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { FlatList, Modal, Pressable, Text } from 'react-native';
+import { FlatList, Modal, Pressable, Text, View } from 'react-native';
 import { claseValor, FormField } from './FormField';
 import { PALETA } from '@/constants/theme';
 
@@ -23,6 +23,8 @@ interface SelectFieldProps<T> {
   /** Un selector dependiente queda inhabilitado hasta que se elige el campo del que depende. */
   deshabilitado?: boolean;
   textoDeshabilitado?: string;
+  /** Letra más grande de etiqueta y valor, para el alta y la publicación de mascota. */
+  grande?: boolean;
 }
 
 export function SelectField<T extends string | number>({
@@ -36,6 +38,7 @@ export function SelectField<T extends string | number>({
   onBlur,
   deshabilitado = false,
   textoDeshabilitado,
+  grande,
 }: SelectFieldProps<T>) {
   const [abierto, setAbierto] = useState(false);
 
@@ -48,7 +51,7 @@ export function SelectField<T extends string | number>({
   };
 
   return (
-    <FormField label={label} obligatorio={obligatorio} error={error}>
+    <FormField label={label} obligatorio={obligatorio} error={error} grande={grande}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${label}. ${seleccionada?.etiqueta ?? 'sin elegir'}`}
@@ -58,7 +61,7 @@ export function SelectField<T extends string | number>({
         className="flex-row items-center"
       >
         <Text
-          className={`flex-1 ${claseValor(Boolean(error), !seleccionada)}`}
+          className={`flex-1 ${claseValor(Boolean(error), !seleccionada, grande)}`}
           numberOfLines={1}
         >
           {seleccionada?.etiqueta ?? textoVacio}
@@ -72,16 +75,17 @@ export function SelectField<T extends string | number>({
         animationType="fade"
         onRequestClose={cerrar}
       >
-        <Pressable
-          className="flex-1 justify-end bg-black/40"
-          onPress={cerrar}
-          accessibilityRole="button"
-          accessibilityLabel="Cerrar"
-        >
+        {/* Fondo y hoja son hermanos, no uno dentro del otro: un Pressable anidado en otro
+            en web (React 19) dispara su onPress al renderizar y tira el handler de cerrar. */}
+        <View className="flex-1 justify-end bg-black/40">
           <Pressable
-            className="max-h-[60%] rounded-t-3xl bg-white pb-8 pt-5"
-            onPress={() => undefined}
-          >
+            accessibilityRole="button"
+            accessibilityLabel="Cerrar"
+            onPress={cerrar}
+            className="absolute inset-0"
+          />
+
+          <View className="max-h-[60%] rounded-t-3xl bg-white pb-8 pt-5">
             <Text className="mb-3 px-6 text-lg font-bold text-gray-900">{label}</Text>
 
             <FlatList
@@ -106,7 +110,7 @@ export function SelectField<T extends string | number>({
                     className="flex-row items-center justify-between px-6 py-4 active:bg-gray-50"
                   >
                     <Text
-                      className={`text-base ${activa ? 'font-semibold text-pethood-orange' : 'text-gray-800'}`}
+                      className={`${grande ? 'text-lg' : 'text-base'} ${activa ? 'font-semibold text-pethood-orange' : 'text-gray-800'}`}
                     >
                       {item.etiqueta}
                     </Text>
@@ -115,8 +119,8 @@ export function SelectField<T extends string | number>({
                 );
               }}
             />
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
     </FormField>
   );

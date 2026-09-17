@@ -15,6 +15,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
@@ -31,6 +32,7 @@ import { ToggleField } from '@/components/ui/ToggleField';
 import { estiloDeEstado } from '@/constants/EstadosMascota';
 import { PALETA } from '@/constants/theme';
 import { crearPublicacion, listarMisMascotas, type Mascota } from '@/services/mascotas';
+import { textoSegunGenero } from '@/shared/genero';
 import { LIMITES } from '@/shared/validation/limits';
 import { validarTexto } from '@/shared/validation/text';
 
@@ -54,6 +56,21 @@ const RASGOS_DE_PERSONALIDAD = [
   'Bueno con chicos',
   'Bueno con otras mascotas',
 ];
+
+/**
+ * Forma femenina de cada rasgo, solo para mostrar (ver `ChipMultiField.etiquetaDe`). Los dos
+ * de compatibilidad se traducen igual que el resto: lo que cambia es la etiqueta, nunca el
+ * texto que viaja al backend.
+ */
+const RASGO_FEMENINO: Partial<Record<string, string>> = {
+  Juguetón: 'Juguetona',
+  Cariñoso: 'Cariñosa',
+  Tranquilo: 'Tranquila',
+  Activo: 'Activa',
+  Protector: 'Protectora',
+  'Bueno con chicos': 'Buena con chicos',
+  'Bueno con otras mascotas': 'Buena con otras mascotas',
+};
 
 interface ErroresFormulario {
   mascotaId?: string;
@@ -128,6 +145,12 @@ export default function CrearPublicacionScreen() {
 
   const formularioValido = Object.keys(errores).length === 0;
 
+  /** El género de la mascota elegida decide cómo concordar "Desparasitado" y los rasgos. */
+  const generoMascota = publicables.find((mascota) => mascota.id === mascotaId)?.genero ?? null;
+
+  const etiquetaDeRasgo = (rasgo: string): string =>
+    textoSegunGenero(generoMascota, rasgo, RASGO_FEMENINO[rasgo] ?? rasgo);
+
   const errorDe = (campo: keyof ErroresFormulario): string | undefined =>
     mostrarErrores || tocados[campo] ? errores[campo] : undefined;
 
@@ -180,13 +203,19 @@ export default function CrearPublicacionScreen() {
   };
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    // Transición chica de entrada además de la del stack: refuerza que se navegó a otra
+    // pantalla en vez de que "todo cambió de golpe".
+    <Animated.View entering={FadeInDown.duration(220)} className="flex-1 bg-pethood-beige">
       <SafeAreaView className="flex-1" edges={['top']}>
         <View className="flex-row items-center gap-3 px-4 py-3">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Volver"
-            onPress={() => router.replace('/(tabs)/mis-mascotas' as Href)}
+            // Vuelve al alta de la mascota cuando se llegó desde ahí (con la mascota ya
+            // elegida). Si se entra suelto y no hay historial, cae a "Mis mascotas".
+            onPress={() =>
+              router.canGoBack() ? router.back() : router.replace('/(tabs)/mis-mascotas' as Href)
+            }
             hitSlop={8}
             className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-80"
           >
@@ -232,6 +261,7 @@ export default function CrearPublicacionScreen() {
                     onBlur={() => marcarTocado('mascotaId')}
                     deshabilitado={publicables.length === 0}
                     error={errorDe('mascotaId')}
+                    grande
                   />
                 </FormCardRow>
 
@@ -245,14 +275,16 @@ export default function CrearPublicacionScreen() {
                     onBlur={() => marcarTocado('descripcion')}
                     maximo={LIMITES.publicacion.descripcion.max}
                     error={errorDe('descripcion')}
+                    grande
                   />
                 </FormCardRow>
 
                 <FormCardRow>
                   <ToggleField
-                    label="Desparasitado"
+                    label={textoSegunGenero(generoMascota, 'Desparasitado', 'Desparasitada')}
                     valor={desparasitado}
                     onChange={setDesparasitado}
+                    grande
                   />
                 </FormCardRow>
 
@@ -263,6 +295,7 @@ export default function CrearPublicacionScreen() {
                     value={vacunas}
                     onChangeText={setVacunas}
                     maxLength={LIMITES.publicacion.vacunas.max}
+                    grande
                   />
                 </FormCardRow>
 
@@ -272,6 +305,8 @@ export default function CrearPublicacionScreen() {
                     opciones={RASGOS_DE_PERSONALIDAD}
                     seleccionadas={personalidad}
                     onChange={setPersonalidad}
+                    etiquetaDe={etiquetaDeRasgo}
+                    grande
                   />
                 </FormCardRow>
 
@@ -282,6 +317,7 @@ export default function CrearPublicacionScreen() {
                     etiquetas={requisitos}
                     onChange={setRequisitos}
                     maximoPorEtiqueta={LIMITES.publicacion.requisito.max}
+                    grande
                   />
                 </FormCardRow>
 
@@ -295,6 +331,7 @@ export default function CrearPublicacionScreen() {
                     onBlur={() => marcarTocado('ubicacion')}
                     maxLength={LIMITES.publicacion.ubicacion.max}
                     error={errorDe('ubicacion')}
+                    grande
                   />
                 </FormCardRow>
               </FormCard>
@@ -312,6 +349,6 @@ export default function CrearPublicacionScreen() {
           </KeyboardAvoidingView>
         )}
       </SafeAreaView>
-    </View>
+    </Animated.View>
   );
 }

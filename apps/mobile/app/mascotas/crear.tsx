@@ -42,7 +42,8 @@ import {
   type EstadoMascota,
   type OpcionCatalogo,
 } from '@/services/catalogos';
-import { crearMascota, type Destino, type Genero, type Tamanio } from '@/services/mascotas';
+import { crearMascota, type Destino, type Genero, type Mascota, type Tamanio } from '@/services/mascotas';
+import { textoSegunGenero } from '@/shared/genero';
 import { aFechaISO, validarFechaPasada } from '@/shared/validation/dates';
 import { LIMITES } from '@/shared/validation/limits';
 import { filtrarEntradaDecimal, validarDecimal } from '@/shared/validation/numbers';
@@ -118,6 +119,13 @@ export default function CrearMascotaScreen() {
   const [cargandoCatalogos, setCargandoCatalogos] = useState(true);
   const [cargandoRazas, setCargandoRazas] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  /**
+   * Mascota ya creada en este paso: se guarda para poder volver del alta de publicación sin
+   * crearla de nuevo. Antes se navegaba con `router.replace`, que saca esta pantalla del
+   * historial y la flecha de "Publicar" termina saliendo directo a "Mis mascotas" en vez de
+   * volver acá.
+   */
+  const [mascotaCreada, setMascotaCreada] = useState<Mascota | null>(null);
   /** Revela todos los errores de golpe al intentar guardar. */
   const [mostrarErrores, setMostrarErrores] = useState(false);
   /** Campos de los que el usuario ya salió: sus errores se muestran sin haber guardado. */
@@ -233,6 +241,14 @@ export default function CrearMascotaScreen() {
     ? (estados.find((estado) => estado.id === estadoMascotaId)?.habilitaPublicacion ?? false)
     : destino === 'ADOPCION';
 
+  /**
+   * El refugio siempre ve las dos acciones (el estado decide si publicar queda habilitado).
+   * El adoptante ve una sola, la que corresponde a lo que eligió, para no mostrar "Crear
+   * publicación" bloqueado cuando ya dijo que la mascota es suya (y viceversa).
+   */
+  const mostrarCrearMascota = esRefugio || destino !== 'ADOPCION';
+  const mostrarCrearPublicacion = esRefugio || destino === 'ADOPCION';
+
   /** Al tocar un botón deshabilitado: revelar todos los errores y nombrar qué falta. */
   const explicarQueFalta = (): void => {
     setMostrarErrores(true);
@@ -242,11 +258,13 @@ export default function CrearMascotaScreen() {
     );
 
     if (faltantes.length === 0) {
-      toast.mostrarAdvertencia(
-        esRefugio
-          ? 'Con el estado "En tratamiento" todavía no se puede publicar en adopción.'
-          : 'Elegí "Para adopción" si querés publicarla.',
-      );
+      // Solo puede pasar en el refugio: el adoptante ahora ve un único botón, el que
+      // corresponde al destino que ya eligió, así que nunca lo encuentra bloqueado por eso.
+      if (esRefugio) {
+        toast.mostrarAdvertencia(
+          'Con el estado "En tratamiento" todavía no se puede publicar en adopción.',
+        );
+      }
       return;
     }
 
@@ -258,9 +276,26 @@ export default function CrearMascotaScreen() {
     toast.mostrarAdvertencia(`Todavía falta completar ${lista}.`);
   };
 
+  const irDespuesDeCrear = (mascota: Mascota, continuarAPublicacion: boolean): void => {
+    if (continuarAPublicacion && mascota.habilitaPublicacion) {
+      // `push` (no `replace`): esta pantalla se queda en el historial para poder volver
+      // acá con la flecha de "Crear publicación" en vez de salir directo a "Mis mascotas".
+      router.push({ pathname: '/publicaciones/crear', params: { mascotaId: mascota.id } });
+    } else {
+      router.replace('/(tabs)/mis-mascotas' as Href);
+    }
+  };
+
   const guardar = async (continuarAPublicacion: boolean): Promise<void> => {
     setMostrarErrores(true);
     if (!formularioValido || !foto || !fechaNacimiento) return;
+
+    // Si ya se creó y se volvió a esta pantalla con la flecha de atrás, no se crea de nuevo:
+    // se repite la navegación con la misma mascota.
+    if (mascotaCreada) {
+      irDespuesDeCrear(mascotaCreada, continuarAPublicacion);
+      return;
+    }
 
     setGuardando(true);
     try {
@@ -279,13 +314,9 @@ export default function CrearMascotaScreen() {
         foto,
       });
 
+      setMascotaCreada(mascota);
       toast.mostrarExito(`¡Listo! ${mascota.nombre} ya está en tus mascotas.`);
-
-      if (continuarAPublicacion && mascota.habilitaPublicacion) {
-        router.replace({ pathname: '/publicaciones/crear', params: { mascotaId: mascota.id } });
-      } else {
-        router.replace('/(tabs)/mis-mascotas' as Href);
-      }
+      irDespuesDeCrear(mascota, continuarAPublicacion);
     } catch (err) {
       // Se queda en la pantalla con todo lo cargado, para poder reintentar.
       toast.mostrarError(
@@ -339,6 +370,7 @@ export default function CrearMascotaScreen() {
                     onBlur={() => marcarTocado('nombre')}
                     maxLength={LIMITES.mascota.nombre.max}
                     error={errorDe('nombre')}
+                    grande
                   />
                 </FormCardRow>
 
@@ -359,6 +391,7 @@ export default function CrearMascotaScreen() {
                       }}
                       onBlur={() => marcarTocado('especieId')}
                       error={errorDe('especieId')}
+                      grande
                     />
 
                     <SelectField
@@ -370,6 +403,7 @@ export default function CrearMascotaScreen() {
                       onChange={setGenero}
                       onBlur={() => marcarTocado('genero')}
                       error={errorDe('genero')}
+                      grande
                     />
                   </FormCardColumns>
                 </FormCardRow>
@@ -387,6 +421,7 @@ export default function CrearMascotaScreen() {
                       deshabilitado={especieId === null || cargandoRazas}
                       textoDeshabilitado="Elegí la especie"
                       error={errorDe('razaId')}
+                      grande
                     />
 
                     <DateField
@@ -397,6 +432,7 @@ export default function CrearMascotaScreen() {
                       onChange={setFechaNacimiento}
                       onBlur={() => marcarTocado('fechaNacimiento')}
                       error={errorDe('fechaNacimiento')}
+                      grande
                     />
                   </FormCardColumns>
                 </FormCardRow>
@@ -412,6 +448,7 @@ export default function CrearMascotaScreen() {
                       onChange={setTamanio}
                       onBlur={() => marcarTocado('tamanio')}
                       error={errorDe('tamanio')}
+                      grande
                     />
 
                     <TextField
@@ -425,15 +462,17 @@ export default function CrearMascotaScreen() {
                       }
                       onBlur={() => marcarTocado('peso')}
                       error={errorDe('peso')}
+                      grande
                     />
                   </FormCardColumns>
                 </FormCardRow>
 
                 <FormCardRow>
                   <ToggleField
-                    label="Castrado / Esterilizado"
+                    label={textoSegunGenero(genero, 'Castrado / Esterilizado', 'Castrada / Esterilizada')}
                     valor={castrado}
                     onChange={setCastrado}
+                    grande
                   />
                 </FormCardRow>
 
@@ -452,6 +491,7 @@ export default function CrearMascotaScreen() {
                         marcarTocado('estadoMascotaId');
                       }}
                       error={errorDe('estadoMascotaId')}
+                      grande
                     />
                   </FormCardRow>
                 ) : (
@@ -466,6 +506,7 @@ export default function CrearMascotaScreen() {
                         marcarTocado('destino');
                       }}
                       error={errorDe('destino')}
+                      grande
                     />
                   </FormCardRow>
                 )}
@@ -479,26 +520,34 @@ export default function CrearMascotaScreen() {
                     onBlur={() => marcarTocado('descripcion')}
                     maximo={LIMITES.mascota.descripcion.max}
                     error={errorDe('descripcion')}
+                    grande
                   />
                 </FormCardRow>
               </FormCard>
 
               <View className="mt-5 gap-3">
-                <CustomButton
-                  title="Crear mascota"
-                  loading={guardando}
-                  disabled={!formularioValido}
-                  onPress={() => void guardar(false)}
-                  onPressDeshabilitado={explicarQueFalta}
-                />
+                {mostrarCrearMascota ? (
+                  <CustomButton
+                    title="Crear mascota"
+                    loading={guardando}
+                    disabled={!formularioValido}
+                    onPress={() => void guardar(false)}
+                    onPressDeshabilitado={explicarQueFalta}
+                  />
+                ) : null}
 
-                <CustomButton
-                  title="Crear publicación"
-                  variant="secondary"
-                  disabled={!formularioValido || !permitePublicar || guardando}
-                  onPress={() => void guardar(true)}
-                  onPressDeshabilitado={explicarQueFalta}
-                />
+                {mostrarCrearPublicacion ? (
+                  <CustomButton
+                    title="Crear publicación"
+                    // Naranja y llamativo cuando es la única acción posible (adoptante que
+                    // eligió "Para adopción"); en el refugio conviven las dos, así que se
+                    // mantiene como acción secundaria.
+                    variant={mostrarCrearMascota ? 'secondary' : 'primary'}
+                    disabled={!formularioValido || !permitePublicar || guardando}
+                    onPress={() => void guardar(true)}
+                    onPressDeshabilitado={explicarQueFalta}
+                  />
+                ) : null}
               </View>
             </ScrollView>
           </KeyboardAvoidingView>

@@ -28,6 +28,12 @@ interface FormFieldProps {
    * contorno, así que se dibujan sin la caja.
    */
   conCaja?: boolean;
+  /**
+   * Formularios de letra grande (alta y publicación de mascota, a pedido): agranda la
+   * etiqueta y el pie del campo un escalón. El resto de las pantallas no la pasan y se ven
+   * exactamente igual que antes.
+   */
+  grande?: boolean;
   children: ReactNode;
 }
 
@@ -39,6 +45,7 @@ export function FormField({
   ayudaDerecha,
   variante = 'compacta',
   conCaja = true,
+  grande = false,
   children,
 }: FormFieldProps) {
   const esPregunta = variante === 'pregunta';
@@ -50,8 +57,8 @@ export function FormField({
       <Text
         className={
           esPregunta
-            ? 'mb-1.5 font-cuerpo-semi text-[13.5px] text-organic-neutral-800'
-            : 'mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400'
+            ? `mb-1.5 font-cuerpo-semi text-organic-neutral-800 ${grande ? 'text-[15px]' : 'text-[13.5px]'}`
+            : `mb-1 font-semibold uppercase tracking-wide text-gray-400 ${grande ? 'text-[13px]' : 'text-[11px]'}`
         }
       >
         {label}
@@ -70,7 +77,7 @@ export function FormField({
         children
       )}
 
-      <PieDeCampo error={error} ayuda={ayuda} ayudaDerecha={ayudaDerecha} />
+      <PieDeCampo error={error} ayuda={ayuda} ayudaDerecha={ayudaDerecha} grande={grande} />
     </View>
   );
 }
@@ -83,22 +90,25 @@ function PieDeCampo({
   error,
   ayuda,
   ayudaDerecha,
-}: Pick<FormFieldProps, 'error' | 'ayuda' | 'ayudaDerecha'>) {
+  grande,
+}: Pick<FormFieldProps, 'error' | 'ayuda' | 'ayudaDerecha' | 'grande'>) {
   if (!error && !ayuda && !ayudaDerecha) return null;
+
+  const tamanio = grande ? 'text-sm' : 'text-xs';
 
   return (
     <View className="mt-1 flex-row items-start justify-between gap-3">
-      <Text className={`flex-1 text-xs ${error ? 'text-red-500' : 'text-gray-400'}`}>
+      <Text className={`flex-1 ${tamanio} ${error ? 'text-red-500' : 'text-gray-400'}`}>
         {error ?? ayuda ?? ''}
       </Text>
 
-      {ayudaDerecha ? <Text className="text-xs text-gray-400">{ayudaDerecha}</Text> : null}
+      {ayudaDerecha ? <Text className={`${tamanio} text-gray-400`}>{ayudaDerecha}</Text> : null}
     </View>
   );
 }
 
 /** Estilo del texto de un campo dentro de la tarjeta: sin borde propio, lo da la fila. */
-export function claseValor(hayError: boolean, vacio: boolean): string {
+export function claseValor(hayError: boolean, vacio: boolean, grande = false): string {
   const color = hayError ? 'text-red-500' : vacio ? 'text-gray-400' : 'text-gray-800';
-  return `text-base ${color}`;
+  return `${grande ? 'text-lg' : 'text-base'} ${color}`;
 }

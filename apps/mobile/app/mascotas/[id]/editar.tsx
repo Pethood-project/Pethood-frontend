@@ -47,6 +47,7 @@ import {
   type Mascota,
   type Tamanio,
 } from '@/services/mascotas';
+import { textoSegunGenero } from '@/shared/genero';
 import { aFechaISO, parsearFecha, validarFechaPasada } from '@/shared/validation/dates';
 import { LIMITES } from '@/shared/validation/limits';
 import { filtrarEntradaDecimal, validarDecimal } from '@/shared/validation/numbers';
@@ -452,7 +453,7 @@ export default function EditarMascotaScreen() {
 
                 <FormCardRow>
                   <ToggleField
-                    label="Castrado / Esterilizado"
+                    label={textoSegunGenero(genero, 'Castrado / Esterilizado', 'Castrada / Esterilizada')}
                     valor={castrado}
                     onChange={setCastrado}
                   />

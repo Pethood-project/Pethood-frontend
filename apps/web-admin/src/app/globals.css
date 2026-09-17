@@ -1,14 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --background: var(--color-pethood-beige);
-  --foreground: #171717;
+  /*
+   * Fondo de página = ORGANIC.bg de apps/mobile/constants/theme.js (mismo valor que
+   * --color-bg en pantallas/PetHood App (standalone).html): un tostado más marrón que
+   * --color-neutral-100, para que las tarjetas (que sí usan neutral-100) se despeguen del
+   * fondo. Antes el body usaba neutral-100 igual que las cards y todo quedaba del mismo color.
+   */
+  --background: #f5ead8;
+  --foreground: #201e1d;
   /* Identidad visual PetHood — CLAUDE.md, misma paleta que apps/mobile/tailwind.config.js */
   --color-pethood-orange: #ff9d5c;
   --color-pethood-orange-dark: #ff8a3d;
   --color-pethood-beige: #fff5ed;
   --color-pethood-beige-dark: #f5f1e8;
   --color-pethood-input: #fafafa;
+
+  /*
+   * Rampa de acento del diseño de referencia (GUI-15.1.1/15.2.1, --color-accent-* en
+   * pantallas/PetHood App (standalone).html): variantes del naranja de marca para series de
+   * gráficos e íconos de KPI que necesitan más de un tono (bg-pethood-orange es siempre el
+   * mismo). "success" es el rol que ahí cumple --color-accent-2-* (verde oliva cálido), para
+   * KPIs positivos sin recurrir al verde frío por defecto de Tailwind.
+   */
+  --color-pethood-accent-100: #fff2eb;
+  --color-pethood-accent-400: #f6a06b;
+  --color-pethood-accent-500: #d67f48;
+  --color-pethood-accent-600: #b2622d;
+  --color-pethood-accent-700: #8c491a;
+  --color-pethood-accent-800: #643312;
+  --color-pethood-gold: #fcb442;
+  --color-pethood-badge: #fbe6af;
+  --color-pethood-success-100: #f0fae1;
+  --color-pethood-success-600: #728157;
+  --color-pethood-success-700: #56633f;
 }
 
 @theme inline {
@@ -19,21 +44,56 @@
   --color-pethood-beige: var(--color-pethood-beige);
   --color-pethood-beige-dark: var(--color-pethood-beige-dark);
   --color-pethood-input: var(--color-pethood-input);
-  --font-sans: var(--font-geist-sans);
+  --color-pethood-accent-100: var(--color-pethood-accent-100);
+  --color-pethood-accent-400: var(--color-pethood-accent-400);
+  --color-pethood-accent-500: var(--color-pethood-accent-500);
+  --color-pethood-accent-600: var(--color-pethood-accent-600);
+  --color-pethood-accent-700: var(--color-pethood-accent-700);
+  --color-pethood-accent-800: var(--color-pethood-accent-800);
+  --color-pethood-gold: var(--color-pethood-gold);
+  --color-pethood-badge: var(--color-pethood-badge);
+  --color-pethood-success-100: var(--color-pethood-success-100);
+  --color-pethood-success-600: var(--color-pethood-success-600);
+  --color-pethood-success-700: var(--color-pethood-success-700);
+  --font-sans: var(--font-figtree);
+  --font-heading: var(--font-caprasimo);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/*
+ * Rampa "Organic" (apps/mobile/constants/theme.js, sección ORGANIC) — la misma que usa el
+ * diseño de referencia (pantallas/PetHood App (standalone).html, GUI-15.1.1/15.2.1). Pisa la
+ * escala "neutral" gris-fría por defecto de Tailwind para que las clases bg-neutral-N,
+ * text-neutral-N y border-neutral-N de todos los componentes ya existentes (Sidebar, Card,
+ * KpiCard, gráficos) salgan cálidas sin tocar cada uno por separado. `neutral-900` se pisa con el tono más oscuro
+ * de la maqueta (`--color-text` ahí, #201e1d) en vez del propio de la rampa Organic (#2e2b25),
+ * porque es el que usa el sidebar/CTA oscuro y no hay otro consumo de neutral-900 en la app.
+ */
+@theme {
+  --color-neutral-50: #fbf8f3;
+  --color-neutral-100: #f9f4ed;
+  --color-neutral-200: #eee7db;
+  --color-neutral-300: #dcd3c4;
+  --color-neutral-400: #c0b6a5;
+  --color-neutral-500: #a19786;
+  --color-neutral-600: #82796a;
+  --color-neutral-700: #645c50;
+  --color-neutral-800: #474238;
+  --color-neutral-900: #201e1d;
+  --color-neutral-950: #141312;
 }
 
+/*
+ * Sin @media (prefers-color-scheme: dark) a propósito: todos los componentes usan clases
+ * fijas (bg-neutral-100, text-neutral-900, etc.), no hay tema oscuro real implementado. El
+ * bloque que venía del template de Next.js solo invertía --background/--foreground acá, y con
+ * el navegador en modo oscuro el fondo quedaba negro con el texto oscuro fijo de los
+ * componentes encima, ilegible.
+ */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-figtree), system-ui, sans-serif;
 }
 
 @keyframes dashboard-fade-in {

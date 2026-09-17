@@ -1,7 +1,7 @@
 import { LayoutDashboard, Megaphone, Building2 } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 
-const ICONO = "h-4 w-4 shrink-0";
+const ICONO = "h-5 w-5 shrink-0";
 
 // Funciones exclusivas del rol Refugio (ya verificado) — CLAUDE.md.
 const LINKS = [

@@ -12,7 +12,7 @@ const VARIANTES: Record<NonNullable<ButtonProps["variant"]>, string> = {
 export function Button({ variant = "primary", className = "", ...props }: ButtonProps) {
   return (
     <button
-      className={`rounded-md px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${VARIANTES[variant]} ${className}`}
+      className={`rounded-md px-5 py-2.5 text-base font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${VARIANTES[variant]} ${className}`}
       {...props}
     />
   );

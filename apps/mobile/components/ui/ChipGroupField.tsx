@@ -16,6 +16,8 @@ interface ChipGroupFieldProps<T> {
   obligatorio?: boolean;
   error?: string;
   variante?: VarianteCampo;
+  /** Letra más grande, para el alta y la publicación de mascota. */
+  grande?: boolean;
 }
 
 export function ChipGroupField<T extends string | number>({
@@ -26,6 +28,7 @@ export function ChipGroupField<T extends string | number>({
   obligatorio,
   error,
   variante,
+  grande,
 }: ChipGroupFieldProps<T>) {
   return (
     // Las pastillas ya traen su propio contorno: la caja de la variante "pregunta" les
@@ -36,6 +39,7 @@ export function ChipGroupField<T extends string | number>({
       error={error}
       variante={variante}
       conCaja={false}
+      grande={grande}
     >
       <View className="mt-1 flex-row flex-wrap gap-2">
         {opciones.map((opcion) => (
@@ -45,6 +49,7 @@ export function ChipGroupField<T extends string | number>({
             variante="seleccion"
             activa={opcion.valor === valor}
             onPress={() => onChange(opcion.valor)}
+            grande={grande}
           />
         ))}
       </View>

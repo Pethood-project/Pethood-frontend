@@ -15,6 +15,8 @@ interface TextAreaFieldProps extends Omit<TextInputProps, 'className' | 'multili
   ayuda?: string;
   /** Alto mínimo del área editable. El default alcanza para dos o tres renglones. */
   altoMinimo?: number;
+  /** Letra más grande de etiqueta y valor, para el alta y la publicación de mascota. */
+  grande?: boolean;
 }
 
 export function TextAreaField({
@@ -26,6 +28,7 @@ export function TextAreaField({
   variante,
   ayuda,
   altoMinimo = 72,
+  grande,
   ...inputProps
 }: TextAreaFieldProps) {
   return (
@@ -36,9 +39,10 @@ export function TextAreaField({
       variante={variante}
       ayuda={ayuda}
       ayudaDerecha={`${value.trim().length} / ${maximo}`}
+      grande={grande}
     >
       <TextInput
-        className={`${claseValor(Boolean(error), !value)} p-0`}
+        className={`${claseValor(Boolean(error), !value, grande)} p-0`}
         style={{ minHeight: altoMinimo }}
         placeholderTextColor={PALETA.gris[400]}
         multiline

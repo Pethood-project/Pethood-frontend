@@ -14,6 +14,8 @@ interface SegmentedFieldProps<T> {
   error?: string;
   variante?: VarianteSegmentado;
   varianteCampo?: VarianteCampo;
+  /** Letra más grande, para el alta y la publicación de mascota. */
+  grande?: boolean;
 }
 
 export function SegmentedField<T extends string | number>({
@@ -25,6 +27,7 @@ export function SegmentedField<T extends string | number>({
   error,
   variante,
   varianteCampo,
+  grande,
 }: SegmentedFieldProps<T>) {
   return (
     // El riel dibuja su propio contorno alrededor del grupo y las tarjetas el suyo: ninguno
@@ -35,6 +38,7 @@ export function SegmentedField<T extends string | number>({
       error={error}
       variante={varianteCampo}
       conCaja={false}
+      grande={grande}
     >
       <View className="mt-1">
         <Segmentado
@@ -43,6 +47,7 @@ export function SegmentedField<T extends string | number>({
           onChange={onChange}
           variante={variante}
           conError={Boolean(error)}
+          grande={grande}
         />
       </View>
     </FormField>

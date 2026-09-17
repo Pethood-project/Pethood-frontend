@@ -23,6 +23,8 @@ interface DateFieldProps {
   /** Solo tiene sentido para fecha de nacimiento; el resto de los campos de fecha no la muestran. */
   mostrarEdad?: boolean;
   variante?: VarianteCampo;
+  /** Letra más grande de etiqueta y valor, para el alta y la publicación de mascota. */
+  grande?: boolean;
 }
 
 export function DateField({
@@ -37,6 +39,7 @@ export function DateField({
   fechaMinima = new Date(LIMITES.fecha.anioMinimo, 0, 1),
   mostrarEdad = true,
   variante,
+  grande,
 }: DateFieldProps) {
   return (
     <FormField
@@ -45,6 +48,7 @@ export function DateField({
       error={error}
       ayuda={mostrarEdad && valor ? edadEnTexto(valor) : undefined}
       variante={variante}
+      grande={grande}
     >
       <input
         type="date"
@@ -64,7 +68,7 @@ export function DateField({
           outline: 'none',
           background: 'transparent',
           padding: 0,
-          fontSize: 16,
+          fontSize: grande ? 18 : 16,
           fontFamily: 'inherit',
           color: error ? '#EF4444' : valor ? '#1F2937' : '#9CA3AF',
         }}

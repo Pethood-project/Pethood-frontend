@@ -7,11 +7,14 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { useState } from 'react';
 import { Alert, Image, Pressable, Text, View } from 'react-native';
 
 import { abrirSelectorImagen } from '@/lib/elegirImagen';
 import { LIMITES } from '../../shared/validation/limits';
 import { PALETA } from '@/constants/theme';
+
+import { FotoPreviewModal } from './FotoPreviewModal';
 
 export interface FotoElegida {
   uri: string;
@@ -56,6 +59,9 @@ export function PhotoPicker({
   error,
   permiteQuitar = true,
 }: PhotoPickerProps) {
+  /** Foto recién elegida, en revisión en el modal de vista previa antes de confirmarse. */
+  const [pendiente, setPendiente] = useState<FotoElegida | null>(null);
+
   const procesar = (resultado: ImagePicker.ImagePickerResult): void => {
     if (resultado.canceled || !resultado.assets[0]) return;
 
@@ -79,14 +85,16 @@ export function PhotoPicker({
     }
 
     const extension = EXTENSION_POR_TIPO[tipo] ?? 'jpg';
-    onChange({ uri: asset.uri, nombre: `mascota.${extension}`, tipo });
+    // No se confirma todavía: primero pasa por la vista previa, donde se puede girar.
+    setPendiente({ uri: asset.uri, nombre: `mascota.${extension}`, tipo });
   };
 
   const elegir = (): void => {
     abrirSelectorImagen({
       titulo: 'Foto de la mascota',
+      // Recorte nativo del sistema operativo: deja reencuadrar antes de aceptar la foto.
       mensaje: '¿De dónde querés sacar la foto?',
-      opciones: { mediaTypes: ['images'], quality: 0.8 },
+      opciones: { mediaTypes: ['images'], quality: 0.8, allowsEditing: true },
       onElegida: (asset) => procesar({ canceled: false, assets: [asset] }),
       onErrorPermisoGaleria: (mensaje) => Alert.alert('Necesitamos tus fotos', mensaje),
       onErrorPermisoCamara: () =>
@@ -143,6 +151,20 @@ export function PhotoPicker({
       )}
 
       {error ? <Text className="mt-1.5 text-xs text-red-500">{error}</Text> : null}
+
+      <FotoPreviewModal
+        visible={pendiente !== null}
+        uri={pendiente?.uri ?? ''}
+        onCancelar={() => setPendiente(null)}
+        onConfirmar={(resultado) => {
+          onChange({
+            uri: resultado.uri,
+            nombre: resultado.seReescribioComoJpeg ? 'mascota.jpg' : pendiente!.nombre,
+            tipo: resultado.seReescribioComoJpeg ? 'image/jpeg' : pendiente!.tipo,
+          });
+          setPendiente(null);
+        }}
+      />
     </View>
   );
 }

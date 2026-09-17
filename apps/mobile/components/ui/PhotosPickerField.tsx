@@ -10,6 +10,8 @@ import { elegirArchivosWeb } from '@/lib/elegirImagen';
 import { LIMITES } from '../../shared/validation/limits';
 import { PALETA } from '@/constants/theme';
 
+import { FotoPreviewModal } from './FotoPreviewModal';
+
 export interface FotoElegida {
   uri: string;
   nombre: string;
@@ -45,6 +47,8 @@ function normalizarTipo(tipo: string): string {
 
 export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPickerFieldProps) {
   const [cargando, setCargando] = useState(false);
+  /** Fotos recién elegidas, en revisión de a una en el modal de vista previa. */
+  const [cola, setCola] = useState<FotoElegida[]>([]);
 
   const lleno = fotos.length >= maximo;
 
@@ -52,9 +56,10 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
     if (resultado.canceled) return;
 
     const nuevas: FotoElegida[] = [];
+    const reservadas = fotos.length + cola.length;
 
     for (const asset of resultado.assets) {
-      if (fotos.length + nuevas.length >= maximo) break;
+      if (reservadas + nuevas.length >= maximo) break;
 
       const tipo = normalizarTipo(asset.mimeType ?? tipoDesdeUri(asset.uri));
 
@@ -72,7 +77,8 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
       nuevas.push({ uri: asset.uri, nombre: `foto-${Date.now()}-${nuevas.length}.${extension}`, tipo });
     }
 
-    if (nuevas.length > 0) onChange([...fotos, ...nuevas]);
+    // No se agregan todavía: pasan una por una por la vista previa, donde se pueden girar.
+    if (nuevas.length > 0) setCola((previa) => [...previa, ...nuevas]);
   };
 
   const abrirGaleria = async (): Promise<void> => {
@@ -104,7 +110,8 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
 
     setCargando(true);
     try {
-      procesar(await ImagePicker.launchCameraAsync({ quality: 0.8 }));
+      // Foto única: acá sí hay recorte nativo antes de pasar a la vista previa.
+      procesar(await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true }));
     } finally {
       setCargando(false);
     }
@@ -245,6 +252,26 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
       )}
 
       {error ? <Text className="mt-1.5 text-xs text-red-500">{error}</Text> : null}
+
+      <FotoPreviewModal
+        visible={cola.length > 0}
+        uri={cola[0]?.uri ?? ''}
+        onCancelar={() => setCola((previa) => previa.slice(1))}
+        onConfirmar={(resultado) => {
+          const actual = cola[0]!;
+          onChange([
+            ...fotos,
+            {
+              uri: resultado.uri,
+              nombre: resultado.seReescribioComoJpeg
+                ? actual.nombre.replace(/\.\w+$/, '.jpg')
+                : actual.nombre,
+              tipo: resultado.seReescribioComoJpeg ? 'image/jpeg' : actual.tipo,
+            },
+          ]);
+          setCola((previa) => previa.slice(1));
+        }}
+      />
     </View>
   );
 }

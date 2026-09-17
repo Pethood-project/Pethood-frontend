@@ -28,6 +28,8 @@ interface SegmentadoProps<T> {
   variante?: VarianteSegmentado;
   /** Pinta el riel en rojo cuando el campo que lo contiene tiene un error. */
   conError?: boolean;
+  /** Letra más grande, para el alta y la publicación de mascota. */
+  grande?: boolean;
 }
 
 export function Segmentado<T extends string | number>({
@@ -36,6 +38,7 @@ export function Segmentado<T extends string | number>({
   onChange,
   variante = 'riel',
   conError = false,
+  grande = false,
 }: SegmentadoProps<T>) {
   const esRiel = variante === 'riel';
 
@@ -73,8 +76,8 @@ export function Segmentado<T extends string | number>({
             <Text
               className={
                 esRiel
-                  ? `text-sm ${activa ? 'font-semibold text-white' : 'text-gray-600'}`
-                  : `text-center text-[14px] ${
+                  ? `${grande ? 'text-base' : 'text-sm'} ${activa ? 'font-semibold text-white' : 'text-gray-600'}`
+                  : `text-center ${grande ? 'text-[16px]' : 'text-[14px]'} ${
                       activa
                         ? 'font-cuerpo-bold text-white'
                         : 'font-cuerpo-semi text-organic-neutral-700'

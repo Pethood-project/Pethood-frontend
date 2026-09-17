@@ -2,9 +2,9 @@
 
 <img src="docs/images/logo.png" alt="PetHood Logo" width="200" />
 
-# PetHood - Frontend
+# PetHood - Cliente
 
-**Monorepo: app móvil + panel de administración web**
+**Clientes de la API de Pethood. Cuenta con app móvil de usuario y panel de administración web**
 
 [![CI](https://github.com/ncorrea-13/Pethood-frontend/actions/workflows/ci.yml/badge.svg)](https://github.com/ncorrea-13/Pethood-frontend/actions/workflows/ci.yml)
 [![Node](https://img.shields.io/badge/Node.js-22-339933?logo=node.js&logoColor=white)](https://nodejs.org)
@@ -18,13 +18,13 @@
 
 ---
 
-Dos apps cliente que consumen la misma API REST del backend ([`pethood-backend`](https://github.com/ncorrea-13/Pethood-backend)):
+Cuenta con dos apps cliente que consumen la misma API REST del backend ([`pethood-backend`](https://github.com/ncorrea-13/Pethood-backend)):
 
-| App | Stack | Estado |
-| --- | --- | --- |
-| [`apps/mobile/`](apps/mobile/) | Expo SDK 57 + TypeScript + NativeWind | En desarrollo |
-| [`apps/web-admin/`](apps/web-admin/) | Next.js 15 + Tailwind CSS | En desarrollo |
-| [`packages/shared/`](packages/shared/) | Tipos, cliente API, validaciones Zod | Placeholder |
+| App                                    | Stack                                 | Estado        |
+| -------------------------------------- | ------------------------------------- | ------------- |
+| [`apps/mobile/`](apps/mobile/)         | Expo SDK 57 + TypeScript + NativeWind | En desarrollo |
+| [`apps/web-admin/`](apps/web-admin/)   | Next.js 15 + Tailwind CSS             | En desarrollo |
+| [`packages/shared/`](packages/shared/) | Tipos, cliente API, validaciones Zod  | Placeholder   |
 
 Proyecto académico - UTN Regional Mendoza, Ingeniería en Sistemas de Información
 
@@ -46,15 +46,15 @@ Guía completa de entorno (Node 22, troubleshooting, `.env`) en [`apps/mobile/RE
 
 ## Stack
 
-| Capa | Mobile | Web-admin |
-| --- | --- | --- |
-| Runtime | Node.js 22 | Node.js 22 |
-| Framework | Expo SDK 57 | Next.js 15 |
-| Lenguaje | TypeScript (strict) | TypeScript (strict) |
-| Estilos | NativeWind (Tailwind para RN) | Tailwind CSS 4 |
-| Navegación | Expo Router | App Router (Next.js) |
-| Almacenamiento | expo-secure-store (tokens) | - |
-| Cámara | expo-image-picker (nativa, obligatoria) | - |
+| Capa           | Mobile                                  | Web-admin            |
+| -------------- | --------------------------------------- | -------------------- |
+| Runtime        | Node.js 22                              | Node.js 22           |
+| Framework      | Expo SDK 57                             | Next.js 15           |
+| Lenguaje       | TypeScript (strict)                     | TypeScript (strict)  |
+| Estilos        | NativeWind (Tailwind para RN)           | Tailwind CSS 4       |
+| Navegación     | Expo Router                             | App Router (Next.js) |
+| Almacenamiento | expo-secure-store (tokens)              | -                    |
+| Cámara         | expo-image-picker (nativa, obligatoria) | -                    |
 
 ## Estructura del Proyecto
 
@@ -91,27 +91,23 @@ cd apps/web-admin && npm run dev          # http://localhost:3000
 
 ## Documentación
 
-Las convenciones de desarrollo (pantallas, reglas de negocio, componentes) están en [`CLAUDE.md`](CLAUDE.md). Los documentos rectores del proyecto completo viven en [`../backend/docs/`](../backend/docs/):
+Las convenciones de desarrollo (pantallas, reglas de negocio, componentes) están en [`CLAUDE.md`](CLAUDE.md). Los documentos rectores del proyecto completo viven en el [servidor](https://github.com/ncorrea-13/Pethood-backend):
 
-| Documento | Contenido |
-| --- | --- |
-| `CONSTITUTION.md` | Principios no negociables |
-| `REQUISITOS.md` | Requisitos funcionales por módulo |
-| `MODELO_DATOS.md` | Entidades, atributos y relaciones |
-| `ROADMAP.md` | Plan de desarrollo por fases |
+| Documento         | Contenido                           |
+| ----------------- | ----------------------------------- |
+| `CONSTITUTION.md` | Principios no negociables           |
+| `REQUISITOS.md`   | Requisitos funcionales por módulo   |
+| `MODELO_DATOS.md` | Entidades, atributos y relaciones   |
+| `ROADMAP.md`      | Plan de desarrollo por fases        |
 | `ARQUITECTURA.md` | Árbol de directorios y convenciones |
-| `specs/` | Specs aprobadas por módulo |
+| `specs/`          | Specs aprobadas por módulo          |
 
 ## Equipo
 
-Proyecto académico - **UTN Regional Mendoza**, Ingeniería en Sistemas, Grupo N°09.
+Proyecto académico - **UTN Regional Mendoza**, Ingeniería en Sistemas.
 
 - Camila Fabián
 - Agustín Leyes
 - Nicolás Correa
 - Matías Hansen
 - Juan Ignacio Castro
-
-## Licencia
-
-MIT

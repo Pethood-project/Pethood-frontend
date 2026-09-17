@@ -3,12 +3,13 @@ import * as WebBrowser from 'expo-web-browser';
 import type { ComponentProps } from 'react';
 import { Platform } from 'react-native';
 
+/** El href apunta siempre afuera de la app, así que no es una de las rutas tipadas. */
 export function ExternalLink(props: Omit<ComponentProps<typeof Link>, 'href'> & { href: string }) {
   return (
     <Link
       target="_blank"
       {...props}
-      href={props.href}
+      href={props.href as ComponentProps<typeof Link>['href']}
       onPress={(e) => {
         if (Platform.OS !== 'web') {
           // Prevent the default behavior of linking to the default browser on native.

@@ -31,9 +31,20 @@
         {
           "image": "./assets/images/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#F5EBE0"
+          "backgroundColor": "#f5ead8"
         }
-      ]
+      ],
+      "expo-status-bar",
+      "expo-web-browser",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "PetHood usa tus fotos para la foto de perfil.",
+          "cameraPermission": "PetHood usa la cámara para la foto de perfil y para las fotos de prueba del seguimiento post-adopción, que tienen que sacarse en el momento."
+        }
+      ],
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

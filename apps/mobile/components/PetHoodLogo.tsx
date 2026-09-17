@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View } from 'react-native';
 
+import { PALETA } from '@/constants/theme';
+
 interface PetHoodLogoProps {
   size?: 'sm' | 'lg';
 }
@@ -15,7 +17,7 @@ export function PetHoodLogo({ size = 'lg' }: PetHoodLogoProps) {
       <View
         className={`${containerSize} mb-3 items-center justify-center rounded-2xl bg-pethood-orange`}
       >
-        <Ionicons name="paw" size={iconSize} color="#FFFFFF" />
+        <Ionicons name="paw" size={iconSize} color={PALETA.blanco} />
       </View>
       <Text className={`${titleSize} font-bold text-pethood-orange`}>PetHood</Text>
     </View>

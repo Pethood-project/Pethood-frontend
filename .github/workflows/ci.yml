@@ -2,17 +2,17 @@ name: CI
 
 on:
   pull_request:
-    branches: [main, developer]
+    branches: [main, dev]
   push:
-    branches: [main, developer]
+    branches: [main, dev]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: Conflictos, compile y arranque
+  check-mobile:
+    name: Mobile — conflictos, compile y arranque
     runs-on: ubuntu-latest
 
     steps:
@@ -72,3 +72,48 @@ jobs:
           echo "::error::Metro no respondió a tiempo"
           kill $METRO_PID || true
           exit 1
+
+  check-web-admin:
+    name: Web-admin — conflictos, lint y build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verificar conflictos con la rama base
+        run: |
+          git fetch origin ${{ github.base_ref || 'main' }}
+          BASE_REF="${{ github.base_ref || 'main' }}"
+          git merge-tree "$(git merge-base HEAD origin/$BASE_REF)" HEAD "origin/$BASE_REF" > /tmp/merge-result.txt || true
+          if grep -q '<<<<<<<' /tmp/merge-result.txt; then
+            echo "::error::Hay conflictos de merge con origin/$BASE_REF"
+            cat /tmp/merge-result.txt
+            exit 1
+          fi
+          echo "Sin conflictos con origin/$BASE_REF"
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: apps/web-admin/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: apps/web-admin
+        run: npm ci
+
+      - name: Verificar TypeScript (compila tipos)
+        working-directory: apps/web-admin
+        run: npx tsc --noEmit
+
+      - name: Lint
+        working-directory: apps/web-admin
+        run: npm run lint
+
+      - name: Build
+        working-directory: apps/web-admin
+        run: npm run build

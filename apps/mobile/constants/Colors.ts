@@ -1,19 +1,21 @@
-const tintColorLight = '#2f95dc';
-const tintColorDark = '#fff';
+import { PALETA } from './theme';
+
+const tintColorLight = PALETA.legado.tintClaro;
+const tintColorDark = PALETA.blanco;
 
 export default {
   light: {
-    text: '#000',
-    background: '#fff',
+    text: PALETA.negro,
+    background: PALETA.blanco,
     tint: tintColorLight,
-    tabIconDefault: '#ccc',
+    tabIconDefault: PALETA.legado.grisClaro,
     tabIconSelected: tintColorLight,
   },
   dark: {
-    text: '#fff',
-    background: '#000',
+    text: PALETA.blanco,
+    background: PALETA.negro,
     tint: tintColorDark,
-    tabIconDefault: '#ccc',
+    tabIconDefault: PALETA.legado.grisClaro,
     tabIconSelected: tintColorDark,
   },
 };

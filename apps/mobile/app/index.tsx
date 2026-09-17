@@ -1,5 +1,10 @@
 import { Redirect } from 'expo-router';
 
+import { useSesion } from '@/hooks/useSesion';
+
 export default function Index() {
-  return <Redirect href="/login" />;
+  const { autenticado, cargando } = useSesion();
+
+  if (cargando) return null;
+  return <Redirect href={autenticado ? '/(tabs)' : '/login'} />;
 }

@@ -20,6 +20,7 @@ import { BurbujaMensaje } from '@/components/chat/BurbujaMensaje';
 import { CabeceraConversacion } from '@/components/chat/CabeceraConversacion';
 import { VisorImagen } from '@/components/chat/VisorImagen';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
+import { EditorFotoModal } from '@/components/ui/EditorFotoModal';
 import { PALETA } from '@/constants/theme';
 import { useSalaChat } from '@/hooks/useSalaChat';
 import { useSesion } from '@/hooks/useSesion';
@@ -46,6 +47,8 @@ export default function ConversacionScreen() {
   const chatId = Number(parametro);
 
   const [foto, setFoto] = useState<ArchivoAdjunto | null>(null);
+  /** Foto recién elegida, en revisión en el editor de recorte/rotación antes de confirmarse. */
+  const [fotoPendiente, setFotoPendiente] = useState<ArchivoAdjunto | null>(null);
   /** Foto que se está viendo a pantalla completa, o `null`. Un solo visor para toda la lista. */
   const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
 
@@ -95,7 +98,8 @@ export default function ConversacionScreen() {
         }
 
         const tipo = normalizarTipo(asset.mimeType);
-        setFoto({
+        // No se confirma todavía: primero pasa por el editor, donde se puede recortar y girar.
+        setFotoPendiente({
           uri: asset.uri,
           nombre: asset.fileName ?? `mensaje.${EXTENSION_POR_TIPO[tipo] ?? 'jpg'}`,
           tipo,
@@ -217,6 +221,21 @@ export default function ConversacionScreen() {
       {/* Un solo visor para toda la conversación: montar un Modal por burbuja sería un
           componente por mensaje para algo que sólo se ve de a uno. */}
       <VisorImagen uri={imagenAmpliada} onCerrar={() => setImagenAmpliada(null)} />
+
+      <EditorFotoModal
+        visible={fotoPendiente !== null}
+        uri={fotoPendiente?.uri ?? ''}
+        onCancelar={() => setFotoPendiente(null)}
+        onConfirmar={(resultado) => {
+          const seReescribio = resultado.uri !== fotoPendiente!.uri;
+          setFoto({
+            uri: resultado.uri,
+            nombre: seReescribio ? 'mensaje.jpg' : fotoPendiente!.nombre,
+            tipo: seReescribio ? 'image/jpeg' : fotoPendiente!.tipo,
+          });
+          setFotoPendiente(null);
+        }}
+      />
     </View>
   );
 }

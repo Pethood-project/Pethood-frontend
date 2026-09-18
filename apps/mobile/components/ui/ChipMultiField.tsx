@@ -11,6 +11,14 @@ interface ChipMultiFieldProps {
   /** Tope opcional de cuántas se pueden marcar a la vez. */
   maximo?: number;
   error?: string;
+  /** Letra más grande, para el alta y la publicación de mascota. */
+  grande?: boolean;
+  /**
+   * Transforma cada opción solo para mostrarla (por ejemplo, a su forma femenina). El valor
+   * que viaja a `onChange` y al backend sigue siendo la opción original: separarlos evita
+   * romper matcheos de texto exacto que dependan de la redacción masculina.
+   */
+  etiquetaDe?: (opcion: string) => string;
 }
 
 export function ChipMultiField({
@@ -20,6 +28,8 @@ export function ChipMultiField({
   onChange,
   maximo,
   error,
+  grande,
+  etiquetaDe = (opcion) => opcion,
 }: ChipMultiFieldProps) {
   const alternar = (opcion: string): void => {
     if (seleccionadas.includes(opcion)) {
@@ -34,7 +44,7 @@ export function ChipMultiField({
   const ayuda = maximo ? `${seleccionadas.length} de ${maximo}` : undefined;
 
   return (
-    <FormField label={label} error={error} ayuda={ayuda}>
+    <FormField label={label} error={error} ayuda={ayuda} grande={grande}>
       <View className="mt-1 flex-row flex-wrap gap-2">
         {opciones.map((opcion) => {
           const activa = seleccionadas.includes(opcion);
@@ -42,12 +52,13 @@ export function ChipMultiField({
           return (
             <Chip
               key={opcion}
-              etiqueta={opcion}
+              etiqueta={etiquetaDe(opcion)}
               variante="multiple"
               rol="checkbox"
               activa={activa}
               deshabilitada={!activa && Boolean(maximo) && seleccionadas.length >= maximo!}
               onPress={() => alternar(opcion)}
+              grande={grande}
             />
           );
         })}

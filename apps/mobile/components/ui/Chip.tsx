@@ -72,6 +72,14 @@ const TAMANIOS_TEXTO: Record<VarianteChip, string> = {
   multiple: 'text-sm',
 };
 
+/** Un escalón más grande, para el alta y la publicación de mascota. */
+const TAMANIOS_TEXTO_GRANDE: Record<VarianteChip, string> = {
+  suave: 'text-[15px]',
+  'sobre-imagen': 'text-[13.5px]',
+  seleccion: 'text-base',
+  multiple: 'text-base',
+};
+
 export interface ChipProps {
   etiqueta: string;
   variante?: VarianteChip;
@@ -81,6 +89,8 @@ export interface ChipProps {
   onPress?: () => void;
   /** Obligatorio cuando hay `onPress`: define cómo lo anuncia el lector de pantalla. */
   rol?: 'radio' | 'checkbox';
+  /** Letra más grande, para el alta y la publicación de mascota. */
+  grande?: boolean;
 }
 
 export function Chip({
@@ -90,11 +100,14 @@ export function Chip({
   deshabilitada = false,
   onPress,
   rol = 'radio',
+  grande = false,
 }: ChipProps) {
   const estilo = activa ? ESTILOS[variante].activa : ESTILOS[variante].inactiva;
   const clases = `flex-row items-center gap-1 self-start rounded-full ${TAMANIOS[variante]} ${estilo.contenedor}`;
   const texto = (
-    <Text className={`${TAMANIOS_TEXTO[variante]} ${estilo.texto}`}>{etiqueta}</Text>
+    <Text className={`${grande ? TAMANIOS_TEXTO_GRANDE[variante] : TAMANIOS_TEXTO[variante]} ${estilo.texto}`}>
+      {etiqueta}
+    </Text>
   );
 
   // El tilde solo tiene sentido en la selección múltiple: en la única ya lo dice el relleno.

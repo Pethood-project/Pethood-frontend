@@ -14,9 +14,17 @@ interface ToggleFieldProps {
   valor: boolean;
   onChange: (valor: boolean) => void;
   variante?: VarianteToggle;
+  /** Letra más grande, para el alta y la publicación de mascota. */
+  grande?: boolean;
 }
 
-export function ToggleField({ label, valor, onChange, variante = 'compacta' }: ToggleFieldProps) {
+export function ToggleField({
+  label,
+  valor,
+  onChange,
+  variante = 'compacta',
+  grande = false,
+}: ToggleFieldProps) {
   const esCaja = variante === 'caja';
 
   return (
@@ -30,8 +38,8 @@ export function ToggleField({ label, valor, onChange, variante = 'compacta' }: T
       <Text
         className={
           esCaja
-            ? 'flex-1 font-cuerpo text-[13.5px] text-organic-neutral-800'
-            : 'text-[11px] font-semibold uppercase tracking-wide text-gray-400'
+            ? `flex-1 font-cuerpo text-organic-neutral-800 ${grande ? 'text-[15px]' : 'text-[13.5px]'}`
+            : `font-semibold uppercase tracking-wide text-gray-400 ${grande ? 'text-[13px]' : 'text-[11px]'}`
         }
       >
         {label}

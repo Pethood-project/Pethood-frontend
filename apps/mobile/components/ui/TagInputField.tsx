@@ -13,6 +13,8 @@ interface TagInputFieldProps {
   onChange: (etiquetas: string[]) => void;
   maximoPorEtiqueta: number;
   error?: string;
+  /** Letra más grande, para la publicación de mascota. */
+  grande?: boolean;
 }
 
 export function TagInputField({
@@ -22,6 +24,7 @@ export function TagInputField({
   onChange,
   maximoPorEtiqueta,
   error,
+  grande,
 }: TagInputFieldProps) {
   const [borrador, setBorrador] = useState('');
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
@@ -54,11 +57,11 @@ export function TagInputField({
     onChange(etiquetas.filter((actual) => actual !== etiqueta));
 
   return (
-    <FormField label={label} error={error ?? errorLocal ?? undefined}>
+    <FormField label={label} error={error ?? errorLocal ?? undefined} grande={grande}>
       {/* Botón visible además del Enter: no todos los teclados de celular lo muestran. */}
       <View className="flex-row items-center gap-2">
         <TextInput
-          className={`flex-1 ${claseValor(Boolean(error ?? errorLocal), !borrador)} p-0`}
+          className={`flex-1 ${claseValor(Boolean(error ?? errorLocal), !borrador, grande)} p-0`}
           placeholder={placeholder}
           placeholderTextColor={PALETA.gris[400]}
           value={borrador}
@@ -81,9 +84,9 @@ export function TagInputField({
             borrador.trim() ? 'bg-pethood-orange active:opacity-80' : 'bg-gray-100'
           }`}
         >
-          <Ionicons name="add" size={15} color={borrador.trim() ? PALETA.blanco : PALETA.gris[400]} />
+          <Ionicons name="add" size={grande ? 17 : 15} color={borrador.trim() ? PALETA.blanco : PALETA.gris[400]} />
           <Text
-            className={`text-xs font-semibold ${borrador.trim() ? 'text-white' : 'text-gray-400'}`}
+            className={`${grande ? 'text-sm' : 'text-xs'} font-semibold ${borrador.trim() ? 'text-white' : 'text-gray-400'}`}
           >
             Agregar
           </Text>
@@ -97,7 +100,7 @@ export function TagInputField({
               key={etiqueta}
               className="flex-row items-center gap-1.5 rounded-full bg-pethood-orange/10 py-1.5 pl-3 pr-2"
             >
-              <Text className="text-sm text-pethood-orange">{etiqueta}</Text>
+              <Text className={`${grande ? 'text-base' : 'text-sm'} text-pethood-orange`}>{etiqueta}</Text>
 
               <Pressable
                 accessibilityRole="button"

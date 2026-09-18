@@ -9,6 +9,8 @@ interface TextFieldProps extends Omit<TextInputProps, 'className'> {
   error?: string;
   ayuda?: string;
   variante?: VarianteCampo;
+  /** Letra más grande de etiqueta y valor, para el alta y la publicación de mascota. */
+  grande?: boolean;
 }
 
 export function TextField({
@@ -17,6 +19,7 @@ export function TextField({
   error,
   ayuda,
   variante,
+  grande,
   value,
   ...inputProps
 }: TextFieldProps) {
@@ -27,9 +30,10 @@ export function TextField({
       error={error}
       ayuda={ayuda}
       variante={variante}
+      grande={grande}
     >
       <TextInput
-        className={`${claseValor(Boolean(error), !value)} p-0`}
+        className={`${claseValor(Boolean(error), !value, grande)} p-0`}
         placeholderTextColor={PALETA.gris[400]}
         value={value}
         {...inputProps}

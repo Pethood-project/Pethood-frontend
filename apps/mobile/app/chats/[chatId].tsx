@@ -18,13 +18,9 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Keyboard, Text, View } from 'react-native';
-import Animated, {
-  KeyboardState,
-  useAnimatedKeyboard,
-  useAnimatedStyle,
-} from 'react-native-reanimated';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, Keyboard, Platform, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BarraEscritura } from '@/components/chat/BarraEscritura';
@@ -72,36 +68,51 @@ export default function ConversacionScreen() {
    * inset— así que el componente no tiene de dónde calcular el desplazamiento y la pantalla
    * se queda quieta tapando lo que se escribe.
    *
-   * `useAnimatedKeyboard` lee ese inset directo y anima en el hilo de UI. Está marcado como
-   * deprecado a favor de `react-native-keyboard-controller`, que es la opción recomendada
-   * pero trae un módulo nativo: el equipo prueba con Expo Go y eso obligaría a todos a pasar
-   * a una dev build. Cuando el proyecto migre a dev build, conviene cambiarlo.
+   * Tampoco se usa `useAnimatedKeyboard` de Reanimated, que era lo que había acá: para
+   * medir el inset instala un listener nativo sobre la ventana y le apaga el
+   * `decorFitsSystemWindows`, y al desmontarse lo restaura. Si la pantalla se va con el
+   * teclado abierto —que es exactamente lo que pasa al tocar la flecha para volver— esa
+   * restauración deja la ventana medida como si el teclado siguiera ahí, y la siguiente
+   * conversación abre con media pantalla en blanco hasta que un nuevo ciclo de abrir y
+   * cerrar el teclado fuerza otra medición.
+   *
+   * Acá el alto sale de los eventos de `Keyboard`, que son de sólo lectura: no tocan la
+   * ventana, así que no hay nada que pueda quedar trabado. La animación sigue corriendo en
+   * el hilo de UI con un shared value, que además arranca en cero en cada montaje.
    */
-  const teclado = useAnimatedKeyboard({
-    // Con edge-to-edge las dos barras del sistema son translúcidas y la app dibuja por
-    // debajo. Sin declararlo, el alto del teclado se mide contra una ventana que no es la
-    // real y la barra de escritura queda corrida.
-    isStatusBarTranslucentAndroid: true,
-    isNavigationBarTranslucentAndroid: true,
-  });
+  const altoTeclado = useSharedValue(0);
 
-  const estiloConTeclado = useAnimatedStyle(() => {
-    // El alto se aplica SÓLO con el teclado abierto o en movimiento. Salir de la sala con el
-    // teclado abierto desmonta la pantalla antes de que llegue el evento de cierre, así que
-    // al volver a entrar el hook arranca con la última altura conocida y en estado
-    // `UNKNOWN`: sin esta guarda quedaba media pantalla en blanco hasta abrir y cerrar el
-    // teclado a mano.
-    const abierto =
-      teclado.state.value === KeyboardState.OPENING ||
-      teclado.state.value === KeyboardState.OPEN ||
-      teclado.state.value === KeyboardState.CLOSING;
+  useEffect(() => {
+    // iOS avisa ANTES de animar y con la duración real, así que la barra viaja junto al
+    // teclado. Android sólo avisa cuando ya terminó: ahí se acompaña con una transición
+    // corta para que no sea un salto seco.
+    const evtMostrar = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const evtOcultar = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    return { flex: 1, paddingBottom: abierto ? teclado.height.value : 0 };
-  });
+    const alAbrir = Keyboard.addListener(evtMostrar, (evento) => {
+      altoTeclado.value = withTiming(evento.endCoordinates.height, {
+        duration: evento.duration || 120,
+      });
+    });
+
+    const alCerrar = Keyboard.addListener(evtOcultar, (evento) => {
+      altoTeclado.value = withTiming(0, { duration: evento.duration || 120 });
+    });
+
+    return () => {
+      alAbrir.remove();
+      alCerrar.remove();
+    };
+  }, [altoTeclado]);
+
+  const estiloConTeclado = useAnimatedStyle(() => ({
+    flex: 1,
+    paddingBottom: altoTeclado.value,
+  }));
 
   /**
-   * Cierra el teclado al salir de la sala, para que el hook vea el evento mientras la
-   * pantalla sigue montada y la próxima entrada arranque en cero.
+   * Cierra el teclado al salir de la sala: dejarlo abierto mientras se desmonta la pantalla
+   * hace que la animación de salida arranque con el hueco todavía puesto.
    *
    * Va en el desenfoque y no sólo en el botón de volver porque también se sale con el gesto
    * de retroceso y con el botón físico de Android, que no pasan por `volver`.

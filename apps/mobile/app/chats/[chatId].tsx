@@ -17,10 +17,14 @@
  * Lo pinta `TicksMensaje`.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Text, View } from 'react-native';
-import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import { ActivityIndicator, Alert, FlatList, Keyboard, Text, View } from 'react-native';
+import Animated, {
+  KeyboardState,
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BarraEscritura } from '@/components/chat/BarraEscritura';
@@ -81,10 +85,32 @@ export default function ConversacionScreen() {
     isNavigationBarTranslucentAndroid: true,
   });
 
-  const estiloConTeclado = useAnimatedStyle(() => ({
-    flex: 1,
-    paddingBottom: teclado.height.value,
-  }));
+  const estiloConTeclado = useAnimatedStyle(() => {
+    // El alto se aplica SÓLO con el teclado abierto o en movimiento. Salir de la sala con el
+    // teclado abierto desmonta la pantalla antes de que llegue el evento de cierre, así que
+    // al volver a entrar el hook arranca con la última altura conocida y en estado
+    // `UNKNOWN`: sin esta guarda quedaba media pantalla en blanco hasta abrir y cerrar el
+    // teclado a mano.
+    const abierto =
+      teclado.state.value === KeyboardState.OPENING ||
+      teclado.state.value === KeyboardState.OPEN ||
+      teclado.state.value === KeyboardState.CLOSING;
+
+    return { flex: 1, paddingBottom: abierto ? teclado.height.value : 0 };
+  });
+
+  /**
+   * Cierra el teclado al salir de la sala, para que el hook vea el evento mientras la
+   * pantalla sigue montada y la próxima entrada arranque en cero.
+   *
+   * Va en el desenfoque y no sólo en el botón de volver porque también se sale con el gesto
+   * de retroceso y con el botón físico de Android, que no pasan por `volver`.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      return () => Keyboard.dismiss();
+    }, []),
+  );
 
   /**
    * Criterio 6: el clip abre el explorador nativo. Se reusa el selector del proyecto, que
@@ -157,6 +183,10 @@ export default function ConversacionScreen() {
   );
 
   const volver = useCallback((): void => {
+    // Antes de navegar: si el teclado se cierra junto con la pantalla, la animación de
+    // salida arranca con el hueco todavía puesto.
+    Keyboard.dismiss();
+
     if (router.canGoBack()) router.back();
     else router.replace('/(tabs)/chat');
   }, [router]);

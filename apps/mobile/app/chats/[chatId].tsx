@@ -9,10 +9,12 @@
  * El estado de los mensajes vive en `useSalaChat`; acá sólo se pinta.
  *
  * Estilo del artboard 35 del diseño Organic (con las fotos del 37), sobre una maqueta de
- * 262px con el factor ×1,33: la lista con 12 → 16 de padding y 8 → 11 entre mensajes, el
- * chip de día centrado, y al pie de la conversación el "Visto" con doble tilde cuando el
- * otro ya leyó lo último que mandamos. La hora de lectura del artboard ("Visto 10:39") no
- * viaja en el contrato, así que va sin hora.
+ * 262px con el factor ×1,33: la lista con 12 → 16 de padding y 8 → 11 entre mensajes y el
+ * chip de día centrado.
+ *
+ * El acuse de lectura NO va al pie de la conversación como en el artboard ("✓✓ Visto 10:39"):
+ * va mensaje por mensaje, dentro de la burbuja, que es lo que la gente espera de un chat.
+ * Lo pinta `TicksMensaje`.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -24,7 +26,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarraEscritura } from '@/components/chat/BarraEscritura';
 import { BurbujaMensaje } from '@/components/chat/BurbujaMensaje';
 import { CabeceraConversacion } from '@/components/chat/CabeceraConversacion';
-import { PieMensaje } from '@/components/chat/PieMensaje';
 import { VisorImagen } from '@/components/chat/VisorImagen';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { SeparadorFecha } from '@/components/ui/SeparadorFecha';
@@ -135,15 +136,6 @@ export default function ConversacionScreen() {
    */
   const filas = useMemo(() => intercalarSeparadores(sala.items, new Date()), [sala.items]);
 
-  /**
-   * "Visto" al pie de la conversación (artboard 35): el otro ya leyó lo último que mandamos.
-   * Sale del `leido` del mensaje propio más reciente ya confirmado.
-   */
-  const ultimoPropioLeido = useMemo(
-    () => sala.items.find((item) => item.esMio && item.estado === 'enviado')?.leido ?? false,
-    [sala.items],
-  );
-
   const renderItem = useCallback(
     ({ item: fila }: { item: FilaSala }) => (
       <View className="mb-[11px]">
@@ -199,14 +191,6 @@ export default function ConversacionScreen() {
                 sala.items.length === 0
                   ? { flexGrow: 1 }
                   : { paddingHorizontal: 16, paddingVertical: 16 }
-              }
-              // Invertida, el "header" queda al FONDO: es el lugar del "Visto" del diseño.
-              ListHeaderComponent={
-                ultimoPropioLeido ? (
-                  <View className="mb-[11px]">
-                    <PieMensaje texto="Visto" leido alineacion="centro" />
-                  </View>
-                ) : null
               }
               // Con la lista invertida, el "final" de los datos es el mensaje más viejo:
               // o sea, el tope visual. Paginar acá es cargar hacia atrás en el tiempo.

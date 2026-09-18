@@ -9,8 +9,11 @@
  *
  * La foto va SUELTA, fuera de la burbuja (artboard 37): un mensaje de sólo foto no tiene
  * burbuja, y uno con foto y texto pinta la foto arriba y la burbuja del texto debajo. El
- * pie "Enviaste una foto · 16:10 ✓✓" sólo existe para la foto propia; la recibida va pelada,
+ * pie "Enviaste una foto · 16:10" sólo existe para la foto propia; la recibida va pelada,
  * como en el artboard.
+ *
+ * El acuse de los mensajes propios va junto a la hora, dentro de la burbuja: "Enviando…"
+ * mientras el POST está en vuelo, y después los tildes de `TicksMensaje`.
  *
  * No sabe de dónde salió el mensaje: recibe un `ItemChat` ya armado, así que un mensaje del
  * historial, uno que llegó por socket y uno que todavía está subiendo se pintan con el
@@ -20,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 import { FotoMensaje } from '@/components/chat/FotoMensaje';
-import { PieMensaje } from '@/components/chat/PieMensaje';
+import { entregaDe, TicksMensaje } from '@/components/chat/TicksMensaje';
 import { PALETA } from '@/constants/theme';
 import type { ItemChat } from '@/lib/mensajesChat';
 import { horaVisible } from '@/shared/validation/dates';
@@ -95,12 +98,19 @@ function PieBurbuja({ item }: { item: ItemChat }) {
     );
   }
 
-  // El diseño no lleva tildes dentro de la burbuja: el estado de lectura va en el pie de la
-  // conversación ("Visto"), que pinta la pantalla.
   return (
-    <Text className={`mt-1 font-cuerpo text-[11px] ${item.esMio ? 'text-right' : 'text-left'} ${claseTexto}`}>
-      {item.fecha ? horaVisible(new Date(item.fecha)) : ''}
-    </Text>
+    <View
+      className={`mt-1 flex-row items-center gap-1 ${
+        item.esMio ? 'justify-end' : 'justify-start'
+      }`}
+    >
+      <Text className={`font-cuerpo text-[11px] ${claseTexto}`}>
+        {item.fecha ? horaVisible(new Date(item.fecha)) : ''}
+      </Text>
+
+      {/* Sólo en las propias: a nadie se le muestra si leyó lo que le mandaron. */}
+      {item.esMio ? <TicksMensaje entrega={entregaDe(item)} fondo="burbuja" tamanio={14} /> : null}
+    </View>
   );
 }
 
@@ -125,12 +135,12 @@ function PieFotoPropia({ item }: { item: ItemChat }) {
   }
 
   return (
-    <View className="mt-1">
-      <PieMensaje
-        texto={`Enviaste una foto${item.fecha ? ` · ${horaVisible(new Date(item.fecha))}` : ''}`}
-        leido={item.leido}
-        alineacion="derecha"
-      />
+    <View className="mt-1 flex-row items-center justify-end gap-[5px]">
+      <Text className="font-cuerpo text-[11px] text-organic-neutral-600">
+        {`Enviaste una foto${item.fecha ? ` · ${horaVisible(new Date(item.fecha))}` : ''}`}
+      </Text>
+
+      <TicksMensaje entrega={entregaDe(item)} fondo="pantalla" />
     </View>
   );
 }

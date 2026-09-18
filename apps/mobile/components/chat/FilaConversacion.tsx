@@ -7,6 +7,11 @@
  * Layout: el avatar y la hora tienen ancho fijo y el bloque de texto es el que cede — así un
  * nombre largo se trunca con elipsis (criterios 4 y 5) sin empujar ni comprimir la hora ni
  * el badge. El `min-w-0` es lo que habilita ese encogido dentro de un flex row.
+ *
+ * Medidas del artboard 07/18 del diseño Organic (sobre una maqueta de 262px, ×1,33): gap
+ * 10 → 13, padding 11/16 → 15/21, avatar 42 → 56, nombre 12 → 16, hora 8.5 → 11, preview
+ * 10 → 13. El separador entre filas lo pone la lista (`ItemSeparatorComponent`), no la fila:
+ * en el diseño la última no lleva línea debajo.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
@@ -20,6 +25,8 @@ import { tiempoRelativo } from '@/shared/validation/dates';
 
 /** Lado del avatar en la fila. El diseño lo da en 42px sobre una maqueta de 262px de ancho. */
 const AVATAR = 56;
+/** Iniciales del avatar: 13px en el artboard. */
+const AVATAR_TEXTO = 17;
 
 interface FilaConversacionProps {
   conversacion: Conversacion;
@@ -47,7 +54,7 @@ export function FilaConversacion({ conversacion, ahora, onPress }: FilaConversac
       }`}
       onPress={onPress}
       disabled={!onPress}
-      className={`flex-row items-center gap-3 border-b border-organic-neutral-200 px-4 py-3 ${
+      className={`flex-row items-center gap-[13px] px-[21px] py-[15px] ${
         onPress ? 'active:bg-black/5' : ''
       }`}
     >
@@ -57,6 +64,11 @@ export function FilaConversacion({ conversacion, ahora, onPress }: FilaConversac
           uri={urlAbsoluta(contacto.imagenUrl)}
           nombre={contacto.nombre}
           tamanio={AVATAR}
+          tamanioTexto={AVATAR_TEXTO}
+          variante="organic"
+          // El diseño pinta el fondo de las iniciales según quién es el contacto: el
+          // acento para un refugio, el neutro para una persona.
+          tono={contacto.tipo === 'REFUGIO' ? 'acento' : 'neutro'}
           accessibilityLabel={`Foto de ${contacto.nombre}`}
         />
         <BadgeContador
@@ -66,11 +78,11 @@ export function FilaConversacion({ conversacion, ahora, onPress }: FilaConversac
       </View>
 
       <View className="min-w-0 flex-1">
-        <View className="flex-row items-center gap-2">
+        <View className="flex-row items-center justify-between gap-2">
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
-            className="min-w-0 flex-1 text-base font-semibold text-organic-neutral-900"
+            className="min-w-0 flex-1 font-cuerpo-semi text-[16px] text-organic-neutral-900"
           >
             {contacto.nombre}
           </Text>
@@ -79,15 +91,17 @@ export function FilaConversacion({ conversacion, ahora, onPress }: FilaConversac
               Va sobre `fechaUltimaActividad` y no sobre `ultimoMensaje.fecha` porque el
               contrato la garantiza no nula — en una sala todavía sin mensajes es la fecha
               en que se abrió, y así la fila nunca queda con el hueco de la hora vacío. */}
-          <Text className="flex-none text-xs text-organic-neutral-500">
+          <Text className="flex-none font-cuerpo text-[11px] text-organic-neutral-500">
             {tiempoRelativo(new Date(conversacion.fechaUltimaActividad), ahora)}
           </Text>
         </View>
 
-        <View className="mt-0.5 flex-row items-center gap-1">
+        <View className="mt-[3px] flex-row items-center gap-1">
           {/* "Vos:" sale de `esMio`, que ya manda el backend: el cliente no compara ids. */}
           {ultimoMensaje?.esMio ? (
-            <Text className="flex-none text-sm text-organic-neutral-500">Vos:</Text>
+            <Text className="flex-none font-cuerpo text-[13px] text-organic-neutral-500">
+              Vos:
+            </Text>
           ) : null}
 
           {soloFoto ? (
@@ -99,7 +113,7 @@ export function FilaConversacion({ conversacion, ahora, onPress }: FilaConversac
             ellipsizeMode="tail"
             // El diseño pinta el preview oscuro cuando hay mensajes nuevos y apagado cuando
             // ya se leyó: es lo que hace que un chat con novedades pese más en la lista.
-            className={`min-w-0 flex-1 text-sm ${
+            className={`min-w-0 flex-1 font-cuerpo text-[13px] ${
               sinLeer ? 'text-organic-neutral-900' : 'text-organic-neutral-500'
             }`}
           >
@@ -110,7 +124,7 @@ export function FilaConversacion({ conversacion, ahora, onPress }: FilaConversac
         {/* El backend manda el hecho (`activo: false`), el texto lo pone la UI. La
             conversación se sigue pudiendo leer; bloquear el envío es de HU-5.2. */}
         {contacto.activo ? null : (
-          <Text className="mt-0.5 text-xs italic text-organic-neutral-400">
+          <Text className="mt-[3px] font-cuerpo text-[11px] italic text-organic-neutral-400">
             Esta cuenta ya no está activa
           </Text>
         )}

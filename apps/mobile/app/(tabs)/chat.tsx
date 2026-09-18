@@ -9,6 +9,12 @@
  *
  * El estado de la lista (carga, refresco y tiempo real) vive en `useListaChats`; acá sólo se
  * pinta.
+ *
+ * Estilo del artboard 07 (adoptante) / 18 (refugio) del diseño Organic, sobre una maqueta
+ * de 262px con el factor ×1,33: cabecera en `neutral-100` con borde inferior `neutral-300`
+ * y padding 10/16 → 13/21; título en Caprasimo 18 → 24 (17 → 23 en refugio) en `accent-600`;
+ * subtítulo del refugio 9 → 12 en `neutral-600`; la lista con 4 → 5 de aire arriba y abajo y
+ * un separador `neutral-300` entre filas.
  */
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
@@ -21,6 +27,11 @@ import { BarraBusqueda } from '@/components/ui/BarraBusqueda';
 import { PALETA } from '@/constants/theme';
 import { useListaChats } from '@/hooks/useListaChats';
 import { useSesion } from '@/hooks/useSesion';
+
+/** Separador entre filas: 1px `neutral-300`, a todo el ancho, como en el diseño. */
+function SeparadorFilas() {
+  return <View className="h-px bg-organic-neutral-300" />;
+}
 
 /**
  * Cada cuánto se recalculan los textos relativos ("Hace 5 min").
@@ -83,22 +94,27 @@ export default function ChatScreen() {
   const vacio = chats.length === 0;
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="border-b border-organic-neutral-200 bg-white/85 px-4 py-2.5">
-          <Text className="text-xl font-bold text-pethood-orange">
-            {esRefugio ? 'Mensajes del Refugio' : 'Mensajes'}
-          </Text>
-
+        <View className="border-b border-organic-neutral-300 bg-organic-neutral-100 px-[21px] py-[13px]">
           {esRefugio ? (
-            <Text className="mt-0.5 text-xs text-organic-neutral-500">
-              {subtituloRefugio(sinLeer)}
+            <>
+              <Text className="font-titulo text-[23px] leading-[28px] text-organic-accent-600">
+                Mensajes del Refugio
+              </Text>
+              <Text className="mt-[4px] font-cuerpo text-[12px] text-organic-neutral-600">
+                {subtituloRefugio(sinLeer)}
+              </Text>
+            </>
+          ) : (
+            <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
+              Mensajes
             </Text>
-          ) : null}
+          )}
 
           {/* Criterio 2: sin conversaciones el buscador SE MUESTRA, deshabilitado. Con
               conversaciones se ve normal pero todavía no filtra: eso es HU-5.3. */}
-          <View className="mt-2.5">
+          <View className="mt-[12px]">
             <BarraBusqueda
               placeholder={esRefugio ? 'Buscar...' : 'Buscar conversaciones...'}
               deshabilitada={vacio}
@@ -125,13 +141,14 @@ export default function ChatScreen() {
                 onPress={() => router.push(`/chats/${item.chatId}`)}
               />
             )}
+            ItemSeparatorComponent={SeparadorFilas}
             ListEmptyComponent={ListaVacia}
-            contentContainerStyle={vacio ? { flexGrow: 1 } : { paddingVertical: 4 }}
+            contentContainerStyle={vacio ? { flexGrow: 1 } : { paddingVertical: 5 }}
             refreshControl={
               <RefreshControl
                 refreshing={refrescando}
                 onRefresh={refrescar}
-                tintColor={PALETA.pethood.naranja}
+                tintColor={PALETA.accent[600]}
               />
             }
           />

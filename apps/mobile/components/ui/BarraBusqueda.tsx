@@ -7,6 +7,10 @@
  *
  * `deshabilitada` la deja visible pero sin interacción — es lo que pide HU-5.1 criterio 2
  * para el usuario sin conversaciones: el buscador se muestra, atenuado, no se oculta.
+ *
+ * Estilo del artboard 07/18 del diseño Organic (sobre 262px, ×1,33): fondo `neutral-100`,
+ * borde `neutral-300`, radio 15 → 20, padding 8/11 → 11/15, lupa de 14 → 19 en `neutral-500`
+ * y texto de 10.5 → 14.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { TextInput, View } from 'react-native';
@@ -30,11 +34,11 @@ export function BarraBusqueda({
 }: BarraBusquedaProps) {
   return (
     <View
-      className={`flex-row items-center gap-2 rounded-xl border border-organic-neutral-200 bg-white px-3 py-2.5 ${
+      className={`flex-row items-center gap-[9px] rounded-[20px] border border-organic-neutral-300 bg-organic-neutral-100 px-[15px] py-[11px] ${
         deshabilitada ? 'opacity-60' : ''
       }`}
     >
-      <Ionicons name="search" size={18} color={PALETA.neutral[400]} />
+      <Ionicons name="search" size={19} color={PALETA.neutral[500]} />
 
       <TextInput
         // Se escribe sólo si alguien está escuchando los cambios. Así la barra tiene tres
@@ -45,9 +49,9 @@ export function BarraBusqueda({
         value={valor}
         onChangeText={onCambiar}
         placeholder={placeholder}
-        placeholderTextColor={PALETA.neutral[400]}
+        placeholderTextColor={PALETA.neutral[500]}
         accessibilityLabel={accessibilityLabel ?? placeholder}
-        className="flex-1 p-0 text-sm text-organic-neutral-900"
+        className="flex-1 p-0 font-cuerpo text-[14px] text-organic-neutral-900"
       />
     </View>
   );

@@ -35,6 +35,8 @@ export default function TabsLayout() {
           overflow: 'visible',
         },
         tabBarItemStyle: { paddingTop: 2 },
+        // Todos los íconos van de contorno, también el de la pestaña abierta: como en el
+        // diseño, la activa se distingue por el color y por la barrita de arriba.
         tabBarBackground: () => <IndicadorTabs />,
         tabBarLabelStyle: { fontSize: 12, fontWeight: '500', paddingTop: 2, paddingBottom: 0 },
         // Sin ripple: el cambio de color de la pestaña activa ya es feedback suficiente, y
@@ -46,8 +48,8 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Inicio',
-          tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
           ),
         }}
       />
@@ -79,8 +81,6 @@ export default function TabsLayout() {
         name="chat"
         options={{
           title: 'Chat',
-          // Siempre el contorno, como en el diseño: la pestaña abierta se distingue por el
-          // color y por la barrita de arriba, no por rellenarse.
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubble-outline" size={size} color={color} />
           ),
@@ -90,8 +90,8 @@ export default function TabsLayout() {
         name="perfil"
         options={{
           title: 'Perfil',
-          tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={size} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
       />

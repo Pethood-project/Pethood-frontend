@@ -79,8 +79,10 @@ export default function TabsLayout() {
         name="chat"
         options={{
           title: 'Chat',
-          tabBarIcon: ({ color, focused, size }) => (
-            <Ionicons name={focused ? 'chatbubble' : 'chatbubble-outline'} size={size} color={color} />
+          // Siempre el contorno, como en el diseño: la pestaña abierta se distingue por el
+          // color y por la barrita de arriba, no por rellenarse.
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="chatbubble-outline" size={size} color={color} />
           ),
         }}
       />

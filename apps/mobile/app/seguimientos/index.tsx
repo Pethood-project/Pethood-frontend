@@ -76,8 +76,8 @@ export default function SeguimientosScreen() {
   const seccion = (titulo: string, ayuda: string, items: SolicitudEnSeguimiento[]) =>
     items.length === 0 ? null : (
       <View className="mb-5">
-        <Text className="mb-1 text-sm font-bold text-gray-900">{titulo}</Text>
-        <Text className="mb-3 text-xs text-gray-500">{ayuda}</Text>
+        <Text className="mb-1 text-base font-bold text-gray-900">{titulo}</Text>
+        <Text className="mb-3 text-sm text-gray-500">{ayuda}</Text>
 
         {items.map((solicitud) => (
           <TarjetaSolicitudSeguimiento
@@ -106,7 +106,7 @@ export default function SeguimientosScreen() {
 
           <View className="flex-1">
             <Text className="text-2xl font-bold text-pethood-orange">Seguimientos</Text>
-            <Text className="text-xs text-gray-500">Adopciones y tránsitos en curso</Text>
+            <Text className="text-sm text-gray-500">Adopciones y tránsitos en curso</Text>
           </View>
         </View>
 

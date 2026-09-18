@@ -1,8 +1,10 @@
 /**
  * HU-9.2 Ver seguimientos — GUI-21 Seguimiento Adopción/Tránsito.
  *
- * Historial de una solicitud: la mascota arriba y debajo la lista de pedidos del más nuevo
- * al más viejo, tal como los manda el backend (no reordenar acá).
+ * Historial de una solicitud: la mascota arriba y debajo la lista de pedidos. El backend los
+ * manda del más nuevo al más viejo (no reordenar el contrato); acá se invierten sólo para
+ * pintarlos como un chat — el más viejo arriba, el más nuevo abajo — y se hace scroll
+ * automático al final para que la pantalla abra siempre en la última actualización.
  *
  * El botón "Subir actualización" se habilita con `puedeSubirActualizacion`, que el servidor
  * ya calcula combinando rol y estado. No se recalcula en el cliente: el plazo de 48 h se
@@ -10,7 +12,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshControl, ScrollView, Text, View, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -82,6 +84,7 @@ export default function SeguimientoSolicitudScreen() {
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ahora, setAhora] = useState(() => new Date());
+  const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     const intervalo = setInterval(() => setAhora(new Date()), REFRESCO_TEXTOS_MS);
@@ -134,7 +137,7 @@ export default function SeguimientoSolicitudScreen() {
           <View className="flex-1">
             <Text className="text-2xl font-bold text-pethood-orange">Seguimiento</Text>
             {detalle ? (
-              <Text className="text-xs text-gray-500" numberOfLines={1}>
+              <Text className="text-sm text-gray-500" numberOfLines={1}>
                 {nombreMascota} · {NOMBRE_TIPO[detalle.tipo]}
               </Text>
             ) : null}
@@ -155,8 +158,12 @@ export default function SeguimientoSolicitudScreen() {
         ) : (
           <>
             <ScrollView
+              ref={scrollRef}
               className="flex-1"
               contentContainerClassName="px-4 pb-6"
+              // Estilo chat: el hito más nuevo queda al final, así que la pantalla se abre
+              // siempre ahí abajo en vez de forzar al usuario a bajar manualmente.
+              onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })}
               refreshControl={
                 <RefreshControl
                   refreshing={refrescando}
@@ -179,10 +186,10 @@ export default function SeguimientoSolicitudScreen() {
                 </View>
 
                 <View className="min-w-0 flex-1">
-                  <Text className="text-sm font-bold text-gray-900" numberOfLines={1}>
+                  <Text className="text-base font-bold text-gray-900" numberOfLines={1}>
                     {nombreMascota}
                   </Text>
-                  <Text className="mt-0.5 text-[11px] text-gray-500" numberOfLines={1}>
+                  <Text className="mt-0.5 text-sm text-gray-500" numberOfLines={1}>
                     {esAdoptante
                       ? 'Está a tu cuidado'
                       : `A cargo de ${detalle.adoptante.nombre} ${detalle.adoptante.apellido}`}
@@ -206,16 +213,18 @@ export default function SeguimientoSolicitudScreen() {
                 </View>
               ) : (
                 <>
-                  <Text className="mb-3 text-sm font-bold text-gray-900">
+                  <Text className="mb-3 text-base font-bold text-gray-900">
                     Hitos del seguimiento
                   </Text>
-                  {detalle.seguimientos.map((pedido, indice) => (
+                  {/* El backend los manda del más nuevo al más viejo; acá se invierten sólo
+                      para pintarlos, así el más nuevo queda al final como en un chat. */}
+                  {[...detalle.seguimientos].reverse().map((pedido, indice, hitos) => (
                     <FilaPedidoSeguimiento
                       key={pedido.id}
                       pedido={pedido}
                       ahora={ahora}
                       esAdoptante={esAdoptante}
-                      esUltimo={indice === detalle.seguimientos.length - 1}
+                      esUltimo={indice === hitos.length - 1}
                       // HU-9.3. Todos los hitos se abren, no sólo los completados: el
                       // endpoint también responde por los que no tienen nada cargado, con
                       // el mensaje que corresponde según si el plazo sigue abierto.

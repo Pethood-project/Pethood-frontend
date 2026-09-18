@@ -2,8 +2,11 @@
  * Envoltorio común de los campos: etiqueta, marca de obligatorio y mensaje de error.
  * Centraliza el estilo para que todos los campos se vean igual.
  */
+import { Ionicons } from '@expo/vector-icons';
 import { Text, View } from 'react-native';
 import type { ReactNode } from 'react';
+
+import { PALETA } from '@/constants/theme';
 
 export type VarianteCampo =
   /** Etiqueta chica en mayúsculas, sin caja: el borde lo pone la fila de `FormCard`. */
@@ -34,6 +37,8 @@ interface FormFieldProps {
    * exactamente igual que antes.
    */
   grande?: boolean;
+  /** Pinta un lapicito junto a la etiqueta, para marcar que el campo se puede editar (perfil). */
+  lapiz?: boolean;
   children: ReactNode;
 }
 
@@ -46,6 +51,7 @@ export function FormField({
   variante = 'compacta',
   conCaja = true,
   grande = false,
+  lapiz = false,
   children,
 }: FormFieldProps) {
   const esPregunta = variante === 'pregunta';
@@ -54,16 +60,21 @@ export function FormField({
     // Sin flex acá: el reparto de ancho lo hace FormCardColumns. Con flex-1, los campos
     // de filas de un solo elemento intentan ocupar todo el alto y se aplastan entre sí.
     <View>
-      <Text
-        className={
-          esPregunta
-            ? `mb-1.5 font-cuerpo-semi text-organic-neutral-800 ${grande ? 'text-[15px]' : 'text-[13.5px]'}`
-            : `mb-1 font-semibold uppercase tracking-wide text-gray-400 ${grande ? 'text-[13px]' : 'text-[11px]'}`
-        }
-      >
-        {label}
-        {obligatorio ? <Text className="text-pethood-orange"> *</Text> : null}
-      </Text>
+      <View className="mb-1 flex-row items-center gap-1.5">
+        <Text
+          className={
+            esPregunta
+              ? `font-cuerpo-semi text-organic-neutral-800 ${grande ? 'text-[15px]' : 'text-[13.5px]'}`
+              : `font-semibold uppercase tracking-wide text-gray-400 ${grande ? 'text-[13px]' : 'text-[11px]'}`
+          }
+        >
+          {label}
+          {obligatorio ? <Text className="text-pethood-orange"> *</Text> : null}
+        </Text>
+        {lapiz ? (
+          <Ionicons name="pencil-outline" size={grande ? 14 : 12} color={PALETA.gris[400]} />
+        ) : null}
+      </View>
 
       {esPregunta && conCaja ? (
         <View

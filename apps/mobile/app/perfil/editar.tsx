@@ -1,6 +1,12 @@
 /**
- * GUI-15 Editar Perfil — HU-1.4 y HU-1.5 (completar foto + datos).
- * Volver con cambios sin guardar pide confirmación.
+ * GUI-15 Editar Perfil — HU-1.4, HU-1.5 (completar foto + datos), HU-1.7 cierre de sesión,
+ * HU-1.8 dar de baja cuenta.
+ *
+ * Es la pantalla a la que lleva el ícono de perfil de GUI-09: además de los datos, vive acá
+ * el mail (que ya no se muestra apenas se entra al perfil) y las acciones sensibles de la
+ * cuenta. Mientras no hay cambios sin guardar se ven "Cambiar contraseña", "Cerrar sesión" y
+ * "Dar de baja"; apenas se toca un campo, esos tres desaparecen y sólo quedan "Guardar
+ * cambios" y "Cancelar" — así nunca conviven un botón de cuenta con uno de guardado.
  */
 import { Ionicons } from '@expo/vector-icons';
 import type { ImagePickerAsset } from 'expo-image-picker';
@@ -41,7 +47,7 @@ import {
   validarUbicacion,
 } from '@/lib/validacionRegistro';
 import { ApiError, urlAbsoluta } from '@/services/api';
-import { actualizarPerfil, obtenerPerfil } from '@/services/usuarios';
+import { actualizarPerfil, darDeBajaCuenta, obtenerPerfil } from '@/services/usuarios';
 
 interface Formulario {
   nombre: string;
@@ -67,7 +73,7 @@ export default function EditarPerfilScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const toast = useToast();
-  const { token, actualizarUsuario } = useSesion();
+  const { token, usuario, actualizarUsuario, cerrarSesion } = useSesion();
 
   const [form, setForm] = useState<Formulario>(vacio);
   const [inicial, setInicial] = useState<Formulario>(vacio);
@@ -80,6 +86,8 @@ export default function EditarPerfilScreen() {
   const permitirSalir = useRef(false);
 
   const [confirmarSalida, setConfirmarSalida] = useState(false);
+  const [confirmarBaja, setConfirmarBaja] = useState(false);
+  const [dandoDeBaja, setDandoDeBaja] = useState(false);
 
   const hayCambios =
     JSON.stringify(form) !== JSON.stringify(inicial) || Boolean(fotoNueva);
@@ -146,6 +154,38 @@ export default function EditarPerfilScreen() {
       return;
     }
     router.back();
+  };
+
+  const cancelarEdicion = (): void => {
+    setForm(inicial);
+    setFotoNueva(undefined);
+    setErrors({});
+    setFormError(undefined);
+  };
+
+  const salir = async (): Promise<void> => {
+    await cerrarSesion();
+    router.replace('/login');
+  };
+
+  const confirmarDarDeBaja = async (): Promise<void> => {
+    if (!token) return;
+    setDandoDeBaja(true);
+    try {
+      await darDeBajaCuenta(token);
+      setConfirmarBaja(false);
+      toast.mostrarExito('Tu cuenta fue dada de baja');
+      await cerrarSesion();
+      router.replace('/login');
+    } catch (error) {
+      const mensaje =
+        error instanceof ApiError
+          ? error.mensaje
+          : 'No pudimos dar de baja tu cuenta. Intentalo de nuevo.';
+      toast.mostrarError(mensaje);
+    } finally {
+      setDandoDeBaja(false);
+    }
   };
 
   const setCampo = useCallback((campo: keyof Formulario, valor: string) => {
@@ -222,11 +262,6 @@ export default function EditarPerfilScreen() {
   };
 
   const explicarQueFalta = (): void => {
-    if (!hayCambios) {
-      toast.mostrarAdvertencia('Todavía no cambiaste nada.');
-      return;
-    }
-
     validar();
     toast.mostrarAdvertencia('Revisá los campos marcados en rojo.');
   };
@@ -277,7 +312,7 @@ export default function EditarPerfilScreen() {
           >
             <Ionicons name="arrow-back" size={22} color={PALETA.gris[700]} />
           </Pressable>
-          <Text className="text-2xl font-bold text-pethood-orange">Editar Perfil</Text>
+          <Text className="text-2xl font-bold text-pethood-orange">Datos personales</Text>
         </View>
 
         {cargando ? (
@@ -318,6 +353,8 @@ export default function EditarPerfilScreen() {
                   <TextField
                     label="Nombre"
                     obligatorio
+                    lapiz
+                    grande
                     value={form.nombre}
                     onChangeText={handleNombreChange}
                     onBlur={() =>
@@ -335,6 +372,8 @@ export default function EditarPerfilScreen() {
                   <TextField
                     label="Apellido"
                     obligatorio
+                    lapiz
+                    grande
                     value={form.apellido}
                     onChangeText={handleApellidoChange}
                     onBlur={() =>
@@ -352,6 +391,8 @@ export default function EditarPerfilScreen() {
                   <TextField
                     label="Correo"
                     obligatorio
+                    lapiz
+                    grande
                     value={form.email}
                     onChangeText={handleEmailChange}
                     onBlur={() => setFieldError('email', validarEmail(form.email))}
@@ -366,6 +407,8 @@ export default function EditarPerfilScreen() {
                   <TextField
                     label="Teléfono"
                     obligatorio
+                    lapiz
+                    grande
                     value={form.telefono}
                     onChangeText={handleTelefonoChange}
                     onBlur={() => setFieldError('telefono', validarTelefono(form.telefono))}
@@ -380,6 +423,8 @@ export default function EditarPerfilScreen() {
                   <TextField
                     label="Barrio / ciudad"
                     obligatorio
+                    lapiz
+                    grande
                     value={form.ubicacion}
                     onChangeText={handleUbicacionChange}
                     onBlur={() => setFieldError('ubicacion', validarUbicacion(form.ubicacion))}
@@ -390,28 +435,61 @@ export default function EditarPerfilScreen() {
                 </FormCardRow>
               </FormCard>
 
-              <Pressable
-                onPress={() => router.push('/perfil/password' as Href)}
-                className="mt-5 items-center"
-              >
-                <Text className="text-sm font-semibold text-pethood-orange">
-                  Cambiar contraseña
-                </Text>
-              </Pressable>
-
               {formError ? (
                 <Text className="mt-3 text-center text-sm text-red-500">{formError}</Text>
               ) : null}
 
-              <View className="mt-6">
-                <CustomButton
-                  title="Guardar cambios"
-                  loading={guardando}
-                  disabled={!formularioValido || !hayCambios}
-                  onPress={() => void guardar()}
-                  onPressDeshabilitado={explicarQueFalta}
-                />
-              </View>
+              {/* Botones mutuamente excluyentes con los de guardado: mientras hay cambios sin
+                  guardar no tiene sentido ofrecer cerrar sesión o dar de baja la cuenta a
+                  mitad de una edición, así que un set reemplaza al otro por completo. */}
+              {hayCambios ? (
+                <View className="mt-6 flex-row gap-3">
+                  <View className="flex-1">
+                    <CustomButton title="Cancelar" variant="secondary" onPress={cancelarEdicion} />
+                  </View>
+                  <View className="flex-1">
+                    <CustomButton
+                      title="Guardar cambios"
+                      loading={guardando}
+                      disabled={!formularioValido}
+                      onPress={() => void guardar()}
+                      onPressDeshabilitado={explicarQueFalta}
+                    />
+                  </View>
+                </View>
+              ) : (
+                <View className="mt-6 gap-3">
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => void salir()}
+                    className="flex-row items-center justify-center gap-2 rounded-2xl border border-red-200 bg-white py-4 active:opacity-80"
+                  >
+                    <Ionicons name="log-out-outline" size={20} color={PALETA.estado.error} />
+                    <Text className="text-base font-semibold text-red-600">Cerrar sesión</Text>
+                  </Pressable>
+
+                  <Pressable
+                    onPress={() => router.push('/perfil/password' as Href)}
+                    className="items-center py-2"
+                  >
+                    <Text className="text-base font-semibold text-pethood-orange">
+                      Cambiar contraseña
+                    </Text>
+                  </Pressable>
+
+                  {!(usuario?.roles ?? []).includes('ADMIN') ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => setConfirmarBaja(true)}
+                      className="items-center py-3 active:opacity-70"
+                    >
+                      <Text className="text-base font-medium text-red-500">
+                        Dar de baja mi cuenta
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              )}
             </ScrollView>
           </KeyboardAvoidingView>
         )}
@@ -426,6 +504,21 @@ export default function EditarPerfilScreen() {
         textoCancelar="Seguir editando"
         onConfirmar={salirSinGuardar}
         onCerrar={() => setConfirmarSalida(false)}
+      />
+
+      <ConfirmDialog
+        visible={confirmarBaja}
+        tono="peligro"
+        titulo="¿Dar de baja tu cuenta?"
+        mensaje="Se van a cerrar tus solicitudes y publicaciones en curso, y tu perfil deja de ser visible para el resto."
+        detalle="No vas a poder volver a entrar con este correo. Esta acción no se puede deshacer desde la app."
+        textoConfirmar="Dar de baja"
+        textoCancelar="Cancelar"
+        cargando={dandoDeBaja}
+        onConfirmar={() => void confirmarDarDeBaja()}
+        onCerrar={() => {
+          if (!dandoDeBaja) setConfirmarBaja(false);
+        }}
       />
     </View>
   );

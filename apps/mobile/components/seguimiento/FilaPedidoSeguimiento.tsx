@@ -158,14 +158,14 @@ export function FilaPedidoSeguimiento({
             className={`rounded-2xl p-3 ${estilo.tarjeta}`}
             style={estilo.sombra ?? undefined}
           >
-            <Text className="text-sm font-bold leading-5 text-gray-900">{pedido.pregunta}</Text>
+            <Text className="text-base font-bold leading-6 text-gray-900">{pedido.pregunta}</Text>
 
-            <Text className="mt-1 text-[11px] text-gray-500">
+            <Text className="mt-1 text-sm text-gray-500">
               {[contexto, estilo.etiqueta].filter(Boolean).join(' · ')}
             </Text>
 
             {pedido.descripcion ? (
-              <Text className="mt-2 text-sm leading-5 text-gray-700" numberOfLines={3}>
+              <Text className="mt-2 text-base leading-6 text-gray-700" numberOfLines={3}>
                 {pedido.descripcion}
               </Text>
             ) : null}

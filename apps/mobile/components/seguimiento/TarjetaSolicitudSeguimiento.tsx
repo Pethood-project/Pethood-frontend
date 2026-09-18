@@ -82,16 +82,25 @@ export function TarjetaSolicitudSeguimiento({
   ahora,
   onPress,
 }: TarjetaSolicitudSeguimientoProps) {
-  const { mascota, adoptante, tipo, rol, totales } = solicitud;
+  const { mascota, adoptante, tipo, rol, totales, pendiente } = solicitud;
   const nombreMascota = mascota.nombre ?? 'Sin nombre';
   const estado = estadoActual(solicitud, ahora);
+  const tienePendiente = Boolean(pendiente);
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Seguimiento de ${nombreMascota}. ${estado.texto}`}
       onPress={onPress}
-      className="mb-3 flex-row items-center gap-3 rounded-2xl bg-white p-3 shadow-sm active:opacity-80"
+      // Un seguimiento con pregunta sin responder tiene que saltar a la vista frente a los que
+      // no tienen nada pendiente: borde y fondo tintados, no sólo el texto ámbar de abajo.
+      // La sombra queda fija en `shadow-sm`: alternarla junto con el resto de la clase dispara
+      // el bug de NativeWind descrito en `FilaPedidoSeguimiento` (nativewind#1557).
+      className={`mb-3 flex-row items-center gap-3 rounded-2xl p-3 shadow-sm active:opacity-80 ${
+        tienePendiente
+          ? 'border-2 border-amber-400 bg-amber-50'
+          : 'border border-transparent bg-white'
+      }`}
     >
       {/* `flex-none`: la foto nunca se achica, por largo que sea el nombre. */}
       <View className="flex-none">
@@ -105,28 +114,38 @@ export function TarjetaSolicitudSeguimiento({
       {/* `min-w-0` deja que este bloque se achique: sin él un nombre largo empuja el chevron. */}
       <View className="min-w-0 flex-1">
         <View className="flex-row items-center gap-2">
-          <Text className="flex-1 text-base font-bold text-gray-900" numberOfLines={1}>
+          <Text className="flex-1 text-lg font-bold text-gray-900" numberOfLines={1}>
             {nombreMascota}
           </Text>
-          <View className="flex-none rounded-full bg-pethood-beige-dark px-2 py-0.5">
-            <Text className="text-[10px] font-semibold text-gray-600">{NOMBRE_TIPO[tipo]}</Text>
+          <View className="flex-none flex-row items-center gap-1.5">
+            {tienePendiente ? (
+              <View className="rounded-full bg-amber-400 px-2 py-0.5">
+                <Text className="text-xs font-bold text-white">Pendiente</Text>
+              </View>
+            ) : null}
+            <View className="rounded-full bg-pethood-beige-dark px-2 py-0.5">
+              <Text className="text-xs font-semibold text-gray-600">{NOMBRE_TIPO[tipo]}</Text>
+            </View>
           </View>
         </View>
 
-        <Text className="mt-0.5 text-xs text-gray-500" numberOfLines={1}>
+        <Text className="mt-0.5 text-sm text-gray-500" numberOfLines={1}>
           {rol === 'ADOPTANTE'
             ? 'Está a tu cuidado'
             : `A cargo de ${adoptante.nombre} ${adoptante.apellido}`}
         </Text>
 
         <View className="mt-1.5 flex-row items-center gap-1.5">
-          <Ionicons name={estado.icono} size={13} color={estado.color} />
-          <Text className={`flex-1 text-[11px] font-medium ${estado.clase}`} numberOfLines={1}>
+          <Ionicons name={estado.icono} size={15} color={estado.color} />
+          <Text
+            className={`flex-1 text-sm ${tienePendiente ? 'font-bold' : 'font-medium'} ${estado.clase}`}
+            numberOfLines={1}
+          >
             {estado.texto}
           </Text>
         </View>
 
-        <Text className="mt-1 text-[11px] text-gray-400">
+        <Text className="mt-1 text-xs text-gray-400">
           {totales.completados} completados · {totales.vencidos} sin completar
         </Text>
       </View>

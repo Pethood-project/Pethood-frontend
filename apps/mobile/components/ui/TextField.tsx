@@ -11,6 +11,8 @@ interface TextFieldProps extends Omit<TextInputProps, 'className'> {
   variante?: VarianteCampo;
   /** Letra más grande de etiqueta y valor, para el alta y la publicación de mascota. */
   grande?: boolean;
+  /** Lapicito junto a la etiqueta, para marcar que el campo se puede editar (perfil). */
+  lapiz?: boolean;
 }
 
 export function TextField({
@@ -20,6 +22,7 @@ export function TextField({
   ayuda,
   variante,
   grande,
+  lapiz,
   value,
   ...inputProps
 }: TextFieldProps) {
@@ -31,6 +34,7 @@ export function TextField({
       ayuda={ayuda}
       variante={variante}
       grande={grande}
+      lapiz={lapiz}
     >
       <TextInput
         className={`${claseValor(Boolean(error), !value, grande)} p-0`}

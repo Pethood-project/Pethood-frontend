@@ -1,12 +1,20 @@
 /**
- * Barra de escritura de la conversación (GUI-14, criterios 5 y 6): clip, campo y botón de
- * enviar con el avión de papel.
+ * Barra de escritura de la conversación (GUI-14, criterios 5 y 6): botón de adjuntar, campo
+ * y botón de enviar con el avión de papel. Artboard 35 del diseño Organic.
+ *
+ * Medidas (sobre 262px, ×1,33): fondo `neutral-100` con borde superior `neutral-300`,
+ * padding 9/11 → 12/15, gap 8 → 11; el "+" 18 → 24 en `accent-700`; el campo en píldora
+ * sobre `bg` con borde `neutral-300`, padding 8/12 → 11/16 y texto 10 → 13; el botón de
+ * enviar 32 → 43, `accent-600` sólido, con el avión 15 → 20 en blanco.
+ *
+ * El "+" del diseño abre una hoja con cinco opciones (foto o video, mascota, solicitud,
+ * visita, ubicación); el backend sólo acepta fotos, así que acá abre el selector de
+ * Cámara/Galería de siempre. Cuando existan las demás, la hoja se cuelga de este botón.
  *
  * El campo crece con el texto hasta un tope y después scrollea: un mensaje largo no puede
  * comerse la conversación entera.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { Image, Pressable, TextInput, View } from 'react-native';
 
@@ -14,8 +22,8 @@ import { PALETA } from '@/constants/theme';
 import type { ArchivoAdjunto } from '@/services/api';
 import { LIMITES } from '@/shared/validation/limits';
 
-/** Diámetro del botón de enviar: 34px del artboard con el factor de conversión de HU-5.1. */
-const BOTON = 45;
+/** Diámetro del botón de enviar: 32px del artboard con el factor de conversión. */
+const BOTON = 43;
 
 /** Alto de una línea del campo y tope antes de que empiece a scrollear (unas 5 líneas). */
 const ALTO_LINEA = 20;
@@ -60,14 +68,14 @@ export function BarraEscritura({
   };
 
   return (
-    <View className="border-t border-organic-neutral-200 bg-white px-4 py-3">
+    <View className="border-t border-organic-neutral-300 bg-organic-neutral-100 px-[15px] py-3">
       {/* Vista previa de la foto elegida: sin esto no habría forma de saber cuál se
           adjuntó ni de arrepentirse antes de mandarla. */}
       {foto ? (
         <View className="mb-2.5 flex-row items-center gap-2.5">
           <Image
             source={{ uri: foto.uri }}
-            className="h-14 w-14 rounded-xl"
+            className="h-14 w-14 rounded-[14px]"
             accessibilityLabel="Foto que vas a enviar"
           />
 
@@ -78,24 +86,26 @@ export function BarraEscritura({
             hitSlop={8}
             className="h-7 w-7 items-center justify-center rounded-full bg-organic-neutral-200 active:opacity-70"
           >
-            <Ionicons name="close" size={15} color={PALETA.grisCalido[700]} />
+            <Ionicons name="close" size={15} color={PALETA.neutral[700]} />
           </Pressable>
         </View>
       ) : null}
 
-      <View className="flex-row items-end gap-2.5">
+      <View className="flex-row items-end gap-[11px]">
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Adjuntar una foto"
           onPress={onElegirFoto}
           disabled={!habilitada}
           hitSlop={10}
-          className={`pb-2 ${habilitada ? 'active:opacity-60' : 'opacity-40'}`}
+          // Centrado con el campo de una línea; con varias líneas se queda abajo, junto al
+          // botón de enviar.
+          className={`pb-[10px] ${habilitada ? 'active:opacity-60' : 'opacity-40'}`}
         >
-          <Ionicons name="attach" size={22} color={PALETA.neutral[500]} />
+          <Ionicons name="add" size={24} color={PALETA.accent[700]} />
         </Pressable>
 
-        <View className="min-w-0 flex-1 justify-center rounded-full bg-organic-neutral-200/70 px-4 py-2">
+        <View className="min-w-0 flex-1 justify-center rounded-full border border-organic-neutral-300 bg-organic-bg px-4 py-[11px]">
           <TextInput
             value={texto}
             onChangeText={setTexto}
@@ -105,13 +115,13 @@ export function BarraEscritura({
             placeholder={
               habilitada ? 'Escribí un mensaje...' : 'No podés escribirle a esta cuenta'
             }
-            placeholderTextColor={PALETA.neutral[400]}
+            placeholderTextColor={PALETA.neutral[500]}
             accessibilityLabel="Mensaje"
             // El alto lo maneja el propio contenido: `multiline` sin esto se queda en una
             // línea en Android y no deja ver lo que se escribió.
             style={{ height: Math.min(Math.max(alto, ALTO_MINIMO), ALTO_MAXIMO) }}
             onContentSizeChange={(evento) => setAlto(evento.nativeEvent.contentSize.height)}
-            className="p-0 text-sm text-organic-neutral-900"
+            className="p-0 font-cuerpo text-[13px] text-organic-neutral-900"
           />
         </View>
 
@@ -122,16 +132,11 @@ export function BarraEscritura({
           onPress={enviar}
           disabled={!puedeEnviar}
           style={{ width: BOTON, height: BOTON, borderRadius: BOTON / 2 }}
-          className={`overflow-hidden ${puedeEnviar ? 'active:opacity-85' : 'opacity-40'}`}
+          className={`items-center justify-center bg-organic-accent-600 ${
+            puedeEnviar ? 'active:opacity-85' : 'opacity-40'
+          }`}
         >
-          <LinearGradient
-            colors={[PALETA.pethood.naranja, PALETA.pethood.naranjaOscuro]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
-          >
-            <Ionicons name="send" size={21} color={PALETA.blanco} />
-          </LinearGradient>
+          <Ionicons name="send" size={20} color={PALETA.blanco} />
         </Pressable>
       </View>
     </View>

@@ -1,55 +1,43 @@
 /**
- * Una burbuja de la conversación (GUI-14, criterios 3 y 4).
+ * Una burbuja de la conversación (GUI-14, criterios 3 y 4), según los artboards 35 y 37 del
+ * diseño Organic.
  *
- * Propia: a la DERECHA, gradiente naranja, texto blanco, esquina inferior derecha cortada.
- * Recibida: a la IZQUIERDA, fondo blanco, texto oscuro, esquina inferior izquierda cortada
- * y una sombra suave. El diseño da los radios en 15/4 sobre una maqueta de 262px; con el
- * factor de conversión de HU-5.1 quedan en 20/5.
+ * Propia: a la DERECHA, `accent-600` sólido, texto blanco, esquina inferior derecha cortada.
+ * Recibida: a la IZQUIERDA, `neutral-100`, texto oscuro, esquina inferior izquierda cortada
+ * y una sombra suave. El diseño da los radios en `17 15 4 15` sobre una maqueta de 262px;
+ * con el factor ×1,33 quedan en 23 / 20 / 5.
+ *
+ * La foto va SUELTA, fuera de la burbuja (artboard 37): un mensaje de sólo foto no tiene
+ * burbuja, y uno con foto y texto pinta la foto arriba y la burbuja del texto debajo. El
+ * pie "Enviaste una foto · 16:10 ✓✓" sólo existe para la foto propia; la recibida va pelada,
+ * como en el artboard.
  *
  * No sabe de dónde salió el mensaje: recibe un `ItemChat` ya armado, así que un mensaje del
  * historial, uno que llegó por socket y uno que todavía está subiendo se pintan con el
  * mismo componente.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  Text,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { ActivityIndicator, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
+import { FotoMensaje } from '@/components/chat/FotoMensaje';
+import { PieMensaje } from '@/components/chat/PieMensaje';
 import { PALETA } from '@/constants/theme';
 import type { ItemChat } from '@/lib/mensajesChat';
 import { horaVisible } from '@/shared/validation/dates';
 
-const RADIO = 20;
-/** La esquina del lado de quien escribe se corta: es lo que da la "colita" de la burbuja. */
+/** Radios del artboard: 17 y 15 en las esquinas grandes, 4 en la "colita". */
+const RADIO_SUPERIOR = 23;
+const RADIO_INFERIOR = 20;
 const RADIO_COLA = 5;
 
-/**
- * Padding interno de la burbuja (8/11 del artboard, con el factor de HU-5.1).
- *
- * Va como `style` y no como clase porque NativeWind sólo mapea `className` en componentes
- * de React Native, y `LinearGradient` viene de una librería — mismo motivo que documenta
- * `TarjetaAdopcion`. Se comparte con la burbuja recibida para que las dos midan igual.
- */
-const RELLENO = { paddingHorizontal: 14, paddingVertical: 10 };
+/** Padding interno de la burbuja: 8/11 del artboard. */
+const RELLENO = { paddingHorizontal: 15, paddingVertical: 11 };
 
-/** Alto de la foto dentro de la burbuja. */
-const ALTO_IMAGEN = 180;
-
-/**
- * Tope del ancho de la foto. En pantallas anchas la burbuja no tiene por qué crecer hasta
- * el 80%: una foto de chat más grande que esto ya se abre con el visor.
- */
-const ANCHO_MAX_IMAGEN = 260;
-
-/** Fracción de la pantalla que ocupa la burbuja como máximo (el `max-w-[80%]` de abajo). */
-const FRACCION_BURBUJA = 0.8;
-
+/** Foto recibida: 88 de lado en el artboard. */
+const LADO_FOTO_RECIBIDA = 117;
+/** Foto propia: 104 de alto y el 76% del ancho disponible. */
+const ALTO_FOTO_PROPIA = 139;
+const FRACCION_FOTO_PROPIA = 0.76;
 /** El padding horizontal de la lista en la pantalla de conversación. */
 const MARGEN_LISTA = 16 * 2;
 
@@ -62,6 +50,20 @@ const SOMBRA = {
   elevation: 2,
 };
 
+const RADIOS_PROPIA = {
+  borderTopLeftRadius: RADIO_SUPERIOR,
+  borderTopRightRadius: RADIO_INFERIOR,
+  borderBottomRightRadius: RADIO_COLA,
+  borderBottomLeftRadius: RADIO_INFERIOR,
+};
+
+const RADIOS_RECIBIDA = {
+  borderTopLeftRadius: RADIO_SUPERIOR,
+  borderTopRightRadius: RADIO_INFERIOR,
+  borderBottomRightRadius: RADIO_INFERIOR,
+  borderBottomLeftRadius: RADIO_COLA,
+};
+
 interface BurbujaMensajeProps {
   item: ItemChat;
   /** Sólo en las propias que fallaron. */
@@ -71,17 +73,15 @@ interface BurbujaMensajeProps {
   onAbrirImagen?: () => void;
 }
 
-/** Hora del mensaje, o el estado mientras todavía no hay una fecha del servidor. */
+/** Hora del mensaje dentro de la burbuja, o el estado mientras no hay fecha del servidor. */
 function PieBurbuja({ item }: { item: ItemChat }) {
-  const colorTexto = item.esMio ? 'rgba(255,255,255,0.8)' : PALETA.neutral[500];
+  const claseTexto = item.esMio ? 'text-white/80' : 'text-organic-neutral-500';
 
   if (item.estado === 'enviando') {
     return (
       <View className="mt-1 flex-row items-center justify-end gap-1">
-        <ActivityIndicator size="small" color={colorTexto} />
-        <Text style={{ color: colorTexto }} className="text-[11px]">
-          Enviando…
-        </Text>
+        <ActivityIndicator size="small" color={PALETA.blanco} />
+        <Text className={`font-cuerpo text-[11px] ${claseTexto}`}>Enviando…</Text>
       </View>
     );
   }
@@ -90,110 +90,48 @@ function PieBurbuja({ item }: { item: ItemChat }) {
     return (
       <View className="mt-1 flex-row items-center justify-end gap-1">
         <Ionicons name="alert-circle" size={12} color={PALETA.blanco} />
-        <Text className="text-[11px] text-white">No se envió</Text>
+        <Text className="font-cuerpo text-[11px] text-white">No se envió</Text>
+      </View>
+    );
+  }
+
+  // El diseño no lleva tildes dentro de la burbuja: el estado de lectura va en el pie de la
+  // conversación ("Visto"), que pinta la pantalla.
+  return (
+    <Text className={`mt-1 font-cuerpo text-[11px] ${item.esMio ? 'text-right' : 'text-left'} ${claseTexto}`}>
+      {item.fecha ? horaVisible(new Date(item.fecha)) : ''}
+    </Text>
+  );
+}
+
+/** Pie de una foto propia sin texto: reemplaza a la burbuja que ese mensaje no tiene. */
+function PieFotoPropia({ item }: { item: ItemChat }) {
+  if (item.estado === 'enviando') {
+    return (
+      <View className="mt-1 flex-row items-center justify-end gap-1">
+        <ActivityIndicator size="small" color={PALETA.neutral[600]} />
+        <Text className="font-cuerpo text-[11px] text-organic-neutral-600">Enviando…</Text>
+      </View>
+    );
+  }
+
+  if (item.estado === 'error') {
+    return (
+      <View className="mt-1 flex-row items-center justify-end gap-1">
+        <Ionicons name="alert-circle" size={12} color={PALETA.accent[700]} />
+        <Text className="font-cuerpo text-[11px] text-organic-accent-700">No se envió</Text>
       </View>
     );
   }
 
   return (
-    <View
-      className={`mt-1 flex-row items-center gap-1 ${
-        item.esMio ? 'justify-end' : 'justify-start'
-      }`}
-    >
-      <Text style={{ color: colorTexto }} className="text-[11px]">
-        {item.fecha ? horaVisible(new Date(item.fecha)) : ''}
-      </Text>
-
-      {/* Doble check sólo en las propias: el estado de lectura del otro no se muestra. */}
-      {item.esMio ? (
-        <Ionicons
-          name={item.leido ? 'checkmark-done' : 'checkmark'}
-          size={13}
-          color={colorTexto}
-        />
-      ) : null}
-    </View>
-  );
-}
-
-/**
- * Foto del mensaje, con su lugar reservado mientras carga para que la lista no salte.
- *
- * El ancho va EXPLÍCITO y no como `w-full`: la burbuja se ajusta a su contenido (no tiene
- * ancho propio, sólo un máximo), así que un `100%` no tiene contra qué medirse y la foto
- * colapsaba a una franja angosta. Se calcula desde el ancho de la pantalla para que en un
- * celular chico siga entrando dentro del 80% de la burbuja.
- */
-function ImagenMensaje({
-  uri,
-  subiendo,
-  onAbrir,
-}: {
-  uri: string;
-  subiendo: boolean;
-  onAbrir?: () => void;
-}) {
-  const { width: anchoPantalla } = useWindowDimensions();
-
-  const ancho = Math.floor(
-    Math.min(
-      ANCHO_MAX_IMAGEN,
-      (anchoPantalla - MARGEN_LISTA) * FRACCION_BURBUJA - RELLENO.paddingHorizontal * 2,
-    ),
-  );
-
-  return (
-    <Pressable
-      accessibilityRole="imagebutton"
-      accessibilityLabel="Ver la foto en grande"
-      // Mientras sube no se abre: la foto todavía no es la definitiva y ampliarla mostraría
-      // el archivo local, no lo que quedó guardado.
-      onPress={subiendo ? undefined : onAbrir}
-      disabled={subiendo || !onAbrir}
-      style={{ width: ancho, height: ALTO_IMAGEN, borderRadius: RADIO - 6 }}
-      className="mb-1.5 overflow-hidden bg-pethood-beige-dark active:opacity-90"
-    >
-      <Image
-        source={{ uri }}
-        style={{ width: '100%', height: '100%' }}
-        resizeMode="cover"
-        accessibilityLabel="Foto del mensaje"
+    <View className="mt-1">
+      <PieMensaje
+        texto={`Enviaste una foto${item.fecha ? ` · ${horaVisible(new Date(item.fecha))}` : ''}`}
+        leido={item.leido}
+        alineacion="derecha"
       />
-
-      {/* Una foto tarda mucho más que un texto: sin esto la burbuja se vería terminada
-          cuando en realidad todavía está subiendo. */}
-      {subiendo ? (
-        <View className="absolute inset-0 items-center justify-center bg-black/35">
-          <ActivityIndicator color={PALETA.blanco} />
-        </View>
-      ) : null}
-    </Pressable>
-  );
-}
-
-function Contenido({ item, onAbrirImagen }: { item: ItemChat; onAbrirImagen?: () => void }) {
-  return (
-    <>
-      {item.imagen ? (
-        <ImagenMensaje
-          uri={item.imagen}
-          subiendo={item.estado === 'enviando'}
-          onAbrir={onAbrirImagen}
-        />
-      ) : null}
-
-      {/* Un mensaje puede ser sólo foto: ahí `contenido` viene vacío y no se pinta el texto. */}
-      {item.contenido ? (
-        <Text
-          className={`text-sm leading-5 ${item.esMio ? 'text-white' : 'text-organic-neutral-900'}`}
-        >
-          {item.contenido}
-        </Text>
-      ) : null}
-
-      <PieBurbuja item={item} />
-    </>
+    </View>
   );
 }
 
@@ -203,54 +141,68 @@ export function BurbujaMensaje({
   onDescartar,
   onAbrirImagen,
 }: BurbujaMensajeProps) {
-  const radios = item.esMio
-    ? {
-        borderTopLeftRadius: RADIO,
-        borderTopRightRadius: RADIO,
-        borderBottomRightRadius: RADIO_COLA,
-        borderBottomLeftRadius: RADIO,
-      }
-    : {
-        borderTopLeftRadius: RADIO,
-        borderTopRightRadius: RADIO,
-        borderBottomRightRadius: RADIO,
-        borderBottomLeftRadius: RADIO_COLA,
-      };
+  const { width: anchoPantalla } = useWindowDimensions();
+
+  const propia = item.esMio;
+  const soloFoto = Boolean(item.imagen) && !item.contenido;
+  const anchoFotoPropia = Math.floor((anchoPantalla - MARGEN_LISTA) * FRACCION_FOTO_PROPIA);
 
   return (
-    <View className={`w-full ${item.esMio ? 'items-end' : 'items-start'}`}>
-      <View className="max-w-[80%]">
-        {item.esMio ? (
-          <LinearGradient
-            // El artboard lo da como `linear-gradient(135deg, …)`: en un cuadrado, 135°
-            // equivale a la diagonal de arriba-izquierda a abajo-derecha.
-            colors={[PALETA.pethood.naranja, PALETA.pethood.naranjaOscuro]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ ...radios, ...RELLENO }}
+    <View className={`w-full ${propia ? 'items-end' : 'items-start'}`}>
+      {item.imagen ? (
+        <FotoMensaje
+          uri={item.imagen}
+          ancho={propia ? anchoFotoPropia : LADO_FOTO_RECIBIDA}
+          alto={propia ? ALTO_FOTO_PROPIA : LADO_FOTO_RECIBIDA}
+          subiendo={item.estado === 'enviando'}
+          onAbrir={onAbrirImagen}
+        />
+      ) : null}
+
+      {/* Un mensaje de sólo foto no tiene burbuja: la foto propia lleva su pie debajo y la
+          recibida va pelada, como en el artboard 37. */}
+      {soloFoto ? (
+        propia ? (
+          <View style={{ width: anchoFotoPropia }}>
+            <PieFotoPropia item={item} />
+          </View>
+        ) : null
+      ) : (
+        <View
+          style={{
+            ...(propia ? RADIOS_PROPIA : RADIOS_RECIBIDA),
+            ...RELLENO,
+            ...(propia ? null : SOMBRA),
+          }}
+          className={`max-w-[80%] ${item.imagen ? 'mt-[5px]' : ''} ${
+            propia ? 'bg-organic-accent-600' : 'bg-organic-neutral-100'
+          }`}
+        >
+          <Text
+            className={`font-cuerpo text-[14px] leading-[19px] ${
+              propia ? 'text-white' : 'text-organic-neutral-900'
+            }`}
           >
-            <Contenido item={item} onAbrirImagen={onAbrirImagen} />
-          </LinearGradient>
-        ) : (
-          <View style={{ ...radios, ...RELLENO, ...SOMBRA }} className="bg-white">
-            <Contenido item={item} onAbrirImagen={onAbrirImagen} />
-          </View>
-        )}
+            {item.contenido}
+          </Text>
 
-        {/* El error no se traga el mensaje: el texto sigue en la burbuja y se puede
-            reintentar sin volver a escribirlo. */}
-        {item.estado === 'error' ? (
-          <View className="mt-1 flex-row justify-end gap-3">
-            <Pressable accessibilityRole="button" onPress={onReintentar} hitSlop={8}>
-              <Text className="text-xs font-semibold text-pethood-orange">Reintentar</Text>
-            </Pressable>
+          <PieBurbuja item={item} />
+        </View>
+      )}
 
-            <Pressable accessibilityRole="button" onPress={onDescartar} hitSlop={8}>
-              <Text className="text-xs text-organic-neutral-500">Descartar</Text>
-            </Pressable>
-          </View>
-        ) : null}
-      </View>
+      {/* El error no se traga el mensaje: el texto sigue en la burbuja y se puede reintentar
+          sin volver a escribirlo. */}
+      {item.estado === 'error' ? (
+        <View className="mt-1 flex-row justify-end gap-3">
+          <Pressable accessibilityRole="button" onPress={onReintentar} hitSlop={8}>
+            <Text className="font-cuerpo-semi text-[12px] text-organic-accent-600">Reintentar</Text>
+          </Pressable>
+
+          <Pressable accessibilityRole="button" onPress={onDescartar} hitSlop={8}>
+            <Text className="font-cuerpo text-[12px] text-organic-neutral-500">Descartar</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }

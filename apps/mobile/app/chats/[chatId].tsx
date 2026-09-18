@@ -7,10 +7,16 @@
  * que no pasan por el listado.
  *
  * El estado de los mensajes vive en `useSalaChat`; acá sólo se pinta.
+ *
+ * Estilo del artboard 35 del diseño Organic (con las fotos del 37), sobre una maqueta de
+ * 262px con el factor ×1,33: la lista con 12 → 16 de padding y 8 → 11 entre mensajes, el
+ * chip de día centrado, y al pie de la conversación el "Visto" con doble tilde cuando el
+ * otro ya leyó lo último que mandamos. La hora de lectura del artboard ("Visto 10:39") no
+ * viaja en el contrato, así que va sin hora.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Text, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,13 +24,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarraEscritura } from '@/components/chat/BarraEscritura';
 import { BurbujaMensaje } from '@/components/chat/BurbujaMensaje';
 import { CabeceraConversacion } from '@/components/chat/CabeceraConversacion';
+import { PieMensaje } from '@/components/chat/PieMensaje';
 import { VisorImagen } from '@/components/chat/VisorImagen';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
+import { SeparadorFecha } from '@/components/ui/SeparadorFecha';
 import { PALETA } from '@/constants/theme';
 import { useSalaChat } from '@/hooks/useSalaChat';
 import { useSesion } from '@/hooks/useSesion';
 import { abrirSelectorImagen, validarAssetImagen } from '@/lib/elegirImagen';
-import type { ItemChat } from '@/lib/mensajesChat';
+import { intercalarSeparadores, type FilaSala } from '@/lib/mensajesChat';
 import type { ArchivoAdjunto } from '@/services/api';
 
 const EXTENSION_POR_TIPO: Record<string, string> = {
@@ -120,15 +128,37 @@ export default function ConversacionScreen() {
     [sala, foto],
   );
 
+  /**
+   * Los mensajes más los chips de día. Se recalcula sólo cuando cambia la lista: el día de
+   * cada mensaje no cambia, y el "Hoy" pasa a "Ayer" recién con el próximo mensaje o al
+   * reabrir la pantalla, que alcanza.
+   */
+  const filas = useMemo(() => intercalarSeparadores(sala.items, new Date()), [sala.items]);
+
+  /**
+   * "Visto" al pie de la conversación (artboard 35): el otro ya leyó lo último que mandamos.
+   * Sale del `leido` del mensaje propio más reciente ya confirmado.
+   */
+  const ultimoPropioLeido = useMemo(
+    () => sala.items.find((item) => item.esMio && item.estado === 'enviado')?.leido ?? false,
+    [sala.items],
+  );
+
   const renderItem = useCallback(
-    ({ item }: { item: ItemChat }) => (
-      <View className="mb-3">
-        <BurbujaMensaje
-          item={item}
-          onReintentar={() => sala.reintentar(item.clave)}
-          onDescartar={() => sala.descartar(item.clave)}
-          onAbrirImagen={item.imagen ? () => setImagenAmpliada(item.imagen) : undefined}
-        />
+    ({ item: fila }: { item: FilaSala }) => (
+      <View className="mb-[11px]">
+        {fila.tipo === 'separador' ? (
+          <SeparadorFecha etiqueta={fila.etiqueta} />
+        ) : (
+          <BurbujaMensaje
+            item={fila.item}
+            onReintentar={() => sala.reintentar(fila.item.clave)}
+            onDescartar={() => sala.descartar(fila.item.clave)}
+            onAbrirImagen={
+              fila.item.imagen ? () => setImagenAmpliada(fila.item.imagen) : undefined
+            }
+          />
+        )}
       </View>
     ),
     [sala],
@@ -140,7 +170,7 @@ export default function ConversacionScreen() {
   }, [router]);
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
         <CabeceraConversacion
           contacto={sala.cabecera?.contacto ?? null}
@@ -158,8 +188,8 @@ export default function ConversacionScreen() {
             <EstadoError mensaje={sala.error} onAccion={sala.recargar} />
           ) : (
             <FlatList
-              data={sala.items}
-              keyExtractor={(item) => item.clave}
+              data={filas}
+              keyExtractor={(fila) => fila.clave}
               renderItem={renderItem}
               // La lista va invertida: el scroll arranca abajo sin trucos y el backend ya
               // devuelve los mensajes del más reciente al más viejo, así que no hay que
@@ -168,7 +198,15 @@ export default function ConversacionScreen() {
               contentContainerStyle={
                 sala.items.length === 0
                   ? { flexGrow: 1 }
-                  : { paddingHorizontal: 16, paddingVertical: 14 }
+                  : { paddingHorizontal: 16, paddingVertical: 16 }
+              }
+              // Invertida, el "header" queda al FONDO: es el lugar del "Visto" del diseño.
+              ListHeaderComponent={
+                ultimoPropioLeido ? (
+                  <View className="mb-[11px]">
+                    <PieMensaje texto="Visto" leido alineacion="centro" />
+                  </View>
+                ) : null
               }
               // Con la lista invertida, el "final" de los datos es el mensaje más viejo:
               // o sea, el tope visual. Paginar acá es cargar hacia atrás en el tiempo.
@@ -177,7 +215,7 @@ export default function ConversacionScreen() {
               ListFooterComponent={
                 sala.cargandoMas ? (
                   <View className="py-3">
-                    <ActivityIndicator color={PALETA.pethood.naranja} />
+                    <ActivityIndicator color={PALETA.accent[600]} />
                   </View>
                 ) : null
               }
@@ -204,9 +242,9 @@ export default function ConversacionScreen() {
           />
 
           {sala.puedeEscribir ? null : (
-            <View className="flex-row items-center justify-center gap-1.5 bg-white px-4 pb-2">
-              <Ionicons name="information-circle-outline" size={13} color={PALETA.neutral[500]} />
-              <Text className="text-xs text-organic-neutral-500">
+            <View className="flex-row items-center justify-center gap-1.5 bg-organic-neutral-100 px-4 pb-2">
+              <Ionicons name="information-circle-outline" size={13} color={PALETA.neutral[600]} />
+              <Text className="font-cuerpo text-[12px] text-organic-neutral-600">
                 Esta cuenta fue dada de baja. Podés leer la conversación, pero no responder.
               </Text>
             </View>

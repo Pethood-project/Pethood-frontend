@@ -18,6 +18,7 @@
 import type { ArchivoAdjunto } from '@/services/api';
 import { urlAbsoluta } from '@/services/api';
 import type { Mensaje } from '@/services/chats';
+import { etiquetaDia, inicioDelDia } from '@/shared/validation/dates';
 
 /** Un mensaje que el usuario mandó y todavía no confirmó el servidor. */
 export interface MensajePendiente {
@@ -159,4 +160,46 @@ export function aItems(
   }));
 
   return [...enVuelo, ...enviados];
+}
+
+// ─── Separadores de día (artboards 35 y 37) ───
+
+/** Una fila de la lista de la sala: un mensaje o el chip que abre una jornada. */
+export type FilaSala =
+  | { tipo: 'mensaje'; clave: string; item: ItemChat }
+  | { tipo: 'separador'; clave: string; etiqueta: string };
+
+/** Día calendario de un ítem. Un pendiente no tiene fecha del servidor: cuenta como de hoy. */
+function diaDe(item: ItemChat, ahora: Date): number {
+  return inicioDelDia(item.fecha ? new Date(item.fecha) : ahora).getTime();
+}
+
+/**
+ * Intercala el chip de día ("Hoy", "Ayer", fecha) entre los mensajes.
+ *
+ * La lista está en orden DESCENDENTE para la `FlatList inverted`, así que el separador de
+ * una jornada va DESPUÉS de su mensaje más viejo en el array: en pantalla queda arriba del
+ * primer mensaje de ese día, que es donde lo pone el diseño.
+ *
+ * Es presentación pura: no toca los mensajes ni su orden, sólo agrega filas.
+ */
+export function intercalarSeparadores(items: ItemChat[], ahora: Date): FilaSala[] {
+  const filas: FilaSala[] = [];
+
+  items.forEach((item, indice) => {
+    filas.push({ tipo: 'mensaje', clave: item.clave, item });
+
+    const dia = diaDe(item, ahora);
+    const siguiente = items[indice + 1];
+
+    if (!siguiente || diaDe(siguiente, ahora) !== dia) {
+      filas.push({
+        tipo: 'separador',
+        clave: `dia-${dia}`,
+        etiqueta: etiquetaDia(new Date(dia), ahora),
+      });
+    }
+  });
+
+  return filas;
 }

@@ -13,7 +13,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View, Pressable } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
@@ -22,6 +22,7 @@ import { useToast } from '@/components/feedback/Toast';
 import { NOMBRE_TIPO } from '@/components/seguimiento/etiquetas';
 import { FilaPedidoSeguimiento } from '@/components/seguimiento/FilaPedidoSeguimiento';
 import { FotoMascota } from '@/components/ui/FotoMascota';
+import { PressableAnimado } from '@/components/ui/PressableAnimado';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
 import {
@@ -59,16 +60,24 @@ function motivoSinPedido(detalle: DetalleSeguimiento, ahora: Date): string {
  */
 function PastillaEstado({ pedidos }: { pedidos: PedidoSeguimiento[] }) {
   const { etiqueta, fondo, texto } = pedidos.some((pedido) => pedido.estado === 'PENDIENTE')
-    ? { etiqueta: 'Pendiente', fondo: 'bg-amber-50', texto: 'text-amber-700' }
+    ? { etiqueta: 'Pendiente', fondo: 'bg-organic-accent-100', texto: 'text-organic-accent-700' }
     : pedidos.some((pedido) => pedido.estado === 'VENCIDO')
-      ? { etiqueta: 'Con faltantes', fondo: 'bg-gray-100', texto: 'text-gray-600' }
+      ? {
+          etiqueta: 'Con faltantes',
+          fondo: 'bg-organic-neutral-200',
+          texto: 'text-organic-neutral-600',
+        }
       : pedidos.length > 0
-        ? { etiqueta: 'Al día', fondo: 'bg-emerald-50', texto: 'text-emerald-700' }
-        : { etiqueta: 'Sin pedidos', fondo: 'bg-gray-100', texto: 'text-gray-600' };
+        ? { etiqueta: 'Al día', fondo: 'bg-organic-accent-200', texto: 'text-organic-accent-700' }
+        : {
+            etiqueta: 'Sin pedidos',
+            fondo: 'bg-organic-neutral-200',
+            texto: 'text-organic-neutral-600',
+          };
 
   return (
-    <View className={`flex-none rounded-full px-2.5 py-1 ${fondo}`}>
-      <Text className={`text-[10px] font-semibold ${texto}`}>{etiqueta}</Text>
+    <View className={`flex-none rounded-full px-3 py-1.5 ${fondo}`}>
+      <Text className={`font-cuerpo-semi text-xs ${texto}`}>{etiqueta}</Text>
     </View>
   );
 }
@@ -121,23 +130,25 @@ export default function SeguimientoSolicitudScreen() {
   const esAdoptante = detalle?.rol === 'ADOPTANTE';
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-4 py-3">
-          <Pressable
+        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-4 py-4">
+          <PressableAnimado
             accessibilityRole="button"
             accessibilityLabel="Volver"
             onPress={() => router.back()}
             hitSlop={8}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-80"
+            className="h-12 w-12 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100"
           >
-            <Ionicons name="chevron-back" size={20} color={PALETA.gris[600]} />
-          </Pressable>
+            <Ionicons name="arrow-back" size={22} color={PALETA.neutral[700]} />
+          </PressableAnimado>
 
           <View className="flex-1">
-            <Text className="text-2xl font-bold text-pethood-orange">Seguimiento</Text>
+            <Text className="font-titulo text-[26px] leading-8 text-organic-accent-600">
+              Seguimiento
+            </Text>
             {detalle ? (
-              <Text className="text-sm text-gray-500" numberOfLines={1}>
+              <Text className="font-cuerpo text-sm text-organic-neutral-600" numberOfLines={1}>
                 {nombreMascota} · {NOMBRE_TIPO[detalle.tipo]}
               </Text>
             ) : null}
@@ -171,25 +182,25 @@ export default function SeguimientoSolicitudScreen() {
                     setRefrescando(true);
                     void cargar();
                   }}
-                  tintColor={PALETA.pethood.naranja}
-                  colors={[PALETA.pethood.naranja]}
+                  tintColor={PALETA.accent[600]}
+                  colors={[PALETA.accent[600]]}
                 />
               }
             >
-              <View className="mb-5 flex-row items-center gap-3 rounded-2xl bg-white p-3 shadow-sm">
+              <View className="mb-6 flex-row items-center gap-3.5 rounded-[22px] bg-organic-neutral-100 p-4 shadow-sm">
                 <View className="flex-none">
                   <FotoMascota
                     uri={urlAbsoluta(detalle.mascota.imagenUrl)}
-                    tamanio={48}
+                    tamanio={58}
                     accessibilityLabel={`Foto de ${nombreMascota}`}
                   />
                 </View>
 
                 <View className="min-w-0 flex-1">
-                  <Text className="text-base font-bold text-gray-900" numberOfLines={1}>
+                  <Text className="font-titulo text-xl text-organic-neutral-900" numberOfLines={1}>
                     {nombreMascota}
                   </Text>
-                  <Text className="mt-0.5 text-sm text-gray-500" numberOfLines={1}>
+                  <Text className="mt-0.5 font-cuerpo text-sm text-organic-neutral-600" numberOfLines={1}>
                     {esAdoptante
                       ? 'Está a tu cuidado'
                       : `A cargo de ${detalle.adoptante.nombre} ${detalle.adoptante.apellido}`}
@@ -202,18 +213,18 @@ export default function SeguimientoSolicitudScreen() {
               {detalle.seguimientos.length === 0 ? (
                 // Estado vacío en línea y no `EstadoVacio`: la cabecera con la mascota tiene
                 // que seguir visible, así que no puede ocupar la pantalla entera.
-                <View className="items-center rounded-2xl bg-organic-surface px-6 py-10">
-                  <Ionicons name="calendar-outline" size={34} color={PALETA.gris[400]} />
-                  <Text className="mt-3 text-center text-base font-bold text-gray-900">
+                <View className="items-center rounded-[22px] bg-organic-surface px-6 py-12">
+                  <Ionicons name="calendar-outline" size={42} color={PALETA.neutral[400]} />
+                  <Text className="mt-4 text-center font-cuerpo-bold text-lg text-organic-neutral-900">
                     Todavía no hay preguntas
                   </Text>
-                  <Text className="mt-1.5 text-center text-sm leading-5 text-gray-500">
+                  <Text className="mt-2 text-center font-cuerpo text-base leading-6 text-organic-neutral-600">
                     {motivoSinPedido(detalle, ahora)}
                   </Text>
                 </View>
               ) : (
                 <>
-                  <Text className="mb-3 text-base font-bold text-gray-900">
+                  <Text className="mb-4 font-cuerpo-bold text-lg text-organic-neutral-800">
                     Hitos del seguimiento
                   </Text>
                   {/* El backend los manda del más nuevo al más viejo; acá se invierten sólo
@@ -245,9 +256,10 @@ export default function SeguimientoSolicitudScreen() {
                 clase que se monta y desmonta disparan el bug de NativeWind descrito en
                 `FilaPedidoSeguimiento`. */}
             {esAdoptante ? (
-              <View className="border-t border-gray-100 bg-white px-4 pb-4 pt-3">
+              <View className="border-t border-organic-neutral-200 bg-organic-neutral-100 px-4 pb-5 pt-4">
                 <CustomButton
                   title="Subir actualización"
+                  variant="acento"
                   disabled={!detalle.puedeSubirActualizacion}
                   onPress={() =>
                     router.push({

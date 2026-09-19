@@ -9,8 +9,9 @@
  * palabras, para que se entienda igual sin distinguir los tonos.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 
+import { PressableAnimado } from '@/components/ui/PressableAnimado';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
 import type { EstadoSeguimiento, PedidoSeguimiento } from '@/services/seguimiento';
@@ -19,7 +20,7 @@ import { aFechaVisible, parsearFecha, tiempoHasta } from '@/shared/validation/da
 type NombreIcono = keyof typeof Ionicons.glyphMap;
 
 /** Lado del círculo del hito. La línea que los une se centra con este valor. */
-const CIRCULO = 26;
+const CIRCULO = 32;
 
 /**
  * La sombra de la tarjeta completada va por `style` y no como `shadow-sm`.
@@ -56,25 +57,28 @@ const ESTILOS: Record<EstadoSeguimiento, EstiloEstado> = {
   COMPLETADO: {
     icono: 'checkmark',
     colorIcono: PALETA.blanco,
-    circulo: 'bg-pethood-orange',
-    tarjeta: 'bg-white',
+    circulo: 'bg-organic-accent-600',
+    tarjeta: 'bg-organic-neutral-100',
     sombra: SOMBRA_TARJETA,
     etiqueta: 'Completado',
   },
   VENCIDO: {
     icono: 'close',
-    colorIcono: PALETA.grisCalido[400],
-    circulo: 'border-2 border-pethood-beige-dark bg-gray-100',
-    tarjeta: 'border border-gray-200 bg-organic-surface',
+    colorIcono: PALETA.neutral[500],
+    circulo: 'border-2 border-organic-neutral-300 bg-organic-neutral-200',
+    tarjeta: 'border border-organic-neutral-200 bg-organic-surface',
     sombra: null,
     etiqueta: 'No completado',
   },
   PENDIENTE: {
     icono: 'time-outline',
-    colorIcono: PALETA.pethood.naranjaIntensa,
-    circulo: 'border-2 border-pethood-orange bg-white',
+    colorIcono: PALETA.accent[700],
+    // A diferencia de VENCIDO (neutro/inerte), este estado pide una acción ahora: sigue
+    // tintado con el acento de marca para que se distinga por color Y forma (spec 011 §3),
+    // no sólo por el ícono.
+    circulo: 'border-2 border-organic-accent-600 bg-organic-neutral-100',
     // Punteado: en el diseño es la marca de "esto todavía no está".
-    tarjeta: 'border border-dashed border-pethood-orange bg-pethood-beige-dark',
+    tarjeta: 'border border-dashed border-organic-accent-600 bg-organic-accent-100',
     sombra: null,
     etiqueta: 'Esperando tu respuesta',
   },
@@ -130,42 +134,47 @@ export function FilaPedidoSeguimiento({
   const foto = urlAbsoluta(pedido.fotoUrl);
 
   return (
-    <View className="flex-row gap-3">
+    <View className="flex-row gap-3.5">
       <View className="items-center">
         <View
           className={`items-center justify-center rounded-full ${estilo.circulo}`}
           style={{ width: CIRCULO, height: CIRCULO }}
         >
-          <Ionicons name={estilo.icono} size={14} color={estilo.colorIcono} />
+          <Ionicons name={estilo.icono} size={18} color={estilo.colorIcono} />
         </View>
 
         {/* La línea encadena este hito con el siguiente; se estira con el alto de la fila. */}
-        {esUltimo ? null : <View className="my-1 w-0.5 flex-1 bg-pethood-beige-dark" />}
+        {esUltimo ? null : <View className="my-1 w-1 flex-1 rounded-full bg-organic-accent-600" />}
       </View>
 
-      {/* Tres nodos y no uno solo, a propósito: el `active:opacity-80` del Pressable y la
-          sombra tienen que quedar FUERA de la clase que se alterna con el estado del pedido.
-          Ver `SOMBRA_TARJETA` — mezclarlos ahí es lo que dispara el bug de NativeWind. */}
-      <View className="mb-3 flex-1">
-        <Pressable
+      {/* Tres nodos y no uno solo, a propósito: la animación de presión y la sombra tienen que
+          quedar FUERA de la clase que se alterna con el estado del pedido. Ver `SOMBRA_TARJETA`
+          — mezclarlas ahí es lo que dispara el bug de NativeWind (nativewind#1557). */}
+      <View className="mb-4 flex-1">
+        <PressableAnimado
           accessibilityRole="button"
           accessibilityLabel={`Ver la actualización ${pedido.numero}: ${pedido.pregunta}`}
           onPress={onPress}
           disabled={!onPress}
-          className={onPress ? 'active:opacity-80' : ''}
+          escala={0.97}
         >
           <View
-            className={`rounded-2xl p-3 ${estilo.tarjeta}`}
+            className={`rounded-[20px] p-4 ${estilo.tarjeta}`}
             style={estilo.sombra ?? undefined}
           >
-            <Text className="text-base font-bold leading-6 text-gray-900">{pedido.pregunta}</Text>
+            <Text className="font-cuerpo-bold text-lg leading-7 text-organic-neutral-900">
+              {pedido.pregunta}
+            </Text>
 
-            <Text className="mt-1 text-sm text-gray-500">
+            <Text className="mt-1.5 font-cuerpo text-base text-organic-neutral-600">
               {[contexto, estilo.etiqueta].filter(Boolean).join(' · ')}
             </Text>
 
             {pedido.descripcion ? (
-              <Text className="mt-2 text-base leading-6 text-gray-700" numberOfLines={3}>
+              <Text
+                className="mt-2.5 font-cuerpo text-base leading-6 text-organic-neutral-700"
+                numberOfLines={3}
+              >
                 {pedido.descripcion}
               </Text>
             ) : null}
@@ -173,12 +182,12 @@ export function FilaPedidoSeguimiento({
             {foto ? (
               <Image
                 source={{ uri: foto }}
-                className="mt-2.5 h-40 w-full rounded-xl bg-pethood-beige-dark"
+                className="mt-3 h-48 w-full rounded-2xl bg-organic-neutral-200"
                 accessibilityLabel={`Foto de prueba del seguimiento ${pedido.numero}`}
               />
             ) : null}
           </View>
-        </Pressable>
+        </PressableAnimado>
       </View>
     </View>
   );

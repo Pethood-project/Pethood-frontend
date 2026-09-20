@@ -11,6 +11,8 @@ import { ActivityIndicator, Alert, Image, Pressable, Text, View } from 'react-na
 import { LIMITES } from '@/shared/validation/limits';
 import { useState } from 'react';
 
+import { EditorFotoModal } from './EditorFotoModal';
+
 export interface DocumentoElegido {
   uri: string;
   nombre: string;
@@ -58,6 +60,8 @@ export function DocumentField({
   error,
 }: DocumentFieldProps) {
   const [cargando, setCargando] = useState(false);
+  /** Imagen recién elegida, en revisión en el editor de recorte/rotación antes de confirmarse. */
+  const [pendiente, setPendiente] = useState<{ uri: string; tipo: string } | null>(null);
 
   const abrirGaleria = async (): Promise<void> => {
     setCargando(true);
@@ -77,12 +81,8 @@ export function DocumentField({
         return;
       }
 
-      onChange({
-        uri: asset.uri,
-        nombre: `comprobante.${EXTENSION_POR_TIPO[tipo] ?? 'jpg'}`,
-        tipo,
-        esImagen: true,
-      });
+      // No se confirma todavía: primero pasa por el editor, donde se puede recortar y girar.
+      setPendiente({ uri: asset.uri, tipo });
     } finally {
       setCargando(false);
     }
@@ -112,12 +112,7 @@ export function DocumentField({
         return;
       }
 
-      onChange({
-        uri: asset.uri,
-        nombre: `comprobante.${EXTENSION_POR_TIPO[tipo] ?? 'jpg'}`,
-        tipo,
-        esImagen: true,
-      });
+      setPendiente({ uri: asset.uri, tipo });
     } finally {
       setCargando(false);
     }
@@ -141,12 +136,18 @@ export function DocumentField({
         return;
       }
 
-      onChange({
-        uri: asset.uri,
-        nombre: asset.name || `comprobante.${EXTENSION_POR_TIPO[tipo] ?? 'pdf'}`,
-        tipo,
-        esImagen: tipo !== 'application/pdf',
-      });
+      // El pdf no pasa por el editor: recortar/rotar sólo tiene sentido para una imagen.
+      if (tipo === 'application/pdf') {
+        onChange({
+          uri: asset.uri,
+          nombre: asset.name || `comprobante.${EXTENSION_POR_TIPO[tipo] ?? 'pdf'}`,
+          tipo,
+          esImagen: false,
+        });
+        return;
+      }
+
+      setPendiente({ uri: asset.uri, tipo });
     } finally {
       setCargando(false);
     }
@@ -216,6 +217,27 @@ export function DocumentField({
       </Pressable>
 
       {error ? <Text className="mt-1 text-xs text-red-500">{error}</Text> : null}
+
+      <EditorFotoModal
+        visible={pendiente !== null}
+        uri={pendiente?.uri ?? ''}
+        onCancelar={() => setPendiente(null)}
+        onConfirmar={(resultado) => {
+          // Si el editor no tocó nada (sin girar ni recortar) devuelve la misma uri de
+          // entrada y conserva el formato original; si reescribió el archivo, siempre
+          // sale como jpeg.
+          const seReescribio = resultado.uri !== pendiente!.uri;
+          const tipoFinal = seReescribio ? 'image/jpeg' : pendiente!.tipo;
+
+          onChange({
+            uri: resultado.uri,
+            nombre: `comprobante.${EXTENSION_POR_TIPO[tipoFinal] ?? 'jpg'}`,
+            tipo: tipoFinal,
+            esImagen: true,
+          });
+          setPendiente(null);
+        }}
+      />
     </View>
   );
 }

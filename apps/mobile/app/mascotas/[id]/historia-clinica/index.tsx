@@ -5,12 +5,14 @@
  * alta (HU-8.1, botón flotante) y al detalle de cada registro (HU-8.3).
  */
 import { Ionicons } from '@expo/vector-icons';
-import { Link, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
+import { PressableAnimado } from '@/components/ui/PressableAnimado';
+import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
 import { obtenerMiMascota, type Mascota } from '@/services/mascotas';
 import { listarHistorial, type HistoriaClinica } from '@/services/historia-clinica';
@@ -26,51 +28,56 @@ function TarjetaRegistro({
   const fecha = parsearFecha(registro.fechaVisita);
 
   return (
-    <Pressable
+    <PressableAnimado
       accessibilityRole="button"
       accessibilityLabel={`Ver registro ${registro.titulo}`}
       onPress={onPress}
-      className="mb-3 flex-row overflow-hidden rounded-2xl bg-white shadow-sm active:opacity-80"
+      escala={0.97}
+      className="mb-3.5 flex-row overflow-hidden rounded-[22px] bg-organic-neutral-100 shadow-sm"
     >
       <View
-        className={`w-11 items-center justify-center ${
-          registro.documentoUrl ? 'bg-pethood-orange' : 'bg-gray-100'
+        className={`w-14 items-center justify-center ${
+          registro.documentoUrl ? 'bg-organic-accent-600' : 'bg-organic-neutral-200'
         }`}
       >
         <Ionicons
           name={registro.documentoUrl ? 'document-text' : 'medical-outline'}
-          size={18}
-          color={registro.documentoUrl ? '#FFFFFF' : '#9CA3AF'}
+          size={24}
+          color={registro.documentoUrl ? PALETA.blanco : PALETA.neutral[400]}
         />
       </View>
 
-      <View className="flex-1 justify-center px-3 py-2.5">
-        <Text className="text-sm font-bold text-gray-900">{registro.titulo}</Text>
-        <Text className="mt-0.5 text-xs text-gray-500">
+      <View className="flex-1 justify-center px-4 py-3.5">
+        <Text className="font-cuerpo-bold text-base text-organic-neutral-900">
+          {registro.titulo}
+        </Text>
+        <Text className="mt-1 font-cuerpo text-sm text-organic-neutral-600">
           Fecha visita: {fecha ? aFechaVisible(fecha) : '—'}
         </Text>
 
-        <View className="mt-1.5 flex-row items-center gap-3">
+        <View className="mt-2 flex-row items-center gap-3">
           {registro.requiereRevision ? (
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="checkmark-circle" size={13} color="#3f7a43" />
-              <Text className="text-[11px] font-medium text-emerald-700">Requiere revisión</Text>
+            <View className="flex-row items-center gap-1.5">
+              <Ionicons name="checkmark-circle" size={17} color={PALETA.accent[700]} />
+              <Text className="font-cuerpo-semi text-xs text-organic-accent-700">
+                Requiere revisión
+              </Text>
             </View>
           ) : null}
 
           {registro.vacunacion ? (
-            <View className="flex-row items-center gap-1">
-              <Ionicons name="shield-checkmark-outline" size={13} color="#FF9D5C" />
-              <Text className="text-[11px] font-medium text-pethood-orange">Vacuna</Text>
+            <View className="flex-row items-center gap-1.5">
+              <Ionicons name="shield-checkmark-outline" size={17} color={PALETA.accent[600]} />
+              <Text className="font-cuerpo-semi text-xs text-organic-accent-600">Vacuna</Text>
             </View>
           ) : null}
         </View>
       </View>
 
-      <View className="items-center justify-center pr-3">
-        <Ionicons name="chevron-forward" size={18} color="#C3B69E" />
+      <View className="items-center justify-center pr-4">
+        <Ionicons name="chevron-forward" size={22} color={PALETA.neutral[400]} />
       </View>
-    </Pressable>
+    </PressableAnimado>
   );
 }
 
@@ -120,23 +127,25 @@ export default function HistoriaClinicaScreen() {
   );
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 border-b border-gray-100 bg-white/70 px-4 py-3">
-          <Pressable
+        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-4 py-4">
+          <PressableAnimado
             accessibilityRole="button"
             accessibilityLabel="Volver"
             onPress={() => router.back()}
             hitSlop={8}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-80"
+            className="h-12 w-12 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100"
           >
-            <Ionicons name="chevron-back" size={20} color="#4B5563" />
-          </Pressable>
+            <Ionicons name="arrow-back" size={22} color={PALETA.neutral[700]} />
+          </PressableAnimado>
 
           <View className="flex-1">
-            <Text className="text-xl font-bold text-pethood-orange">Historia Clínica</Text>
+            <Text className="font-titulo text-[26px] leading-8 text-organic-accent-600">
+              Historia Clínica
+            </Text>
             {mascota ? (
-              <Text className="text-xs text-gray-500">
+              <Text className="font-cuerpo text-sm text-organic-neutral-600">
                 {[mascota.nombre, mascota.especie.nombre].filter(Boolean).join(' · ')}
               </Text>
             ) : null}
@@ -179,18 +188,27 @@ export default function HistoriaClinicaScreen() {
           />
         )}
 
-        <Link
-          href={{ pathname: '/mascotas/[id]/historia-clinica/nuevo', params: { id: mascotaId } }}
-          asChild
+        <PressableAnimado
+          accessibilityRole="button"
+          accessibilityLabel="Registrar historia clínica"
+          onPress={() =>
+            router.push({
+              pathname: '/mascotas/[id]/historia-clinica/nuevo',
+              params: { id: mascotaId },
+            })
+          }
+          escala={0.92}
+          className="absolute bottom-6 right-6 h-[72px] w-[72px] items-center justify-center rounded-full bg-organic-accent-600 shadow-lg"
+          style={{
+            shadowColor: PALETA.accent[800],
+            shadowOpacity: 0.35,
+            shadowRadius: 12,
+            shadowOffset: { width: 0, height: 6 },
+            elevation: 8,
+          }}
         >
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Registrar historia clínica"
-            className="absolute bottom-6 right-6 h-16 w-16 items-center justify-center rounded-full bg-pethood-orange shadow-lg active:opacity-90"
-          >
-            <Ionicons name="add" size={32} color="#FFFFFF" />
-          </Pressable>
-        </Link>
+          <Ionicons name="add" size={38} color={PALETA.blanco} />
+        </PressableAnimado>
       </SafeAreaView>
     </View>
   );

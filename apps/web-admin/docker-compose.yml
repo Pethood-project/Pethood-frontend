@@ -1,0 +1,12 @@
+services:
+  web-admin:
+    build:
+      context: .
+      args:
+        # build-time: Next hornea NEXT_PUBLIC_* en el bundle del cliente, no sirve pasarlo en runtime.
+        # toma el valor de un .env en este mismo directorio (compose lo autolee), o el default de abajo.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001/api/v1}
+    container_name: pethood-web-admin
+    restart: unless-stopped
+    ports:
+      - '3000:3000'

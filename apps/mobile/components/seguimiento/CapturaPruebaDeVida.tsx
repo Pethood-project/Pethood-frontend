@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { Image, Platform, Pressable, Text, View } from 'react-native';
 
 import { FormField } from '@/components/ui/FormField';
+import { FotoPreviewModal } from '@/components/ui/FotoPreviewModal';
 import { PALETA } from '@/constants/theme';
 import { validarAssetImagen } from '@/lib/elegirImagen';
 
@@ -58,6 +59,8 @@ export function CapturaPruebaDeVida({
 }: CapturaPruebaDeVidaProps) {
   /** Aviso propio del componente (permisos, archivo rechazado), distinto del error del form. */
   const [aviso, setAviso] = useState<string | null>(null);
+  /** Foto recién capturada, en revisión antes de confirmarse (solo puede girarse, no recortarse). */
+  const [pendiente, setPendiente] = useState<FotoCapturada | null>(null);
   const enWeb = Platform.OS === 'web';
 
   const capturar = async (): Promise<void> => {
@@ -79,8 +82,10 @@ export function CapturaPruebaDeVida({
       return;
     }
 
-    // `mediaTypes: ['images']` para que no aparezca el modo video; sin `allowsEditing`,
-    // porque recortar abre una pantalla de edición que no aporta a una prueba de vida.
+    // `mediaTypes: ['images']` para que no aparezca el modo video; sin `allowsEditing` del
+    // picker nativo, porque recortar libremente no aporta a una prueba de vida (regla
+    // transversal 9). Girarla si salió apaisada por error sí se permite, vía el paso de
+    // revisión de abajo — no cambia QUÉ ve la cámara, solo corrige su orientación.
     const resultado = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       quality: 0.8,
@@ -97,7 +102,8 @@ export function CapturaPruebaDeVida({
     }
 
     const tipo = normalizarTipo(asset.mimeType);
-    onChange({
+    // No se confirma todavía: primero pasa por la vista previa, donde se puede girar.
+    setPendiente({
       uri: asset.uri,
       nombre: `seguimiento.${EXTENSION_POR_TIPO[tipo] ?? 'jpg'}`,
       tipo,
@@ -117,6 +123,7 @@ export function CapturaPruebaDeVida({
       error={aviso ?? error}
       ayuda="Tiene que ser una foto sacada en el momento con la cámara. No se puede elegir una de la galería."
     >
+      <>
       {foto ? (
         <View className="relative">
           <Image
@@ -151,6 +158,21 @@ export function CapturaPruebaDeVida({
           <Text className="text-sm font-medium text-gray-500">Sacar foto ahora</Text>
         </Pressable>
       )}
+
+      <FotoPreviewModal
+        visible={pendiente !== null}
+        uri={pendiente?.uri ?? ''}
+        onCancelar={() => setPendiente(null)}
+        onConfirmar={(resultado) => {
+          onChange({
+            uri: resultado.uri,
+            nombre: resultado.seReescribioComoJpeg ? 'seguimiento.jpg' : pendiente!.nombre,
+            tipo: resultado.seReescribioComoJpeg ? 'image/jpeg' : pendiente!.tipo,
+          });
+          setPendiente(null);
+        }}
+      />
+      </>
     </FormField>
   );
 }

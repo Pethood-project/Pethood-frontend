@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GUI-1000 — Presentación PetHood + Registro de refugio/ONG</title>
+  <link rel="icon" type="image/png" href="../apps/web-admin/public/img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Paleta = apps/web-admin/src/app/globals.css (misma que el diseño de referencia).
+       Imágenes en apps/web-admin/public/img (copias de apps/mobile/assets/images/home/adopter y del logo de la org). Al portear a Next: /img/x. */
+    :root {
+      --bg: #f5ead8; --text: #201e1d;
+      --orange: #ff9d5c; --orange-dark: #ff8a3d; --beige: #fff5ed; --input: #fafafa; --badge: #fbe6af;
+      --accent-400: #f6a06b; --accent-600: #b2622d; --accent-700: #8c491a;
+      --n-100: #f9f4ed; --n-200: #eee7db; --n-300: #dcd3c4; --n-500: #a19786; --n-700: #645c50; --n-900: #201e1d;
+      --logo: url(../apps/web-admin/public/img/logo.png);
+      --img-adopt: url(../apps/web-admin/public/img/adopt.jpg);
+      --img-puppy: url(../apps/web-admin/public/img/puppy.jpg);
+      --img-cat: url(../apps/web-admin/public/img/cat.jpg);
+      --radius: 28px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+    body { background: var(--bg); color: var(--text); font-family: 'Figtree', system-ui, sans-serif; line-height: 1.5; overflow-x: hidden; }
+    img { display: block; max-width: 100%; }
+    h1, h2, .logo { font-family: 'Caprasimo', Georgia, serif; font-weight: 400; }
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: 100%; max-width: 1140px; margin: 0 auto; padding: 0 24px; }
+    .grid2 { display: grid; gap: 48px; align-items: center; grid-template-columns: 1fr 1fr; }
+    .grid2 > * { min-width: 0; }
+
+    /* ---- Marca ---- */
+    .logo-img { display: inline-block; flex: none; width: 44px; height: 44px; border-radius: 50%; background: var(--logo) center / cover no-repeat; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; }
+    .logo { font-size: 26px; color: var(--accent-700); }
+
+    /* ---- Header ---- */
+    header { position: sticky; top: 0; z-index: 10; background: rgba(245,234,216,.88); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid rgba(178,98,45,.12); }
+    header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 10px; padding-bottom: 10px; }
+    nav { display: flex; align-items: center; gap: 22px; font-size: 14px; font-weight: 500; color: var(--n-700); }
+    nav a:hover { color: var(--accent-600); }
+
+    .btn { display: inline-block; border: 0; border-radius: 10px; padding: 11px 22px; font: 600 16px 'Figtree', sans-serif; text-align: center; cursor: pointer; background: var(--orange); color: #fff; transition: background .15s; }
+    .btn:hover { background: var(--orange-dark); }
+    .btn.sec { background: #fff; color: var(--n-900); border: 1px solid var(--n-300); }
+    .btn.sec:hover { background: var(--n-100); }
+    nav .btn { padding: 8px 16px; font-size: 14px; }
+
+    .eyebrow { display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; background: var(--badge); border-radius: 999px; padding: 3px 12px; color: var(--accent-700); }
+    h1, h2, .card h3 { text-wrap: balance; }
+    p { text-wrap: pretty; }
+    h1 { font-size: clamp(32px, 5vw, 50px); line-height: 1.12; margin: 14px 0 16px; }
+    h2 { font-size: clamp(24px, 3.2vw, 32px); line-height: 1.2; margin-bottom: 8px; }
+
+    /* ---- Hero: foto de fondo a la derecha, difuminada hacia el texto ---- */
+    .hero { padding-top: 28px; padding-bottom: 28px; }
+    .hero-card { position: relative; overflow: hidden; border-radius: var(--radius); background: var(--beige); border: 1px solid var(--n-200); min-height: 540px; display: flex; align-items: center; }
+    .hero-photo { position: absolute; top: 0; right: 0; bottom: 0; width: 60%; background: var(--img-adopt) 60% center / cover no-repeat;
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 45%); mask-image: linear-gradient(to right, transparent, #000 45%); }
+    .hero-copy { position: relative; padding: 56px 48px; max-width: 520px; }
+    .hero-copy p { color: var(--n-700); max-width: 460px; }
+    .cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .hero-card > .logo-img { position: absolute; right: 28px; bottom: 28px; width: 92px; height: 92px; border: 5px solid var(--beige); box-shadow: 0 6px 18px rgba(140,73,26,.28); }
+
+    /* ---- Para quién es ---- */
+    section.pad { padding-block: 56px; }
+    .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 28px; }
+    .card { background: var(--n-100); border: 1px solid var(--n-200); border-radius: 20px; padding: 14px 14px 20px; transition: transform .15s, box-shadow .15s; }
+    .card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(140,73,26,.14); }
+    .pic { background: center / cover no-repeat; }
+    .pic.puppy { background-image: var(--img-puppy); }
+    .card img, .card .pic, .card .ico { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 14px; margin-bottom: 16px; }
+    .card .ico { display: flex; align-items: center; justify-content: center; background: var(--beige); border: 2px dashed var(--accent-400); color: var(--accent-600); }
+    .card .ico svg { width: 56px; height: 56px; }
+    .card h3 { font-size: 19px; padding: 0 6px; }
+    .card p { font-size: 14px; color: var(--n-700); margin-top: 4px; padding: 0 6px; }
+
+    /* ---- Funciones: banda con foto de fondo ---- */
+    .band { position: relative; color: #fff; padding: 72px 0;
+      background: linear-gradient(rgba(32,30,29,.6), rgba(32,30,29,.72)), var(--img-cat) center 35% / cover no-repeat; }
+    .band .sub { color: rgba(255,255,255,.75); max-width: 520px; }
+    .feat { list-style: none; margin-top: 32px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .feat li { display: flex; gap: 10px; align-items: flex-start; padding: 16px; border-radius: 16px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); font-weight: 500; }
+    .feat li::before { content: ""; flex: none; width: 10px; height: 10px; margin-top: 7px; border-radius: 50%; background: var(--orange); }
+
+    /* ---- Por qué existe ---- */
+    .why { padding: 64px 0; }
+    .why p { color: var(--n-700); margin-top: 12px; }
+    .shot { display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px; aspect-ratio: 16/9; border: 2px dashed var(--accent-400); border-radius: 20px; background: var(--beige); color: var(--accent-600); font-size: 14px; }
+
+    /* ---- Registro ---- */
+    #registro { padding: 24px 0 72px; }
+    #registro .grid2 { grid-template-columns: 1fr 1.4fr; align-items: start; }
+    #registro .logo-img { width: 64px; height: 64px; margin-bottom: 12px; }
+    #registro .lead { color: var(--n-700); margin-top: 12px; }
+    #registro .photo { margin-top: 24px; width: 100%; aspect-ratio: 4/3; border-radius: 20px; }
+    form { background: #fff; border: 1px solid var(--n-200); border-radius: 20px; padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+    fieldset { border: 0; min-width: 0; }
+    fieldset + fieldset { margin-top: 32px; }
+    legend { font-size: 13px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--n-500); margin-bottom: 12px; }
+    .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .fields > * { min-width: 0; }
+    .full { grid-column: 1 / -1; }
+    label { display: block; font-size: 14px; font-weight: 500; color: var(--n-700); margin-bottom: 4px; }
+    input, textarea { width: 100%; font: 14px 'Figtree', sans-serif; color: var(--n-900); background: var(--input); border: 1px solid var(--n-300); border-radius: 8px; padding: 9px 12px; }
+    input:focus, textarea:focus { outline: 2px solid var(--orange); border-color: var(--orange); }
+    .hint { font-size: 12px; color: var(--n-500); margin-top: 4px; }
+    .actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-top: 32px; }
+
+    /* ---- Footer ---- */
+    footer { background: var(--n-900); color: var(--n-300); padding: 40px 0; }
+    footer .logo { color: #fff; font-size: 22px; }
+    footer .logo-img { width: 40px; height: 40px; }
+    footer p { max-width: 560px; font-size: 14px; margin-top: 8px; }
+    footer h4 { margin-top: 20px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--n-500); }
+    footer ul { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 20px; margin-top: 4px; font-size: 14px; }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 960px) {
+      .grid2, #registro .grid2 { grid-template-columns: 1fr; gap: 32px; }
+      .cards { gap: 14px; }
+      .card { padding: 10px 10px 16px; }
+      .card p { font-size: 13px; }
+      .shot { aspect-ratio: auto; height: 240px; }
+      #registro .photo { aspect-ratio: auto; height: 260px; }
+      .feat { grid-template-columns: 1fr 1fr; }
+      nav a:not(.btn) { display: none; }
+      /* hero: la foto pasa arriba y se difumina hacia abajo */
+      .hero-card { flex-direction: column; align-items: stretch; min-height: 0; }
+      .hero-photo { position: relative; width: 100%; height: 280px; background-position: center 35%;
+        -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent); mask-image: linear-gradient(to bottom, #000 55%, transparent); }
+      .hero-copy { max-width: none; padding: 0 32px 40px; margin-top: -20px; }
+      .hero-card > .logo-img { right: 24px; top: 200px; bottom: auto; width: 76px; height: 76px; }
+    }
+    @media (max-width: 700px) {
+      .cards { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .wrap { padding: 0 16px; }
+      .hero { padding-top: 16px; padding-bottom: 16px; }
+      .hero-photo { height: 220px; }
+      .hero-copy { padding: 0 20px 28px; }
+      .hero-card > .logo-img { top: 150px; width: 64px; height: 64px; right: 16px; }
+      .cta .btn { flex: 1 1 100%; }
+      section.pad { padding-block: 40px; }
+      .why { padding: 40px 0; }
+      .card img, .card .pic, .card .ico { aspect-ratio: 16/10; }
+      .band { padding: 48px 0; }
+      .cards, .feat, .fields { grid-template-columns: 1fr; }
+      .card { padding: 14px 14px 20px; }
+      .card p { font-size: 14px; }
+      form { padding: 20px 16px; }
+      .actions { flex-direction: column-reverse; align-items: stretch; }
+      .actions .btn { width: 100%; }
+      .logo { font-size: 22px; }
+      .brand .logo-img { width: 36px; height: 36px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <a href="#" class="brand"><span class="logo-img" role="img" aria-label="Logo PetHood"></span><span class="logo">PetHood</span></a>
+      <nav>
+        <a href="#funciones">Qué hacemos</a>
+        <a href="#registro">Registrá tu refugio</a>
+        <a href="#" class="btn">Ingresar</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero wrap">
+      <div class="hero-card">
+        <div class="hero-photo" role="img" aria-label="Perro mirando a lo lejos al sol"></div>
+        <div class="hero-copy">
+          <p class="eyebrow">GUI-1000</p>
+          <h1>Adopción responsable y rescate animal, en una sola plataforma</h1>
+          <p>PetHood conecta a tres actores que hoy no tienen un lugar en común: <strong>adoptantes</strong>, <strong>refugios y ONGs</strong>, y quien administra todo el sistema.</p>
+          <div class="cta">
+            <a href="#registro" class="btn">Registrá tu refugio</a>
+            <a href="#funciones" class="btn sec">Conocé más</a>
+          </div>
+        </div>
+        <span class="logo-img" role="img" aria-label="Logo PetHood"></span>
+      </div>
+    </section>
+
+    <!-- Actores -->
+    <section class="pad wrap">
+      <h2>Para quién es</h2>
+      <div class="cards">
+        <article class="card">
+          <img src="../apps/web-admin/public/img/siamese.jpg" alt="Gato siamés con collar">
+          <h3>Adoptantes</h3>
+          <p>Encuentran una mascota, piden adoptarla y hacen el seguimiento después de adoptar.</p>
+        </article>
+        <article class="card">
+          <div class="pic puppy" role="img" aria-label="Cachorro bernés en el pasto"></div>
+          <h3>Refugios y ONGs</h3>
+          <p>Publican mascotas, gestionan solicitudes y arman campañas de donación.</p>
+        </article>
+        <article class="card">
+          <div class="ico" role="img" aria-label="Imagen pendiente: ilustración de administración">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <h3>Administración</h3>
+          <p>Verifica refugios, modera reportes y mira los números de toda la plataforma.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Funciones (foto de fondo) -->
+    <section id="funciones" class="band">
+      <div class="wrap">
+        <h2>Todo lo que necesitás, junto</h2>
+        <p class="sub">Un solo lugar para que cada adopción quede registrada, del primer mensaje al seguimiento.</p>
+        <ul class="feat">
+          <li>Publicación de mascotas en adopción</li>
+          <li>Solicitudes de adopción</li>
+          <li>Seguimiento post-adopción con pruebas de vida</li>
+          <li>Historia clínica</li>
+          <li>Chat entre partes</li>
+          <li>Sistema de reputación</li>
+          <li>Campañas de donación para refugios</li>
+          <li>Red de mascotas perdidas y encontradas</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Por qué existe -->
+    <section class="why">
+      <div class="wrap grid2">
+        <div class="shot" role="img" aria-label="Imagen pendiente: captura del panel web">Imagen: captura del panel web / dashboard — 16:9</div>
+        <div>
+          <h2>Por qué existe</h2>
+          <p>Adoptar o dar en adopción hoy pasa por grupos de Facebook, WhatsApp y publicaciones sueltas: sin seguimiento, sin trazabilidad, sin forma de confirmar que la adopción salió bien ni de detectar reincidencia de maltrato.</p>
+          <p>PetHood centraliza eso: cada adopción queda registrada, con seguimiento posterior verificable y reputación tanto de adoptantes como de refugios.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Registro refugio/ONG (mockup: no envía nada) -->
+    <section id="registro">
+      <div class="wrap grid2">
+        <div>
+          <span class="logo-img" role="img" aria-label="Logo PetHood"></span>
+          <h2>Registrá tu refugio u ONG</h2>
+          <p class="lead">Completá tus datos y los del refugio. Tu cuenta queda <strong>pendiente de verificación</strong>: mientras tanto podés completar el perfil, pero no publicar hasta que el equipo de administración la apruebe.</p>
+          <div class="pic puppy photo" role="img" aria-label="Cachorro bernés en el pasto"></div>
+        </div>
+
+        <form onsubmit="return false" aria-label="Registro de refugio u ONG">
+          <fieldset>
+            <legend>Tus datos</legend>
+            <div class="fields">
+              <div><label for="nombre">Nombre *</label><input id="nombre" autocomplete="given-name"></div>
+              <div><label for="apellido">Apellido *</label><input id="apellido" autocomplete="family-name"></div>
+              <div class="full"><label for="email">Email *</label><input id="email" type="email" autocomplete="email"></div>
+              <div>
+                <label for="pass">Contraseña *</label><input id="pass" type="password" autocomplete="new-password">
+                <p class="hint">Mínimo 8 caracteres, con una mayúscula y un número.</p>
+              </div>
+              <div><label for="pass2">Confirmar contraseña *</label><input id="pass2" type="password" autocomplete="new-password"></div>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Datos del refugio</legend>
+            <div class="fields">
+              <div class="full"><label for="rnombre">Nombre del refugio / ONG *</label><input id="rnombre"></div>
+              <div class="full"><label for="rdir">Dirección *</label><input id="rdir" autocomplete="street-address"></div>
+              <div><label for="rtel">Teléfono</label><input id="rtel" type="tel"></div>
+              <div><label for="remail">Email del refugio</label><input id="remail" type="email"></div>
+              <div class="full"><label for="rdesc">Descripción</label><textarea id="rdesc" rows="3"></textarea></div>
+              <div class="full">
+                <label for="rimg">Logo o foto del refugio</label>
+                <input id="rimg" type="file" accept="image/jpeg,image/png,image/webp">
+                <p class="hint">JPG, PNG o WEBP, hasta 5 MB.</p>
+              </div>
+            </div>
+          </fieldset>
+
+          <div class="actions">
+            <p class="hint">Mockup estático: no envía datos.</p>
+            <button type="button" class="btn">Registrar refugio</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span class="brand"><span class="logo-img" role="img" aria-label="Logo PetHood"></span><span class="logo">PetHood</span></span>
+      <p>Proyecto final de Ingeniería en Sistemas de Información — UTN Regional Mendoza, pensado para funcionar como producto real, no solo como entrega académica.</p>
+      <h4>Equipo</h4>
+      <ul>
+        <li>Agustín Leyes</li><li>Camila Fabián</li><li>Juan Ignacio Castro</li><li>Matías Hansen</li><li>Nicolás Correa</li>
+      </ul>
+    </div>
+  </footer>
+</body>
+</html>

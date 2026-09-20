@@ -29,6 +29,7 @@ import { CabeceraConversacion } from '@/components/chat/CabeceraConversacion';
 import { HojaAdjuntos, type OrigenFoto } from '@/components/chat/HojaAdjuntos';
 import { VisorImagen } from '@/components/chat/VisorImagen';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
+import { EditorFotoModal } from '@/components/ui/EditorFotoModal';
 import { SeparadorFecha } from '@/components/ui/SeparadorFecha';
 import { PALETA } from '@/constants/theme';
 import { useSalaChat } from '@/hooks/useSalaChat';
@@ -58,6 +59,12 @@ export default function ConversacionScreen() {
 
   /** Fotos elegidas y todavía sin enviar. Hasta `LIMITES.mensaje.fotos.maximo`. */
   const [fotos, setFotos] = useState<ArchivoAdjunto[]>([]);
+  /**
+   * Fotos recién elegidas que todavía no pasaron por el editor de recorte/rotación. Se
+   * revisan de a una, en orden: la primera de la cola es la que está en el editor. Al
+   * confirmarla pasa a `fotos`; al cancelarla se descarta.
+   */
+  const [enRevision, setEnRevision] = useState<ArchivoAdjunto[]>([]);
   /** Hoja "Enviar en el chat" del botón `+`. */
   const [hojaAbierta, setHojaAbierta] = useState(false);
   /**
@@ -189,7 +196,9 @@ export default function ConversacionScreen() {
             });
           }
 
-          if (validas.length > 0) setFotos((actuales) => [...actuales, ...validas]);
+          // No se confirman todavía: primero pasan por el editor, donde se pueden recortar
+          // y girar.
+          if (validas.length > 0) setEnRevision((actuales) => [...actuales, ...validas]);
         },
       );
     },
@@ -338,6 +347,29 @@ export default function ConversacionScreen() {
         visible={hojaAbierta}
         onCerrar={() => setHojaAbierta(false)}
         onElegirFoto={elegirFotos}
+      />
+
+      {/* Una foto por vez: la primera de la cola. El editor devuelve un archivo nuevo sólo
+          si hubo recorte o giro; si no, se conserva el original con su nombre y tipo. */}
+      <EditorFotoModal
+        visible={enRevision.length > 0}
+        uri={enRevision[0]?.uri ?? ''}
+        onCancelar={() => setEnRevision((actuales) => actuales.slice(1))}
+        onConfirmar={(resultado) => {
+          const original = enRevision[0];
+          if (!original) return;
+
+          const seReescribio = resultado.uri !== original.uri;
+          setFotos((actuales) => [
+            ...actuales,
+            {
+              uri: resultado.uri,
+              nombre: seReescribio ? `mensaje-${actuales.length}.jpg` : original.nombre,
+              tipo: seReescribio ? 'image/jpeg' : original.tipo,
+            },
+          ]);
+          setEnRevision((actuales) => actuales.slice(1));
+        }}
       />
     </View>
   );

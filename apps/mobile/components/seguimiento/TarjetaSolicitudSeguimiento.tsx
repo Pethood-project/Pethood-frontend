@@ -7,16 +7,17 @@
  * saber quién la tiene — y el llamado a la acción, que sólo el adoptante puede ejecutar.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 
 import { NOMBRE_TIPO } from '@/components/seguimiento/etiquetas';
+import { PressableAnimado } from '@/components/ui/PressableAnimado';
 import { FotoMascota } from '@/components/ui/FotoMascota';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
 import type { SolicitudEnSeguimiento } from '@/services/seguimiento';
 import { parsearFecha, tiempoHasta } from '@/shared/validation/dates';
 
-const FOTO = 56;
+const FOTO = 64;
 
 interface TarjetaSolicitudSeguimientoProps {
   solicitud: SolicitudEnSeguimiento;
@@ -43,8 +44,8 @@ function estadoActual(
     return {
       texto: rol === 'ADOPTANTE' ? `Tenés una pregunta sin responder${sufijo}` : `Esperando respuesta${sufijo}`,
       icono: 'time',
-      color: PALETA.estado.advertencia,
-      clase: 'text-amber-600',
+      color: PALETA.accent[700],
+      clase: 'text-organic-accent-700',
     };
   }
 
@@ -52,8 +53,8 @@ function estadoActual(
     return {
       texto: 'Seguimiento finalizado',
       icono: 'flag-outline',
-      color: PALETA.gris[400],
-      clase: 'text-gray-500',
+      color: PALETA.neutral[500],
+      clase: 'text-organic-neutral-500',
     };
   }
 
@@ -64,16 +65,16 @@ function estadoActual(
     return {
       texto: `Próxima pregunta en ${falta}`,
       icono: 'calendar-outline',
-      color: PALETA.pethood.naranja,
-      clase: 'text-pethood-orange',
+      color: PALETA.accent[600],
+      clase: 'text-organic-accent-600',
     };
   }
 
   return {
     texto: totales.completados > 0 ? 'Al día' : 'Sin preguntas todavía',
     icono: 'checkmark-circle-outline',
-    color: PALETA.pethood.naranja,
-    clase: 'text-pethood-orange',
+    color: PALETA.accent[600],
+    clase: 'text-organic-accent-600',
   };
 }
 
@@ -82,16 +83,26 @@ export function TarjetaSolicitudSeguimiento({
   ahora,
   onPress,
 }: TarjetaSolicitudSeguimientoProps) {
-  const { mascota, adoptante, tipo, rol, totales } = solicitud;
+  const { mascota, adoptante, tipo, rol, totales, pendiente } = solicitud;
   const nombreMascota = mascota.nombre ?? 'Sin nombre';
   const estado = estadoActual(solicitud, ahora);
+  const tienePendiente = Boolean(pendiente);
 
   return (
-    <Pressable
+    <PressableAnimado
       accessibilityRole="button"
       accessibilityLabel={`Seguimiento de ${nombreMascota}. ${estado.texto}`}
       onPress={onPress}
-      className="mb-3 flex-row items-center gap-3 rounded-2xl bg-white p-3 shadow-sm active:opacity-80"
+      escala={0.97}
+      // Un seguimiento con pregunta sin responder tiene que saltar a la vista frente a los que
+      // no tienen nada pendiente: borde y fondo tintados, no sólo el texto ámbar de abajo.
+      // La sombra queda fija en `shadow-sm`: alternarla junto con el resto de la clase dispara
+      // el bug de NativeWind descrito en `FilaPedidoSeguimiento` (nativewind#1557).
+      className={`mb-3.5 flex-row items-center gap-3.5 rounded-[20px] p-4 shadow-sm ${
+        tienePendiente
+          ? 'border-2 border-organic-accent-600 bg-organic-accent-100'
+          : 'border border-transparent bg-organic-neutral-100'
+      }`}
     >
       {/* `flex-none`: la foto nunca se achica, por largo que sea el nombre. */}
       <View className="flex-none">
@@ -105,33 +116,45 @@ export function TarjetaSolicitudSeguimiento({
       {/* `min-w-0` deja que este bloque se achique: sin él un nombre largo empuja el chevron. */}
       <View className="min-w-0 flex-1">
         <View className="flex-row items-center gap-2">
-          <Text className="flex-1 text-base font-bold text-gray-900" numberOfLines={1}>
+          <Text className="flex-1 font-titulo text-xl text-organic-neutral-900" numberOfLines={1}>
             {nombreMascota}
           </Text>
-          <View className="flex-none rounded-full bg-pethood-beige-dark px-2 py-0.5">
-            <Text className="text-[10px] font-semibold text-gray-600">{NOMBRE_TIPO[tipo]}</Text>
+          <View className="flex-none flex-row items-center gap-1.5">
+            {tienePendiente ? (
+              <View className="rounded-full bg-organic-accent-600 px-2.5 py-1">
+                <Text className="font-cuerpo-bold text-xs text-white">Pendiente</Text>
+              </View>
+            ) : null}
+            <View className="rounded-full bg-organic-neutral-200 px-2.5 py-1">
+              <Text className="font-cuerpo-semi text-xs text-organic-neutral-600">
+                {NOMBRE_TIPO[tipo]}
+              </Text>
+            </View>
           </View>
         </View>
 
-        <Text className="mt-0.5 text-xs text-gray-500" numberOfLines={1}>
+        <Text className="mt-1 font-cuerpo text-sm text-organic-neutral-600" numberOfLines={1}>
           {rol === 'ADOPTANTE'
             ? 'Está a tu cuidado'
             : `A cargo de ${adoptante.nombre} ${adoptante.apellido}`}
         </Text>
 
-        <View className="mt-1.5 flex-row items-center gap-1.5">
-          <Ionicons name={estado.icono} size={13} color={estado.color} />
-          <Text className={`flex-1 text-[11px] font-medium ${estado.clase}`} numberOfLines={1}>
+        <View className="mt-2 flex-row items-center gap-1.5">
+          <Ionicons name={estado.icono} size={18} color={estado.color} />
+          <Text
+            className={`flex-1 text-base ${tienePendiente ? 'font-cuerpo-bold' : 'font-cuerpo-semi'} ${estado.clase}`}
+            numberOfLines={1}
+          >
             {estado.texto}
           </Text>
         </View>
 
-        <Text className="mt-1 text-[11px] text-gray-400">
+        <Text className="mt-1 font-cuerpo text-xs text-organic-neutral-400">
           {totales.completados} completados · {totales.vencidos} sin completar
         </Text>
       </View>
 
-      <Ionicons name="chevron-forward" size={18} color={PALETA.gris[300]} />
-    </Pressable>
+      <Ionicons name="chevron-forward" size={22} color={PALETA.neutral[300]} />
+    </PressableAnimado>
   );
 }

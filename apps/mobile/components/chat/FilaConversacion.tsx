@@ -44,7 +44,17 @@ export function FilaConversacion({ conversacion, ahora, onPress }: FilaConversac
   const { contacto, ultimoMensaje, noLeidos } = conversacion;
 
   const sinLeer = noLeidos > 0;
-  const soloFoto = ultimoMensaje?.tieneImagen && ultimoMensaje.contenido.trim() === '';
+  const esSolicitud = ultimoMensaje?.tipo === 'SOLICITUD';
+  const soloFoto =
+    !esSolicitud && ultimoMensaje?.tieneImagen && ultimoMensaje.contenido.trim() === '';
+
+  // Lo que va en la línea de abajo. La tarjeta de una solicitud y la foto suelta no tienen
+  // texto propio: se nombra el hecho, con un ícono adelante para que se lea de un vistazo.
+  const preview = esSolicitud
+    ? 'Solicitud'
+    : soloFoto
+      ? 'Foto'
+      : (ultimoMensaje?.contenido ?? 'Todavía no hay mensajes');
 
   return (
     <Pressable
@@ -108,6 +118,10 @@ export function FilaConversacion({ conversacion, ahora, onPress }: FilaConversac
             <Ionicons name="image-outline" size={14} color={PALETA.neutral[500]} />
           ) : null}
 
+          {esSolicitud ? (
+            <Ionicons name="document-text-outline" size={14} color={PALETA.neutral[500]} />
+          ) : null}
+
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
@@ -117,7 +131,7 @@ export function FilaConversacion({ conversacion, ahora, onPress }: FilaConversac
               sinLeer ? 'text-organic-neutral-900' : 'text-organic-neutral-500'
             }`}
           >
-            {soloFoto ? 'Foto' : (ultimoMensaje?.contenido ?? 'Todavía no hay mensajes')}
+            {preview}
           </Text>
         </View>
 

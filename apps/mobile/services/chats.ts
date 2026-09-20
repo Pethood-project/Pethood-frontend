@@ -28,6 +28,8 @@ export interface UltimoMensaje {
   esMio: boolean;
   /** Con `contenido` vacío significa mensaje de sólo foto. */
   tieneImagen: boolean;
+  /** `SOLICITUD` es la tarjeta de un pedido: `contenido` vacío, el texto lo pone la fila. */
+  tipo: 'TEXTO' | 'SOLICITUD';
 }
 
 export interface Conversacion {

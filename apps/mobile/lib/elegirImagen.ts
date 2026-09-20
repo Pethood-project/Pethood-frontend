@@ -98,71 +98,45 @@ export function elegirArchivosWeb(multiple = false): Promise<ImagePicker.ImagePi
   });
 }
 
-interface AbrirSelectorImagenesParams {
-  titulo: string;
-  mensaje: string;
-  /** Cuántas se pueden elegir en esta pasada. */
-  maximo: number;
-  onElegidas: (assets: ImagePicker.ImagePickerAsset[]) => void;
-  onErrorPermisoGaleria: (mensaje: string) => void;
-  onErrorPermisoCamara: () => void;
-}
+/** Qué devolvió el selector: fotos, o que el permiso no está. */
+export type ResultadoSeleccion =
+  | { assets: ImagePicker.ImagePickerAsset[] }
+  | { permisoDenegado: 'camara' | 'galeria' };
 
 /**
- * Igual que `abrirSelectorImagen` pero para varias a la vez: la galería admite selección
- * múltiple y la cámara sigue siendo de a una, porque se saca una foto por vez.
+ * Varias fotos de la galería de una vez, hasta `maximo`.
  *
- * Lo usa el chat, donde un mensaje puede llevar hasta cinco fotos.
+ * No pregunta de dónde: quien llama ya lo decidió con su propia hoja (`HojaAdjuntos`), en
+ * vez del diálogo del sistema. En web no hay galería como tal: se abre el selector de
+ * archivos, que también admite varios.
  */
-export function abrirSelectorImagenes(params: AbrirSelectorImagenesParams): void {
-  const opciones: ImagePicker.ImagePickerOptions = {
+export async function elegirFotosDeGaleria(maximo: number): Promise<ResultadoSeleccion> {
+  if (Platform.OS === 'web') {
+    const assets = await elegirArchivosWeb(true);
+    return { assets: assets.slice(0, maximo) };
+  }
+
+  const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permiso.granted) return { permisoDenegado: 'galeria' };
+
+  const resultado = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     quality: 0.8,
     allowsMultipleSelection: true,
-    selectionLimit: params.maximo,
-  };
+    selectionLimit: maximo,
+  });
 
-  const procesar = (resultado: ImagePicker.ImagePickerResult): void => {
-    if (resultado.canceled) return;
-    params.onElegidas(resultado.assets.slice(0, params.maximo));
-  };
+  return { assets: resultado.canceled ? [] : resultado.assets.slice(0, maximo) };
+}
 
-  if (Platform.OS === 'web') {
-    void elegirArchivosWeb(true).then((assets) => {
-      if (assets.length > 0) params.onElegidas(assets.slice(0, params.maximo));
-    });
-    return;
-  }
+/** Una foto con la cámara. Se saca de a una, así que el máximo no aplica. */
+export async function sacarFotoConCamara(): Promise<ResultadoSeleccion> {
+  const permiso = await ImagePicker.requestCameraPermissionsAsync();
+  if (!permiso.granted) return { permisoDenegado: 'camara' };
 
-  Alert.alert(params.titulo, params.mensaje, [
-    {
-      text: 'Cámara',
-      onPress: () => {
-        void (async () => {
-          const permiso = await ImagePicker.requestCameraPermissionsAsync();
-          if (!permiso.granted) {
-            params.onErrorPermisoCamara();
-            return;
-          }
-          procesar(await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8 }));
-        })();
-      },
-    },
-    {
-      text: 'Galería',
-      onPress: () => {
-        void (async () => {
-          const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
-          if (!permiso.granted) {
-            params.onErrorPermisoGaleria('Necesitamos permiso para acceder a tus fotos.');
-            return;
-          }
-          procesar(await ImagePicker.launchImageLibraryAsync(opciones));
-        })();
-      },
-    },
-    { text: 'Cancelar', style: 'cancel' },
-  ]);
+  const resultado = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8 });
+
+  return { assets: resultado.canceled ? [] : resultado.assets };
 }
 
 export function abrirSelectorImagen(params: AbrirSelectorImagenParams): void {

@@ -60,6 +60,7 @@ export function aplicarMensajeNuevo(
       fecha: mensaje.fechaAlta,
       esMio,
       tieneImagen: mensaje.imagenUrl !== null,
+      tipo: mensaje.tipo,
     },
     noLeidos: esMio ? actual.noLeidos : actual.noLeidos + 1,
     fechaUltimaActividad: mensaje.fechaAlta,

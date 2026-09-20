@@ -26,14 +26,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarraEscritura } from '@/components/chat/BarraEscritura';
 import { BurbujaMensaje } from '@/components/chat/BurbujaMensaje';
 import { CabeceraConversacion } from '@/components/chat/CabeceraConversacion';
-import { HojaAdjuntos } from '@/components/chat/HojaAdjuntos';
+import { HojaAdjuntos, type OrigenFoto } from '@/components/chat/HojaAdjuntos';
 import { VisorImagen } from '@/components/chat/VisorImagen';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { SeparadorFecha } from '@/components/ui/SeparadorFecha';
 import { PALETA } from '@/constants/theme';
 import { useSalaChat } from '@/hooks/useSalaChat';
 import { useSesion } from '@/hooks/useSesion';
-import { abrirSelectorImagenes, validarAssetImagen } from '@/lib/elegirImagen';
+import { elegirFotosDeGaleria, sacarFotoConCamara, validarAssetImagen } from '@/lib/elegirImagen';
 import { intercalarSeparadores, type FilaSala } from '@/lib/mensajesChat';
 import type { ArchivoAdjunto } from '@/services/api';
 import { LIMITES } from '@/shared/validation/limits';
@@ -133,58 +133,68 @@ export default function ConversacionScreen() {
   );
 
   /**
-   * Criterio 6: adjuntar abre el explorador nativo. Se reusa el selector del proyecto, que
-   * ya resuelve el menú Cámara/Galería, los permisos y el caso web.
+   * Criterio 6: adjuntar abre el explorador nativo. De dónde sacar la foto ya lo eligió el
+   * usuario en la hoja; acá sólo se abre el selector que corresponde y se validan las que
+   * vuelven.
    *
    * El tope se calcula contra lo que ya hay elegido, así dos pasadas seguidas no se pasan
    * del máximo que el backend acepta.
    */
-  const elegirFotos = useCallback((): void => {
-    setHojaAbierta(false);
+  const elegirFotos = useCallback(
+    (origen: OrigenFoto): void => {
+      setHojaAbierta(false);
 
-    const lugar = LIMITES.mensaje.fotos.maximo - fotos.length;
+      const lugar = LIMITES.mensaje.fotos.maximo - fotos.length;
 
-    if (lugar <= 0) {
-      Alert.alert(
-        'Llegaste al máximo',
-        `Podés mandar hasta ${LIMITES.mensaje.fotos.maximo} fotos por mensaje.`,
-      );
-      return;
-    }
+      if (lugar <= 0) {
+        Alert.alert(
+          'Llegaste al máximo',
+          `Podés mandar hasta ${LIMITES.mensaje.fotos.maximo} fotos por mensaje.`,
+        );
+        return;
+      }
 
-    abrirSelectorImagenes({
-      titulo: 'Adjuntar fotos',
-      mensaje: '¿De dónde las sacamos?',
-      maximo: lugar,
-      onElegidas: (assets) => {
-        const validas: ArchivoAdjunto[] = [];
-
-        for (const asset of assets) {
-          // Validación de UX nada más: el backend valida igual formato y peso.
-          const problema = validarAssetImagen(asset);
-          if (problema) {
-            Alert.alert('No pudimos adjuntarla', problema);
-            continue;
+      void (origen === 'camara' ? sacarFotoConCamara() : elegirFotosDeGaleria(lugar)).then(
+        (resultado) => {
+          if ('permisoDenegado' in resultado) {
+            // Los permisos son del sistema: acá sí va el diálogo del sistema, como en el
+            // resto de la app.
+            if (resultado.permisoDenegado === 'camara') {
+              Alert.alert(
+                'Necesitamos la cámara',
+                'Dale permiso a PetHood para usar la cámara, o elegí una foto de la galería.',
+              );
+            } else {
+              Alert.alert('Necesitamos tus fotos', 'Necesitamos permiso para acceder a tus fotos.');
+            }
+            return;
           }
 
-          const tipo = normalizarTipo(asset.mimeType);
-          validas.push({
-            uri: asset.uri,
-            nombre: asset.fileName ?? `mensaje-${validas.length}.${EXTENSION_POR_TIPO[tipo] ?? 'jpg'}`,
-            tipo,
-          });
-        }
+          const validas: ArchivoAdjunto[] = [];
 
-        if (validas.length > 0) setFotos((actuales) => [...actuales, ...validas]);
-      },
-      onErrorPermisoGaleria: (mensaje) => Alert.alert('Necesitamos tus fotos', mensaje),
-      onErrorPermisoCamara: () =>
-        Alert.alert(
-          'Necesitamos la cámara',
-          'Dale permiso a PetHood para usar la cámara, o elegí una foto de la galería.',
-        ),
-    });
-  }, [fotos.length]);
+          for (const asset of resultado.assets) {
+            // Validación de UX nada más: el backend valida igual formato y peso.
+            const problema = validarAssetImagen(asset);
+            if (problema) {
+              Alert.alert('No pudimos adjuntarla', problema);
+              continue;
+            }
+
+            const tipo = normalizarTipo(asset.mimeType);
+            validas.push({
+              uri: asset.uri,
+              nombre:
+                asset.fileName ?? `mensaje-${validas.length}.${EXTENSION_POR_TIPO[tipo] ?? 'jpg'}`,
+              tipo,
+            });
+          }
+
+          if (validas.length > 0) setFotos((actuales) => [...actuales, ...validas]);
+        },
+      );
+    },
+    [fotos.length],
+  );
 
   const enviar = useCallback(
     (contenido: string): void => {

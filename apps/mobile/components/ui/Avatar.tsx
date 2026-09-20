@@ -1,9 +1,15 @@
 /**
- * Foto de perfil circular, con las iniciales sobre el naranja de marca como respaldo.
+ * Foto de perfil circular, con las iniciales como respaldo.
  *
  * El patrón estaba escrito tres veces (perfil, editar perfil y la lista de chats), con la
  * función `iniciales` duplicada literal en dos de ellas. Vive acá para que el avatar se vea
  * igual en toda la app.
+ *
+ * Dos variantes, porque conviven dos paletas: `clasico` es el naranja de marca con las
+ * iniciales en negrita (perfil, solicitudes), y `organic` es el del rediseño — iniciales en
+ * Caprasimo sobre `accent-600` para un refugio o `neutral-400` para una persona (artboards
+ * 07, 18 y 35 del diseño). El default sigue siendo `clasico` para no cambiar de golpe las
+ * pantallas que todavía no migraron.
  *
  * Recibe la url YA absoluta: resolver la ruta relativa de la API es tarea de `urlAbsoluta`,
  * y así el componente sirve también para una uri local del selector de fotos.
@@ -32,6 +38,31 @@ export function iniciales(nombre?: string | null, apellido?: string | null): str
   return letras || '?';
 }
 
+/** `clasico` es el naranja de marca; `organic`, el rediseño (iniciales en Caprasimo). */
+export type VarianteAvatar = 'clasico' | 'organic';
+
+/** Sólo lo mira la variante `organic`: el diseño distingue refugios de personas por el fondo. */
+export type TonoAvatar = 'acento' | 'neutro';
+
+const FONDOS: Record<VarianteAvatar, Record<TonoAvatar, string>> = {
+  clasico: { acento: 'bg-pethood-orange', neutro: 'bg-pethood-orange' },
+  organic: { acento: 'bg-organic-accent-600', neutro: 'bg-organic-neutral-400' },
+};
+
+const TIPOGRAFIA: Record<VarianteAvatar, string> = {
+  clasico: 'font-bold text-white',
+  organic: 'font-titulo text-white',
+};
+
+/**
+ * Proporción de las iniciales respecto del lado. En el diseño clásico son ~40%; en el
+ * Organic, 13px sobre 42 (~31%): la Caprasimo es más ancha y con el 40% se saldría.
+ */
+const PROPORCION_TEXTO: Record<VarianteAvatar, number> = {
+  clasico: 0.4,
+  organic: 0.31,
+};
+
 interface AvatarProps {
   /** URL absoluta o uri local. `null` muestra las iniciales. */
   uri?: string | null;
@@ -39,8 +70,11 @@ interface AvatarProps {
   apellido?: string | null;
   /** Lado del círculo en px. Los tamaños en uso: 56 (fila de chat), 80 y 112 (perfil). */
   tamanio: number;
-  /** Tamaño de las iniciales. Por defecto, ~40% del lado, que es la proporción del diseño. */
+  /** Tamaño de las iniciales. Por defecto, la proporción del diseño de cada variante. */
   tamanioTexto?: number;
+  variante?: VarianteAvatar;
+  /** Fondo de las iniciales en `organic`: `acento` para un refugio, `neutro` para una persona. */
+  tono?: TonoAvatar;
   accessibilityLabel?: string;
 }
 
@@ -50,6 +84,8 @@ export function Avatar({
   apellido,
   tamanio,
   tamanioTexto,
+  variante = 'clasico',
+  tono = 'acento',
   accessibilityLabel,
 }: AvatarProps) {
   const [uriRota, setUriRota] = useState<string | null>(null);
@@ -91,11 +127,11 @@ export function Avatar({
     <View
       style={medidas}
       accessibilityLabel={accessibilityLabel}
-      className="items-center justify-center bg-pethood-orange"
+      className={`items-center justify-center ${FONDOS[variante][tono]}`}
     >
       <Text
-        style={{ fontSize: tamanioTexto ?? Math.round(tamanio * 0.4) }}
-        className="font-bold text-white"
+        style={{ fontSize: tamanioTexto ?? Math.round(tamanio * PROPORCION_TEXTO[variante]) }}
+        className={TIPOGRAFIA[variante]}
       >
         {iniciales(nombre, apellido)}
       </Text>

@@ -83,6 +83,8 @@ export const LIMITES = {
    */
   mensaje: {
     contenido: { min: 0, max: 1000 },
+    /** Cuántas fotos admite un mensaje. El backend rechaza a partir de la sexta. */
+    fotos: { maximo: 5 },
     /** Tamaño de página del historial. El backend acepta hasta 50. */
     pagina: { porDefecto: 30, maximo: 50 },
   },

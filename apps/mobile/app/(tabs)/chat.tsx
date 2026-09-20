@@ -6,9 +6,18 @@
  * ese bloque; la lista, la fila y los estados son los mismos.
  *
  * Sólo lectura: abrir una conversación y enviar mensajes es HU-5.2, y filtrar es HU-5.3.
+ *
+ * El estado de la lista (carga, refresco y tiempo real) vive en `useListaChats`; acá sólo se
+ * pinta.
+ *
+ * Estilo del artboard 07 (adoptante) / 18 (refugio) del diseño Organic, sobre una maqueta
+ * de 262px con el factor ×1,33: cabecera en `neutral-100` con borde inferior `neutral-300`
+ * y padding 10/16 → 13/21; título en Caprasimo 18 → 24 (17 → 23 en refugio) en `accent-600`;
+ * subtítulo del refugio 9 → 12 en `neutral-600`; la lista con 4 → 5 de aire arriba y abajo y
+ * un separador `neutral-300` entre filas.
  */
-import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,26 +25,33 @@ import { FilaConversacion } from '@/components/chat/FilaConversacion';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { BarraBusqueda } from '@/components/ui/BarraBusqueda';
 import { PALETA } from '@/constants/theme';
+import { useListaChats } from '@/hooks/useListaChats';
 import { useSesion } from '@/hooks/useSesion';
-import { listarChats, type Conversacion } from '@/services/chats';
+
+/** Separador entre filas: 1px `neutral-300`, a todo el ancho, como en el diseño. */
+function SeparadorFilas() {
+  return <View className="h-px bg-organic-neutral-300" />;
+}
 
 /**
  * Cada cuánto se recalculan los textos relativos ("Hace 5 min").
  *
  * Es un re-render local, sin pedirle nada al servidor: el minuto es la unidad más chica del
  * criterio 6, así que con este intervalo ningún texto queda viejo. El listado en sí se
- * recarga al enfocar la pantalla — esta HU no pide tiempo real.
+ * recarga al enfocar la pantalla y se actualiza por socket cuando llega un mensaje.
  */
 const REFRESCO_TEXTOS_MS = 60_000;
 
 /**
- * Subtítulo de GUI-31. El diseño lo muestra como "Refugio Esperanza · 4 sin leer", pero el
- * nombre del refugio no viaja en la sesión: `Usuario` (types/auth.ts) sólo trae los roles,
- * no a qué refugio pertenece la persona. Se muestra la parte que sí tenemos en vez de
- * inventar un pedido a la API — queda anotado como pendiente.
+ * Subtítulo de GUI-31: "Refugio Esperanza · 4 sin leer".
+ *
+ * El nombre del refugio viaja en la sesión desde que el backend lo sumó a la respuesta de
+ * auth. Una sesión guardada antes de ese cambio no lo tiene: ahí se muestra sólo el
+ * contador, que es lo que el diseño pone a la derecha del punto.
  */
-function subtituloRefugio(sinLeer: number): string {
-  return sinLeer === 1 ? '1 sin leer' : `${sinLeer} sin leer`;
+function subtituloRefugio(sinLeer: number, refugio: string | null): string {
+  const contador = sinLeer === 1 ? '1 sin leer' : `${sinLeer} sin leer`;
+  return refugio ? `${refugio} · ${contador}` : contador;
 }
 
 function ListaVacia() {
@@ -50,13 +66,10 @@ function ListaVacia() {
 }
 
 export default function ChatScreen() {
-  const { esRefugio } = useSesion();
+  const { esRefugio, usuario } = useSesion();
   const router = useRouter();
 
-  const [chats, setChats] = useState<Conversacion[]>([]);
-  const [cargando, setCargando] = useState(true);
-  const [refrescando, setRefrescando] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { chats, cargando, refrescando, error, recargar, refrescar } = useListaChats();
 
   /**
    * Instante contra el que las filas calculan su texto relativo. Avanza solo cada minuto
@@ -69,28 +82,11 @@ export default function ChatScreen() {
     return () => clearInterval(id);
   }, []);
 
-  const cargar = useCallback(async (): Promise<void> => {
-    try {
-      setError(null);
-      setChats((await listarChats()).chats);
-      // Al traer datos nuevos el reloj también se pone al día, para que un mensaje recién
-      // llegado no aparezca con la marca del tick anterior.
-      setAhora(new Date());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'No pudimos cargar tus conversaciones.');
-    } finally {
-      setCargando(false);
-      setRefrescando(false);
-    }
-  }, []);
-
-  // Al volver de una conversación cambiaron los no leídos y el último mensaje, así que se
-  // recarga cada vez que la pantalla toma el foco y no sólo al montarla.
-  useFocusEffect(
-    useCallback(() => {
-      void cargar();
-    }, [cargar]),
-  );
+  // Cada vez que la lista cambia (recarga o mensaje por socket) el reloj también se pone al
+  // día, para que un mensaje recién llegado no aparezca con la marca del tick anterior.
+  useEffect(() => {
+    setAhora(new Date());
+  }, [chats]);
 
   const sinLeer = useMemo(
     () => chats.reduce((total, chat) => total + chat.noLeidos, 0),
@@ -100,22 +96,30 @@ export default function ChatScreen() {
   const vacio = chats.length === 0;
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="border-b border-organic-neutral-200 bg-white/85 px-4 py-2.5">
-          <Text className="text-xl font-bold text-pethood-orange">
-            {esRefugio ? 'Mensajes del Refugio' : 'Mensajes'}
-          </Text>
-
+        <View className="border-b border-organic-neutral-300 bg-organic-neutral-100 px-[21px] py-[13px]">
           {esRefugio ? (
-            <Text className="mt-0.5 text-xs text-organic-neutral-500">
-              {subtituloRefugio(sinLeer)}
+            <>
+              <Text className="font-titulo text-[23px] leading-[28px] text-organic-accent-600">
+                Mensajes del Refugio
+              </Text>
+              <Text
+                numberOfLines={1}
+                className="mt-[4px] font-cuerpo text-[12px] text-organic-neutral-600"
+              >
+                {subtituloRefugio(sinLeer, usuario?.refugio?.nombre ?? null)}
+              </Text>
+            </>
+          ) : (
+            <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
+              Mensajes
             </Text>
-          ) : null}
+          )}
 
           {/* Criterio 2: sin conversaciones el buscador SE MUESTRA, deshabilitado. Con
               conversaciones se ve normal pero todavía no filtra: eso es HU-5.3. */}
-          <View className="mt-2.5">
+          <View className="mt-[12px]">
             <BarraBusqueda
               placeholder={esRefugio ? 'Buscar...' : 'Buscar conversaciones...'}
               deshabilitada={vacio}
@@ -127,13 +131,7 @@ export default function ChatScreen() {
         {cargando ? (
           <EstadoCargando />
         ) : error ? (
-          <EstadoError
-            mensaje={error}
-            onAccion={() => {
-              setCargando(true);
-              void cargar();
-            }}
-          />
+          <EstadoError mensaje={error} onAccion={recargar} />
         ) : (
           <FlatList
             data={chats}
@@ -148,16 +146,14 @@ export default function ChatScreen() {
                 onPress={() => router.push(`/chats/${item.chatId}`)}
               />
             )}
+            ItemSeparatorComponent={SeparadorFilas}
             ListEmptyComponent={ListaVacia}
-            contentContainerStyle={vacio ? { flexGrow: 1 } : { paddingVertical: 4 }}
+            contentContainerStyle={vacio ? { flexGrow: 1 } : { paddingVertical: 5 }}
             refreshControl={
               <RefreshControl
                 refreshing={refrescando}
-                onRefresh={() => {
-                  setRefrescando(true);
-                  void cargar();
-                }}
-                tintColor={PALETA.pethood.naranja}
+                onRefresh={refrescar}
+                tintColor={PALETA.accent[600]}
               />
             }
           />

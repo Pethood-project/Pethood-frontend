@@ -6,6 +6,10 @@
  * mascota: esto es un número sobre un círculo, superpuesto a otro elemento.
  *
  * Con 0 no se renderiza: el diseño muestra el badge sólo en las filas con mensajes nuevos.
+ *
+ * Medidas del artboard 07 (sobre 262px, con el factor ×1,33 de HU-5.1): 17px de lado, texto
+ * de 9px en negrita, anillo de 2px en `accent-100` y desplazado -2px hacia arriba y a la
+ * derecha del avatar.
  */
 import { Text, View } from 'react-native';
 
@@ -18,8 +22,8 @@ const TOPE = 99;
 interface BadgeContadorProps {
   cantidad: number;
   /**
-   * Color del anillo que separa el badge del avatar. Tiene que ser el fondo sobre el que se
-   * apoya el conjunto (en el diseño, el beige de la pantalla).
+   * Color del anillo que separa el badge del avatar. El diseño lo da en `accent-100`, que
+   * no es el fondo de la pantalla: es un halo claro alrededor del número.
    */
   claseAnillo?: string;
   accessibilityLabel?: string;
@@ -27,7 +31,7 @@ interface BadgeContadorProps {
 
 export function BadgeContador({
   cantidad,
-  claseAnillo = 'border-pethood-beige',
+  claseAnillo = 'border-organic-accent-100',
   accessibilityLabel,
 }: BadgeContadorProps) {
   if (cantidad <= 0) return null;
@@ -35,11 +39,11 @@ export function BadgeContador({
   return (
     <View
       accessibilityLabel={accessibilityLabel}
-      // `min-w-5` con `px-1`: hasta 9 es un círculo perfecto y de ahí en más crece a
+      // `min-w` con `px-1`: hasta 9 es un círculo perfecto y de ahí en más crece a
       // píldora sin desbordar. El borde de 2px es el anillo del diseño.
-      className={`absolute -right-1 -top-1 h-5 min-w-5 items-center justify-center rounded-full border-2 bg-pethood-orange px-1 ${claseAnillo}`}
+      className={`absolute -right-[3px] -top-[3px] h-[23px] min-w-[23px] items-center justify-center rounded-full border-2 bg-organic-accent-600 px-1 ${claseAnillo}`}
     >
-      <Text className="text-[11px] font-bold leading-none text-white">
+      <Text className="font-cuerpo-bold text-[12px] leading-none text-white">
         {cantidad > TOPE ? `${TOPE}+` : cantidad}
       </Text>
     </View>

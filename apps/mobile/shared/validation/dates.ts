@@ -113,12 +113,13 @@ function diasCalendarioEntre(desde: Date, hasta: Date): number {
 }
 
 /**
- * Antigüedad de un mensaje para la lista de conversaciones (HU-5.1, criterio 6):
- * "Recién" · "Hace 5 min" · "Hace 1 hora" · "Hace 3 horas" · "Ayer" · "Hace 4 días".
+ * Antigüedad de un mensaje para la lista de conversaciones (HU-5.1, criterio 6), con el
+ * formato compacto del diseño Organic (artboards 07/18): "Ahora" · "5 min" · "2 h" · "Ayer"
+ * · "4 d". Sin "Hace": la columna de la hora es angosta y el artboard la muestra así.
  *
  * Los tramos se evalúan por tiempo transcurrido y NO por día calendario, salvo "Ayer".
- * Por eso un mensaje de ayer a las 23:00 leído hoy a las 10:00 dice "Hace 11 horas" y no
- * "Ayer": pasaron 11 horas, y el criterio pone "Ayer" recién después de las 24.
+ * Por eso un mensaje de ayer a las 23:00 leído hoy a las 10:00 dice "11 h" y no "Ayer":
+ * pasaron 11 horas, y el criterio pone "Ayer" recién después de las 24.
  *
  * `ahora` se puede inyectar para poder probar la función sin depender del reloj.
  */
@@ -126,17 +127,15 @@ export function tiempoRelativo(fecha: Date, ahora: Date = new Date()): string {
   const transcurrido = ahora.getTime() - fecha.getTime();
 
   // Un reloj adelantado o una fecha del futuro no deberían mostrar un negativo.
-  if (transcurrido < UN_MINUTO) return 'Recién';
+  if (transcurrido < UN_MINUTO) return 'Ahora';
 
-  // "min" es abreviatura y no se pluraliza: "Hace 1 min" y "Hace 5 min" son las dos
-  // correctas. Horas y días sí llevan singular, más abajo.
+  // Abreviaturas, sin plural: "1 min", "5 min", "1 h", "3 h", "4 d".
   if (transcurrido < UNA_HORA) {
-    return `Hace ${Math.floor(transcurrido / UN_MINUTO)} min`;
+    return `${Math.floor(transcurrido / UN_MINUTO)} min`;
   }
 
   if (transcurrido < UN_DIA) {
-    const horas = Math.floor(transcurrido / UNA_HORA);
-    return `Hace ${horas} ${horas === 1 ? 'hora' : 'horas'}`;
+    return `${Math.floor(transcurrido / UNA_HORA)} h`;
   }
 
   // Pasadas las 24 h, "Ayer" sólo si además cae en el día calendario anterior. Con más de
@@ -144,8 +143,24 @@ export function tiempoRelativo(fecha: Date, ahora: Date = new Date()): string {
   // es bien tarde; en cualquier otro caso ya son dos o más días.
   if (diasCalendarioEntre(fecha, ahora) === 1) return 'Ayer';
 
-  const dias = Math.floor(transcurrido / UN_DIA);
-  return `Hace ${dias} ${dias === 1 ? 'día' : 'días'}`;
+  return `${Math.floor(transcurrido / UN_DIA)} d`;
+}
+
+/**
+ * Etiqueta del separador de día dentro de una conversación (GUI-14, artboards 35 y 37):
+ * "Hoy", "Ayer", o la fecha corta para cualquier otro día.
+ *
+ * Acá sí manda el día calendario y no el tiempo transcurrido: un mensaje de anoche a las
+ * 23:00 va bajo "Ayer" aunque hayan pasado sólo dos horas, porque el separador agrupa
+ * mensajes por jornada.
+ */
+export function etiquetaDia(fecha: Date, ahora: Date = new Date()): string {
+  const dias = diasCalendarioEntre(fecha, ahora);
+
+  if (dias <= 0) return 'Hoy';
+  if (dias === 1) return 'Ayer';
+
+  return aFechaVisible(fecha);
 }
 
 /**

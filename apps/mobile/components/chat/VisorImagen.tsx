@@ -1,5 +1,6 @@
 /**
- * Visor de una foto del chat a pantalla completa, con zoom de pellizco (HU-5.2).
+ * Visor de las fotos de un mensaje a pantalla completa, con paginación horizontal entre
+ * ellas y zoom de pellizco en cada una (HU-5.2).
  *
  * Se arma con `react-native-gesture-handler` y `react-native-reanimated`, que ya son
  * dependencias del proyecto: una librería de galería traería un módulo nativo y el equipo
@@ -7,11 +8,29 @@
  *
  * Los gestos corren en el hilo de UI (worklets de Reanimated), así que el zoom sigue al
  * dedo aunque el hilo de JS esté ocupado recibiendo mensajes por el socket.
+ *
+ * Deslizar entre fotos y arrastrar una foto ampliada son el MISMO gesto (un dedo en
+ * horizontal), así que se reparten por estado: sin zoom manda el scroll paginado y el
+ * arrastre está apagado; con zoom se apaga el scroll y el arrastre reencuadra. Al cambiar de
+ * página la foto que se deja vuelve a su tamaño, para no volver a ella y encontrarla ampliada.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { Modal, Pressable, useWindowDimensions, View } from 'react-native';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useCallback, useEffect, useState } from 'react';
+import { Modal, Pressable, Text, useWindowDimensions, View } from 'react-native';
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+  ScrollView,
+} from 'react-native-gesture-handler';
+import type { NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import Animated, {
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PALETA } from '@/constants/theme';
@@ -22,8 +41,10 @@ const ESCALA_MAXIMA = 5;
 const ESCALA_DOBLE_TOQUE = 2.5;
 
 interface VisorImagenProps {
-  /** URL de la foto a mostrar, o `null` para mantener el visor cerrado. */
-  uri: string | null;
+  /** Todas las fotos del mensaje, en orden. */
+  imagenes: string[];
+  /** Cuál se abre primero, o `null` para mantener el visor cerrado. */
+  indiceInicial: number | null;
   onCerrar: () => void;
 }
 
@@ -39,9 +60,18 @@ function limitar(valor: number, limite: number): number {
   return Math.min(Math.max(valor, -limite), limite);
 }
 
-export function VisorImagen({ uri, onCerrar }: VisorImagenProps) {
-  const { width: anchoPantalla, height: altoPantalla } = useWindowDimensions();
+interface PaginaVisorProps {
+  uri: string;
+  ancho: number;
+  alto: number;
+  /** `false` cuando el usuario se fue a otra foto: la ampliación se descarta. */
+  activa: boolean;
+  /** Avisa cuando la foto entra o sale del zoom, para prender o apagar el scroll. */
+  onZoom: (activo: boolean) => void;
+}
 
+/** Una foto con sus gestos. Cada página tiene su propio zoom, independiente de las demás. */
+function PaginaVisor({ uri, ancho, alto, activa, onZoom }: PaginaVisorProps) {
   const escala = useSharedValue(1);
   const escalaPrevia = useSharedValue(1);
   const x = useSharedValue(0);
@@ -49,26 +79,41 @@ export function VisorImagen({ uri, onCerrar }: VisorImagenProps) {
   const xPrevia = useSharedValue(0);
   const yPrevia = useSharedValue(0);
 
-  const reiniciar = (): void => {
+  const [conZoom, setConZoom] = useState(false);
+
+  // El estado de zoom se necesita en JS —para el `scrollEnabled` del paginador y el
+  // `enabled` del arrastre—, así que se refleja desde el hilo de UI sólo cuando cambia.
+  useAnimatedReaction(
+    () => escala.value > 1,
+    (ampliada, anterior) => {
+      if (ampliada !== anterior) runOnJS(setConZoom)(ampliada);
+    },
+  );
+
+  useEffect(() => {
+    onZoom(conZoom);
+  }, [conZoom, onZoom]);
+
+  const reiniciar = useCallback((): void => {
     escala.value = withTiming(1);
     escalaPrevia.value = 1;
     x.value = withTiming(0);
     y.value = withTiming(0);
     xPrevia.value = 0;
     yPrevia.value = 0;
-  };
+  }, [escala, escalaPrevia, x, y, xPrevia, yPrevia]);
 
-  const cerrar = (): void => {
-    // Se reinicia al cerrar para que la próxima foto no herede el zoom de la anterior.
-    reiniciar();
-    onCerrar();
-  };
+  // Al dejar la página, la foto vuelve a su tamaño: si el usuario vuelve, la encuentra
+  // entera y no un recorte ampliado de la vez anterior.
+  useEffect(() => {
+    if (!activa) reiniciar();
+  }, [activa, reiniciar]);
 
   /** Corrige el desplazamiento cuando la imagen ya no puede salirse de la pantalla. */
   const ajustarDentroDeLimites = (): void => {
     'worklet';
-    const maximoX = Math.max(0, (anchoPantalla * escala.value - anchoPantalla) / 2);
-    const maximoY = Math.max(0, (altoPantalla * escala.value - altoPantalla) / 2);
+    const maximoX = Math.max(0, (ancho * escala.value - ancho) / 2);
+    const maximoY = Math.max(0, (alto * escala.value - alto) / 2);
 
     x.value = withTiming(limitar(x.value, maximoX));
     y.value = withTiming(limitar(y.value, maximoY));
@@ -98,11 +143,11 @@ export function VisorImagen({ uri, onCerrar }: VisorImagenProps) {
       ajustarDentroDeLimites();
     });
 
-  // Arrastre: sólo tiene sentido con la foto ampliada, porque sin zoom no hay nada que
-  // correr y el gesto competiría con el scroll de la conversación de atrás.
+  // Arrastre: sólo con la foto ampliada. Apagado, el dedo en horizontal es del paginador,
+  // que es lo que permite pasar a la foto siguiente.
   const arrastre = Gesture.Pan()
+    .enabled(conZoom)
     .onUpdate((evento) => {
-      if (escala.value <= 1) return;
       x.value = xPrevia.value + evento.translationX;
       y.value = yPrevia.value + evento.translationY;
     })
@@ -139,38 +184,98 @@ export function VisorImagen({ uri, onCerrar }: VisorImagenProps) {
   }));
 
   return (
+    <GestureDetector gesture={gestos}>
+      <Animated.View style={{ width: ancho, height: alto }} className="items-center justify-center">
+        <Animated.Image
+          source={{ uri }}
+          style={[{ width: ancho, height: alto }, estiloImagen]}
+          resizeMode="contain"
+          accessibilityLabel="Foto del mensaje ampliada"
+        />
+      </Animated.View>
+    </GestureDetector>
+  );
+}
+
+export function VisorImagen({ imagenes, indiceInicial, onCerrar }: VisorImagenProps) {
+  const { width: anchoPantalla, height: altoPantalla } = useWindowDimensions();
+
+  const abierto = indiceInicial !== null && imagenes.length > 0;
+
+  const [indice, setIndice] = useState(0);
+  const [conZoom, setConZoom] = useState(false);
+
+  // Cada apertura arranca en la foto que se tocó, con el scroll habilitado.
+  useEffect(() => {
+    if (abierto) {
+      setIndice(indiceInicial);
+      setConZoom(false);
+    }
+  }, [abierto, indiceInicial]);
+
+  const alTerminarDeDeslizar = (evento: NativeSyntheticEvent<NativeScrollEvent>): void => {
+    const pagina = Math.round(evento.nativeEvent.contentOffset.x / anchoPantalla);
+    setIndice(Math.min(Math.max(pagina, 0), imagenes.length - 1));
+  };
+
+  return (
     <Modal
-      visible={uri !== null}
+      visible={abierto}
       transparent
       animationType="fade"
       // Android: sin esto el botón físico de retroceso no cierra el visor.
-      onRequestClose={cerrar}
+      onRequestClose={onCerrar}
       statusBarTranslucent
     >
       {/* Gesture handler necesita su propia raíz DENTRO del Modal: el `GestureHandlerRootView`
           del layout no alcanza porque el Modal se monta en otra jerarquía nativa. */}
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 bg-black">
-          <GestureDetector gesture={gestos}>
-            <Animated.View className="flex-1 items-center justify-center">
-              {uri ? (
-                <Animated.Image
-                  source={{ uri }}
-                  style={[{ width: anchoPantalla, height: altoPantalla }, estiloImagen]}
-                  resizeMode="contain"
-                  accessibilityLabel="Foto del mensaje ampliada"
+          {/* Se monta sólo abierto: así `contentOffset` posiciona en la foto tocada en CADA
+              apertura y no sólo en la primera. */}
+          {abierto ? (
+            <ScrollView
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              // Con una foto ampliada el dedo reencuadra; el paginador se apaga para no
+              // pelear por el mismo gesto.
+              scrollEnabled={!conZoom}
+              contentOffset={{ x: indiceInicial * anchoPantalla, y: 0 }}
+              onMomentumScrollEnd={alTerminarDeDeslizar}
+            >
+              {imagenes.map((uri, posicion) => (
+                <PaginaVisor
+                  key={`${uri}-${posicion}`}
+                  uri={uri}
+                  ancho={anchoPantalla}
+                  alto={altoPantalla}
+                  activa={posicion === indice}
+                  onZoom={setConZoom}
                 />
-              ) : null}
-            </Animated.View>
-          </GestureDetector>
+              ))}
+            </ScrollView>
+          ) : null}
 
-          {/* Fuera del GestureDetector para que el gesto de zoom no se coma el toque. */}
+          {/* Fuera del paginador para que el gesto de zoom no se coma el toque. */}
           <SafeAreaView className="absolute left-0 right-0 top-0" edges={['top']}>
-            <View className="flex-row justify-end p-3">
+            <View className="flex-row items-center justify-between p-3">
+              {/* "2 de 5", como en la galería de la publicación. Con una sola foto no
+                  aporta nada y se omite. */}
+              {imagenes.length > 1 ? (
+                <View className="rounded-full bg-black/50 px-3 py-1.5">
+                  <Text className="font-cuerpo-semi text-[13px] text-white">
+                    {`${indice + 1} de ${imagenes.length}`}
+                  </Text>
+                </View>
+              ) : (
+                <View />
+              )}
+
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Cerrar la foto"
-                onPress={cerrar}
+                onPress={onCerrar}
                 hitSlop={12}
                 className="h-10 w-10 items-center justify-center rounded-full bg-black/50 active:opacity-70"
               >

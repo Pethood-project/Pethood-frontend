@@ -28,6 +28,8 @@ export interface UltimoMensaje {
   esMio: boolean;
   /** Con `contenido` vacío significa mensaje de sólo foto. */
   tieneImagen: boolean;
+  /** `SOLICITUD` es la tarjeta de un pedido: `contenido` vacío, el texto lo pone la fila. */
+  tipo: 'TEXTO' | 'SOLICITUD';
 }
 
 export interface Conversacion {
@@ -58,6 +60,31 @@ export function listarChats(): Promise<ListaChats> {
 // ─────────────── HU-5.2 · Sala de conversación (GUI-14) ───────────────
 
 /**
+ * La solicitud que originó la sala. La pinta la tarjeta embebida de la conversación y el
+ * subtítulo de la cabecera.
+ *
+ * Es un resumen: para el detalle completo se navega a `/solicitudes/:id` con el `id`.
+ */
+export interface SolicitudEnChat {
+  id: number;
+  /** "Adopcion" o "Transito", del catálogo del backend. */
+  tipo: string;
+  /** Estado vigente ("Pendiente", "Aceptada"…), resuelto al momento del pedido. */
+  estado: string;
+  /** ISO 8601 crudo: cuándo se envió. */
+  fechaAlta: string;
+  mascota: {
+    id: number;
+    /** `null` si la mascota no tiene nombre cargado. */
+    nombre: string | null;
+    especie: string;
+    /** ISO crudo o `null`. La edad la calcula el cliente. */
+    fechaNacimiento: string | null;
+    imagenUrl: string | null;
+  };
+}
+
+/**
  * Un mensaje. **Misma forma en el historial, en la respuesta del envío y en el evento
  * `chat:mensaje-nuevo`**, así que hay un solo tipo y un solo mapper para los tres.
  */
@@ -65,13 +92,33 @@ export interface Mensaje {
   /** Clave de deduplicación contra el broadcast, y cursor de paginación. */
   id: number;
   chatId: number;
-  /** Cadena vacía en un mensaje de sólo foto. */
+  /** Cadena vacía en un mensaje de sólo foto o en uno de tipo `SOLICITUD`. */
   contenido: string;
-  /** Ruta relativa: pasarla por `urlAbsoluta`. `null` si el mensaje es sólo texto. */
+  /** PRIMERA foto: es siempre `imagenes[0]`. Se conserva por compatibilidad. */
   imagenUrl: string | null;
+  /** Todas las fotos, en orden. Rutas relativas: pasarlas por `urlAbsoluta`. */
+  imagenes: string[];
   /** Id del emisor. El backend NO manda `esMio`: se compara con la sesión. */
   usuarioId: number;
+  /**
+   * `SOLICITUD` es la tarjeta que deja PetHood al enviarse una solicitud: no es una
+   * burbuja y su emisor es el usuario SISTEMA, que no participa de la sala.
+   */
+  tipo: 'TEXTO' | 'SOLICITUD';
+  /**
+   * Le llegó al destinatario aunque no lo haya abierto: el segundo tilde.
+   *
+   * Ojo con la semántica: `entregado` y `leido` responden "¿lo recibió/leyó su
+   * destinatario?". En un mensaje AJENO el destinatario sos vos, así que sólo tienen
+   * sentido en los propios — que es donde el diseño los pinta.
+   */
+  entregado: boolean;
+  /** El destinatario lo leyó: el doble tilde pintado. */
   leido: boolean;
+  /** Cuándo lo leyó, ISO crudo, o `null`. Todos los cubiertos por una lectura comparten hora. */
+  fechaLectura: string | null;
+  /** Sólo en los de `tipo: 'SOLICITUD'`. */
+  solicitud: SolicitudEnChat | null;
   /** ISO 8601 crudo. La hora la arma `horaVisible`. */
   fechaAlta: string;
 }
@@ -89,6 +136,13 @@ export interface CabeceraChat {
   contacto: ContactoChat;
   /** Snapshot de presencia. A partir de acá lo actualiza el evento `chat:presencia`. */
   enLinea: boolean;
+  /**
+   * En cuántos MINUTOS suele responder el contacto, o `null` si todavía no hay tendencia.
+   * El texto ("responde en ~2 h") lo arma el cliente.
+   */
+  minutosRespuesta: number | null;
+  /** La solicitud que abrió la sala, o `null` si no nació de una. */
+  solicitud: SolicitudEnChat | null;
 }
 
 export interface ResultadoLeidos {
@@ -97,6 +151,14 @@ export interface ResultadoLeidos {
   noLeidos: number;
   /** Cuántos cambiaron de verdad. 0 al reabrir una sala ya leída. */
   marcados: number;
+}
+
+export interface ResultadoEntregados {
+  chatId: number;
+  /** Cuántos pasaron a entregados. 0 al reacusar lo ya acusado. */
+  marcados: number;
+  /** Hasta qué fecha quedó acusada la sala, ISO crudo, o `null` si no había nada. */
+  hasta: string | null;
 }
 
 /** Cabecera de GUI-14: contacto ya resuelto y presencia, sin depender del listado. */
@@ -117,23 +179,29 @@ export function listarMensajes(chatId: number, antesDe?: number): Promise<Histor
 /**
  * Envía un mensaje. Devuelve el mensaje YA persistido, con su id y su fecha definitivos.
  *
- * Va por REST y no por socket: así el envío funciona aunque el websocket esté caído, y la
- * foto reusa el multipart por XHR que el resto de la app ya usa. Con foto va multipart;
- * sin foto, JSON — mandar multipart para un texto suelto sería armar un formulario al
+ * Va por REST y no por socket: así el envío funciona aunque el websocket esté caído, y las
+ * fotos reusan el multipart por XHR que el resto de la app ya usa. Con fotos va multipart;
+ * sin fotos, JSON — mandar multipart para un texto suelto sería armar un formulario al
  * pedo.
+ *
+ * Las fotos viajan **repitiendo el campo `foto`**, que es como multipart expresa una lista
+ * y lo que el backend espera. El orden en que se agregan es el que se ve en la grilla.
  */
 export async function enviarMensaje(
   chatId: number,
   contenido: string,
-  foto?: ArchivoAdjunto | null,
+  fotos: ArchivoAdjunto[] = [],
 ): Promise<Mensaje> {
-  if (!foto) {
+  if (fotos.length === 0) {
     return post(`/chats/${chatId}/mensajes`, { contenido });
   }
 
   const formData = new FormData();
   formData.append('contenido', contenido);
-  await adjuntarArchivo(formData, 'foto', foto);
+
+  for (const foto of fotos) {
+    await adjuntarArchivo(formData, 'foto', foto);
+  }
 
   return postFormData(`/chats/${chatId}/mensajes`, formData);
 }
@@ -141,4 +209,14 @@ export async function enviarMensaje(
 /** Marca leída la conversación entera. Se llama al abrir la sala, no por mensaje visto. */
 export function marcarChatLeido(chatId: number): Promise<ResultadoLeidos> {
   return post(`/chats/${chatId}/leidos`, {});
+}
+
+/**
+ * Acusa que los mensajes de la sala LLEGARON, aunque no se haya abierto: el segundo tilde.
+ *
+ * Se llama apenas entra un mensaje por socket, se esté donde se esté. Es de sala y no de
+ * mensaje, así que con una llamada alcanza para una ráfaga entera.
+ */
+export function marcarChatEntregado(chatId: number): Promise<ResultadoEntregados> {
+  return post(`/chats/${chatId}/entregados`, {});
 }

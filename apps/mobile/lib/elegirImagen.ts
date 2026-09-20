@@ -98,6 +98,47 @@ export function elegirArchivosWeb(multiple = false): Promise<ImagePicker.ImagePi
   });
 }
 
+/** Qué devolvió el selector: fotos, o que el permiso no está. */
+export type ResultadoSeleccion =
+  | { assets: ImagePicker.ImagePickerAsset[] }
+  | { permisoDenegado: 'camara' | 'galeria' };
+
+/**
+ * Varias fotos de la galería de una vez, hasta `maximo`.
+ *
+ * No pregunta de dónde: quien llama ya lo decidió con su propia hoja (`HojaAdjuntos`), en
+ * vez del diálogo del sistema. En web no hay galería como tal: se abre el selector de
+ * archivos, que también admite varios.
+ */
+export async function elegirFotosDeGaleria(maximo: number): Promise<ResultadoSeleccion> {
+  if (Platform.OS === 'web') {
+    const assets = await elegirArchivosWeb(true);
+    return { assets: assets.slice(0, maximo) };
+  }
+
+  const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permiso.granted) return { permisoDenegado: 'galeria' };
+
+  const resultado = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    quality: 0.8,
+    allowsMultipleSelection: true,
+    selectionLimit: maximo,
+  });
+
+  return { assets: resultado.canceled ? [] : resultado.assets.slice(0, maximo) };
+}
+
+/** Una foto con la cámara. Se saca de a una, así que el máximo no aplica. */
+export async function sacarFotoConCamara(): Promise<ResultadoSeleccion> {
+  const permiso = await ImagePicker.requestCameraPermissionsAsync();
+  if (!permiso.granted) return { permisoDenegado: 'camara' };
+
+  const resultado = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8 });
+
+  return { assets: resultado.canceled ? [] : resultado.assets };
+}
+
 export function abrirSelectorImagen(params: AbrirSelectorImagenParams): void {
   const opciones = params.opciones ?? OPCIONES_IMAGEN_PERFIL;
 

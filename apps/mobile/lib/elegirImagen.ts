@@ -98,6 +98,73 @@ export function elegirArchivosWeb(multiple = false): Promise<ImagePicker.ImagePi
   });
 }
 
+interface AbrirSelectorImagenesParams {
+  titulo: string;
+  mensaje: string;
+  /** Cuántas se pueden elegir en esta pasada. */
+  maximo: number;
+  onElegidas: (assets: ImagePicker.ImagePickerAsset[]) => void;
+  onErrorPermisoGaleria: (mensaje: string) => void;
+  onErrorPermisoCamara: () => void;
+}
+
+/**
+ * Igual que `abrirSelectorImagen` pero para varias a la vez: la galería admite selección
+ * múltiple y la cámara sigue siendo de a una, porque se saca una foto por vez.
+ *
+ * Lo usa el chat, donde un mensaje puede llevar hasta cinco fotos.
+ */
+export function abrirSelectorImagenes(params: AbrirSelectorImagenesParams): void {
+  const opciones: ImagePicker.ImagePickerOptions = {
+    mediaTypes: ['images'],
+    quality: 0.8,
+    allowsMultipleSelection: true,
+    selectionLimit: params.maximo,
+  };
+
+  const procesar = (resultado: ImagePicker.ImagePickerResult): void => {
+    if (resultado.canceled) return;
+    params.onElegidas(resultado.assets.slice(0, params.maximo));
+  };
+
+  if (Platform.OS === 'web') {
+    void elegirArchivosWeb(true).then((assets) => {
+      if (assets.length > 0) params.onElegidas(assets.slice(0, params.maximo));
+    });
+    return;
+  }
+
+  Alert.alert(params.titulo, params.mensaje, [
+    {
+      text: 'Cámara',
+      onPress: () => {
+        void (async () => {
+          const permiso = await ImagePicker.requestCameraPermissionsAsync();
+          if (!permiso.granted) {
+            params.onErrorPermisoCamara();
+            return;
+          }
+          procesar(await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.8 }));
+        })();
+      },
+    },
+    {
+      text: 'Galería',
+      onPress: () => {
+        void (async () => {
+          const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (!permiso.granted) {
+            params.onErrorPermisoGaleria('Necesitamos permiso para acceder a tus fotos.');
+            return;
+          }
+          procesar(await ImagePicker.launchImageLibraryAsync(opciones));
+        })();
+      },
+    },
+    { text: 'Cancelar', style: 'cancel' },
+  ]);
+}
+
 export function abrirSelectorImagen(params: AbrirSelectorImagenParams): void {
   const opciones = params.opciones ?? OPCIONES_IMAGEN_PERFIL;
 

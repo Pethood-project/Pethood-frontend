@@ -24,6 +24,7 @@ export const EVENTOS = {
   SALIR: 'chat:salir',
   MENSAJE_NUEVO: 'chat:mensaje-nuevo',
   LEIDO: 'chat:leido',
+  ENTREGADO: 'chat:entregado',
   NO_LEIDOS: 'chat:no-leidos',
   PRESENCIA: 'chat:presencia',
   ERROR: 'chat:error',
@@ -34,10 +35,19 @@ export type Ack<T> =
   | { ok: true; datos: T }
   | { ok: false; error: { codigo: string; mensaje: string } };
 
-export interface EventoLeido {
+/**
+ * Alguien leyó (`chat:leido`) o recibió (`chat:entregado`) la conversación.
+ *
+ * Los dos eventos tienen el mismo payload porque son el mismo hecho contado en dos momentos.
+ * `hasta` acota el avance: se marcan los propios con `fechaAlta <= hasta` y no la sala
+ * entera, así un mensaje que entró justo después sigue sin acusar.
+ */
+export interface EventoAcuse {
   chatId: number;
-  /** Quién leyó. Si no sos vos, tus mensajes de esa sala pasan a leídos. */
+  /** Quién acusó. Si no sos vos, tus mensajes de esa sala avanzan de estado. */
   usuarioId: number;
+  /** ISO crudo: hasta qué mensaje llegó el acuse. */
+  hasta: string;
 }
 
 export interface EventoNoLeidos {

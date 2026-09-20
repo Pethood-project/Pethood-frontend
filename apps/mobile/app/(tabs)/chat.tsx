@@ -43,13 +43,15 @@ function SeparadorFilas() {
 const REFRESCO_TEXTOS_MS = 60_000;
 
 /**
- * Subtítulo de GUI-31. El diseño lo muestra como "Refugio Esperanza · 4 sin leer", pero el
- * nombre del refugio no viaja en la sesión: `Usuario` (types/auth.ts) sólo trae los roles,
- * no a qué refugio pertenece la persona. Se muestra la parte que sí tenemos en vez de
- * inventar un pedido a la API — queda anotado como pendiente.
+ * Subtítulo de GUI-31: "Refugio Esperanza · 4 sin leer".
+ *
+ * El nombre del refugio viaja en la sesión desde que el backend lo sumó a la respuesta de
+ * auth. Una sesión guardada antes de ese cambio no lo tiene: ahí se muestra sólo el
+ * contador, que es lo que el diseño pone a la derecha del punto.
  */
-function subtituloRefugio(sinLeer: number): string {
-  return sinLeer === 1 ? '1 sin leer' : `${sinLeer} sin leer`;
+function subtituloRefugio(sinLeer: number, refugio: string | null): string {
+  const contador = sinLeer === 1 ? '1 sin leer' : `${sinLeer} sin leer`;
+  return refugio ? `${refugio} · ${contador}` : contador;
 }
 
 function ListaVacia() {
@@ -64,7 +66,7 @@ function ListaVacia() {
 }
 
 export default function ChatScreen() {
-  const { esRefugio } = useSesion();
+  const { esRefugio, usuario } = useSesion();
   const router = useRouter();
 
   const { chats, cargando, refrescando, error, recargar, refrescar } = useListaChats();
@@ -102,8 +104,11 @@ export default function ChatScreen() {
               <Text className="font-titulo text-[23px] leading-[28px] text-organic-accent-600">
                 Mensajes del Refugio
               </Text>
-              <Text className="mt-[4px] font-cuerpo text-[12px] text-organic-neutral-600">
-                {subtituloRefugio(sinLeer)}
+              <Text
+                numberOfLines={1}
+                className="mt-[4px] font-cuerpo text-[12px] text-organic-neutral-600"
+              >
+                {subtituloRefugio(sinLeer, usuario?.refugio?.nombre ?? null)}
               </Text>
             </>
           ) : (

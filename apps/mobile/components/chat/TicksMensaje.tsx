@@ -5,11 +5,9 @@
  * Sólo tiene sentido en los mensajes propios: el estado de lectura de lo que nos mandan a
  * nosotros no se le muestra a nadie.
  *
- * **Hoy `entregado` no se usa.** El backend expone `leido` y nada más: no hay acuse de
- * entrega al dispositivo del destinatario (ver `api-chat-sala.md`), así que un mensaje pasa
- * de `enviado` a `leido` sin escala. El estado está igual en el tipo para que, cuando el
- * servidor mande el acuse, alcance con devolverlo desde `entregaDe` y no haya que tocar la
- * burbuja ni el pie de la foto.
+ * Los tres estados son reales: el backend expone `entregado` y `leido` por separado desde
+ * que el acuse de recibo vive en `usuario_chat_ultima_entrega` / `ultima_lectura`
+ * (ver `api-chat-sala.md`).
  */
 import { Ionicons } from '@expo/vector-icons';
 import { View } from 'react-native';
@@ -46,7 +44,8 @@ const COLORES: Record<FondoTicks, { pendiente: string; leido: string }> = {
  * todavía no hay mensaje del lado del servidor que acusar.
  */
 export function entregaDe(item: ItemChat): EntregaMensaje {
-  return item.leido ? 'leido' : 'enviado';
+  if (item.leido) return 'leido';
+  return item.entregado ? 'entregado' : 'enviado';
 }
 
 interface TicksMensajeProps {

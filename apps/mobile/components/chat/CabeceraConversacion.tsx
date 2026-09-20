@@ -18,7 +18,7 @@ import { Text, View, Pressable } from 'react-native';
 import { Avatar } from '@/components/ui/Avatar';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
-import type { ContactoChat } from '@/services/chats';
+import type { ContactoChat, SolicitudEnChat } from '@/services/chats';
 
 const AVATAR = 44;
 const AVATAR_TEXTO = 16;
@@ -26,9 +26,29 @@ const AVATAR_TEXTO = 16;
 interface CabeceraConversacionProps {
   contacto: ContactoChat | null;
   enLinea: boolean;
+  /** En cuántos minutos suele responder el contacto, o `null` si no hay tendencia. */
+  minutosRespuesta?: number | null;
+  /** La solicitud que abrió la sala, si la hay: manda sobre el estado en el subtítulo. */
+  solicitud?: SolicitudEnChat | null;
   /** Muestra la franja de "Sin conexión" bajo la cabecera. */
   desconectado: boolean;
   onVolver: () => void;
+}
+
+/**
+ * "responde en ~2 h" a partir de los minutos que manda el backend.
+ *
+ * Redondea a la unidad de arriba a propósito: quien lee está calculando cuánto va a esperar,
+ * y prometer menos de lo que suele tardar es peor que prometer de más.
+ */
+function textoRespuesta(minutos: number): string {
+  if (minutos < 60) return `responde en ~${minutos} min`;
+
+  const horas = Math.round(minutos / 60);
+  if (horas < 24) return `responde en ~${horas} ${horas === 1 ? 'hora' : 'horas'}`;
+
+  const dias = Math.round(horas / 24);
+  return `responde en ~${dias} ${dias === 1 ? 'día' : 'días'}`;
 }
 
 /**
@@ -38,15 +58,34 @@ interface CabeceraConversacionProps {
  * Un refugio nunca figura conectado —es una institución, no una sesión— así que en vez de
  * un "Desconectado" permanente y engañoso se muestra qué es.
  */
-function subtitulo(contacto: ContactoChat, enLinea: boolean): string {
+function subtitulo(
+  contacto: ContactoChat,
+  enLinea: boolean,
+  minutosRespuesta: number | null,
+  solicitud: SolicitudEnChat | null,
+): string {
   if (!contacto.activo) return 'Cuenta dada de baja';
-  if (contacto.tipo === 'REFUGIO') return 'Refugio';
-  return enLinea ? 'En línea' : 'Desconectado';
+
+  // Con una solicitud de por medio, de qué se está hablando importa más que la presencia:
+  // es el subtítulo del artboard 36.
+  if (solicitud) {
+    const mascota = solicitud.mascota.nombre;
+    return `Solicitud #${solicitud.id}${mascota ? ` · ${mascota}` : ''}`;
+  }
+
+  const estado =
+    contacto.tipo === 'REFUGIO' ? 'Refugio' : enLinea ? 'En línea' : 'Desconectado';
+
+  // "En línea · responde en ~2 h" del artboard 35. El tiempo se agrega sólo cuando el
+  // backend pudo calcularlo: con pocas respuestas manda `null` y no se inventa nada.
+  return minutosRespuesta === null ? estado : `${estado} · ${textoRespuesta(minutosRespuesta)}`;
 }
 
 export function CabeceraConversacion({
   contacto,
   enLinea,
+  minutosRespuesta = null,
+  solicitud = null,
   desconectado,
   onVolver,
 }: CabeceraConversacionProps) {
@@ -86,7 +125,7 @@ export function CabeceraConversacion({
 
           {contacto ? (
             <Text numberOfLines={1} className="font-cuerpo text-[11px] text-organic-neutral-600">
-              {subtitulo(contacto, enLinea)}
+              {subtitulo(contacto, enLinea, minutosRespuesta, solicitud)}
             </Text>
           ) : null}
         </View>

@@ -22,7 +22,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
-import { FotoMensaje } from '@/components/chat/FotoMensaje';
+import { GrillaFotosMensaje } from '@/components/chat/GrillaFotosMensaje';
+import { TarjetaSolicitudChat } from '@/components/chat/TarjetaSolicitudChat';
 import { entregaDe, TicksMensaje } from '@/components/chat/TicksMensaje';
 import { PALETA } from '@/constants/theme';
 import type { ItemChat } from '@/lib/mensajesChat';
@@ -36,8 +37,8 @@ const RADIO_COLA = 5;
 /** Padding interno de la burbuja: 8/11 del artboard. */
 const RELLENO = { paddingHorizontal: 15, paddingVertical: 11 };
 
-/** Foto recibida: 88 de lado en el artboard. */
-const LADO_FOTO_RECIBIDA = 117;
+/** Miniatura de la grilla cuando el mensaje trae varias: 88 de lado en el artboard. */
+const LADO_MINIATURA = 117;
 /** Foto propia: 104 de alto y el 76% del ancho disponible. */
 const ALTO_FOTO_PROPIA = 139;
 const FRACCION_FOTO_PROPIA = 0.76;
@@ -72,8 +73,10 @@ interface BurbujaMensajeProps {
   /** Sólo en las propias que fallaron. */
   onReintentar?: () => void;
   onDescartar?: () => void;
-  /** Abre la foto a pantalla completa. El visor lo monta la pantalla, no cada burbuja. */
-  onAbrirImagen?: () => void;
+  /** Abre la foto a pantalla completa, por posición. El visor lo monta la pantalla. */
+  onAbrirImagen?: (indice: number) => void;
+  /** Navega al detalle de la solicitud embebida. Sólo en los mensajes de sistema. */
+  onVerSolicitud?: () => void;
 }
 
 /** Hora del mensaje dentro de la burbuja, o el estado mientras no hay fecha del servidor. */
@@ -114,7 +117,7 @@ function PieBurbuja({ item }: { item: ItemChat }) {
   );
 }
 
-/** Pie de una foto propia sin texto: reemplaza a la burbuja que ese mensaje no tiene. */
+/** Pie de las fotos propias sin texto: reemplaza a la burbuja que ese mensaje no tiene. */
 function PieFotoPropia({ item }: { item: ItemChat }) {
   if (item.estado === 'enviando') {
     return (
@@ -134,10 +137,14 @@ function PieFotoPropia({ item }: { item: ItemChat }) {
     );
   }
 
+  const cuantas = item.imagenes.length;
+
   return (
     <View className="mt-1 flex-row items-center justify-end gap-[5px]">
       <Text className="font-cuerpo text-[11px] text-organic-neutral-600">
-        {`Enviaste una foto${item.fecha ? ` · ${horaVisible(new Date(item.fecha))}` : ''}`}
+        {`Enviaste ${cuantas === 1 ? 'una foto' : `${cuantas} fotos`}${
+          item.fecha ? ` · ${horaVisible(new Date(item.fecha))}` : ''
+        }`}
       </Text>
 
       <TicksMensaje entrega={entregaDe(item)} fondo="pantalla" />
@@ -150,28 +157,42 @@ export function BurbujaMensaje({
   onReintentar,
   onDescartar,
   onAbrirImagen,
+  onVerSolicitud,
 }: BurbujaMensajeProps) {
   const { width: anchoPantalla } = useWindowDimensions();
 
+  // La tarjeta de la solicitud no es una burbuja: ocupa el ancho y no tiene lado.
+  if (item.tipo === 'SOLICITUD') {
+    return item.solicitud ? (
+      <TarjetaSolicitudChat
+        solicitud={item.solicitud}
+        fecha={item.fecha}
+        onVerSolicitud={onVerSolicitud}
+      />
+    ) : null;
+  }
+
   const propia = item.esMio;
-  const soloFoto = Boolean(item.imagen) && !item.contenido;
+  const hayFotos = item.imagenes.length > 0;
+  const soloFotos = hayFotos && !item.contenido;
   const anchoFotoPropia = Math.floor((anchoPantalla - MARGEN_LISTA) * FRACCION_FOTO_PROPIA);
 
   return (
     <View className={`w-full ${propia ? 'items-end' : 'items-start'}`}>
-      {item.imagen ? (
-        <FotoMensaje
-          uri={item.imagen}
-          ancho={propia ? anchoFotoPropia : LADO_FOTO_RECIBIDA}
-          alto={propia ? ALTO_FOTO_PROPIA : LADO_FOTO_RECIBIDA}
+      {hayFotos ? (
+        <GrillaFotosMensaje
+          imagenes={item.imagenes}
+          lado={LADO_MINIATURA}
+          anchoUnica={propia ? anchoFotoPropia : LADO_MINIATURA}
+          altoUnica={propia ? ALTO_FOTO_PROPIA : LADO_MINIATURA}
           subiendo={item.estado === 'enviando'}
           onAbrir={onAbrirImagen}
         />
       ) : null}
 
-      {/* Un mensaje de sólo foto no tiene burbuja: la foto propia lleva su pie debajo y la
-          recibida va pelada, como en el artboard 37. */}
-      {soloFoto ? (
+      {/* Un mensaje de sólo fotos no tiene burbuja: las propias llevan su pie debajo y las
+          recibidas van peladas, como en el artboard 37. */}
+      {soloFotos ? (
         propia ? (
           <View style={{ width: anchoFotoPropia }}>
             <PieFotoPropia item={item} />
@@ -184,7 +205,7 @@ export function BurbujaMensaje({
             ...RELLENO,
             ...(propia ? null : SOMBRA),
           }}
-          className={`max-w-[80%] ${item.imagen ? 'mt-[5px]' : ''} ${
+          className={`max-w-[80%] ${hayFotos ? 'mt-[5px]' : ''} ${
             propia ? 'bg-organic-accent-600' : 'bg-organic-neutral-100'
           }`}
         >

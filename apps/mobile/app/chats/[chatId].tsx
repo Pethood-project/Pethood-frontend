@@ -26,15 +26,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarraEscritura } from '@/components/chat/BarraEscritura';
 import { BurbujaMensaje } from '@/components/chat/BurbujaMensaje';
 import { CabeceraConversacion } from '@/components/chat/CabeceraConversacion';
+import { HojaAdjuntos } from '@/components/chat/HojaAdjuntos';
 import { VisorImagen } from '@/components/chat/VisorImagen';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { SeparadorFecha } from '@/components/ui/SeparadorFecha';
 import { PALETA } from '@/constants/theme';
 import { useSalaChat } from '@/hooks/useSalaChat';
 import { useSesion } from '@/hooks/useSesion';
-import { abrirSelectorImagen, validarAssetImagen } from '@/lib/elegirImagen';
+import { abrirSelectorImagenes, validarAssetImagen } from '@/lib/elegirImagen';
 import { intercalarSeparadores, type FilaSala } from '@/lib/mensajesChat';
 import type { ArchivoAdjunto } from '@/services/api';
+import { LIMITES } from '@/shared/validation/limits';
 
 const EXTENSION_POR_TIPO: Record<string, string> = {
   'image/jpeg': 'jpg',
@@ -54,7 +56,10 @@ export default function ConversacionScreen() {
   const { chatId: parametro } = useLocalSearchParams<{ chatId: string }>();
   const chatId = Number(parametro);
 
-  const [foto, setFoto] = useState<ArchivoAdjunto | null>(null);
+  /** Fotos elegidas y todavía sin enviar. Hasta `LIMITES.mensaje.fotos.maximo`. */
+  const [fotos, setFotos] = useState<ArchivoAdjunto[]>([]);
+  /** Hoja "Enviar en el chat" del botón `+`. */
+  const [hojaAbierta, setHojaAbierta] = useState(false);
   /** Foto que se está viendo a pantalla completa, o `null`. Un solo visor para toda la lista. */
   const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
 
@@ -124,28 +129,49 @@ export default function ConversacionScreen() {
   );
 
   /**
-   * Criterio 6: el clip abre el explorador nativo. Se reusa el selector del proyecto, que
+   * Criterio 6: adjuntar abre el explorador nativo. Se reusa el selector del proyecto, que
    * ya resuelve el menú Cámara/Galería, los permisos y el caso web.
+   *
+   * El tope se calcula contra lo que ya hay elegido, así dos pasadas seguidas no se pasan
+   * del máximo que el backend acepta.
    */
-  const elegirFoto = useCallback((): void => {
-    abrirSelectorImagen({
-      titulo: 'Adjuntar una foto',
-      mensaje: '¿De dónde querés sacarla?',
-      opciones: { mediaTypes: ['images'], quality: 0.8 },
-      onElegida: (asset) => {
-        // Validación de UX nada más: el backend valida igual formato y peso.
-        const problema = validarAssetImagen(asset);
-        if (problema) {
-          Alert.alert('No pudimos adjuntarla', problema);
-          return;
+  const elegirFotos = useCallback((): void => {
+    setHojaAbierta(false);
+
+    const lugar = LIMITES.mensaje.fotos.maximo - fotos.length;
+
+    if (lugar <= 0) {
+      Alert.alert(
+        'Llegaste al máximo',
+        `Podés mandar hasta ${LIMITES.mensaje.fotos.maximo} fotos por mensaje.`,
+      );
+      return;
+    }
+
+    abrirSelectorImagenes({
+      titulo: 'Adjuntar fotos',
+      mensaje: '¿De dónde las sacamos?',
+      maximo: lugar,
+      onElegidas: (assets) => {
+        const validas: ArchivoAdjunto[] = [];
+
+        for (const asset of assets) {
+          // Validación de UX nada más: el backend valida igual formato y peso.
+          const problema = validarAssetImagen(asset);
+          if (problema) {
+            Alert.alert('No pudimos adjuntarla', problema);
+            continue;
+          }
+
+          const tipo = normalizarTipo(asset.mimeType);
+          validas.push({
+            uri: asset.uri,
+            nombre: asset.fileName ?? `mensaje-${validas.length}.${EXTENSION_POR_TIPO[tipo] ?? 'jpg'}`,
+            tipo,
+          });
         }
 
-        const tipo = normalizarTipo(asset.mimeType);
-        setFoto({
-          uri: asset.uri,
-          nombre: asset.fileName ?? `mensaje.${EXTENSION_POR_TIPO[tipo] ?? 'jpg'}`,
-          tipo,
-        });
+        if (validas.length > 0) setFotos((actuales) => [...actuales, ...validas]);
       },
       onErrorPermisoGaleria: (mensaje) => Alert.alert('Necesitamos tus fotos', mensaje),
       onErrorPermisoCamara: () =>
@@ -154,17 +180,21 @@ export default function ConversacionScreen() {
           'Dale permiso a PetHood para usar la cámara, o elegí una foto de la galería.',
         ),
     });
-  }, []);
+  }, [fotos.length]);
 
   const enviar = useCallback(
     (contenido: string): void => {
-      sala.enviar(contenido, foto);
-      // La foto se suelta junto con el texto: ya viajó al pendiente, que conserva su copia
-      // para poder reintentar.
-      setFoto(null);
+      sala.enviar(contenido, fotos);
+      // Las fotos se sueltan junto con el texto: ya viajaron al pendiente, que conserva su
+      // copia para poder reintentar.
+      setFotos([]);
     },
-    [sala, foto],
+    [sala, fotos],
   );
+
+  const quitarFoto = useCallback((indice: number): void => {
+    setFotos((actuales) => actuales.filter((_, posicion) => posicion !== indice));
+  }, []);
 
   /**
    * Los mensajes más los chips de día. Se recalcula sólo cuando cambia la lista: el día de
@@ -183,14 +213,17 @@ export default function ConversacionScreen() {
             item={fila.item}
             onReintentar={() => sala.reintentar(fila.item.clave)}
             onDescartar={() => sala.descartar(fila.item.clave)}
-            onAbrirImagen={
-              fila.item.imagen ? () => setImagenAmpliada(fila.item.imagen) : undefined
+            onAbrirImagen={(indice) => setImagenAmpliada(fila.item.imagenes[indice] ?? null)}
+            onVerSolicitud={
+              fila.item.solicitud
+                ? () => router.push(`/solicitudes/${fila.item.solicitud!.id}`)
+                : undefined
             }
           />
         )}
       </View>
     ),
-    [sala],
+    [sala, router],
   );
 
   const volver = useCallback((): void => {
@@ -208,6 +241,8 @@ export default function ConversacionScreen() {
         <CabeceraConversacion
           contacto={sala.cabecera?.contacto ?? null}
           enLinea={sala.enLinea}
+          minutosRespuesta={sala.cabecera?.minutosRespuesta ?? null}
+          solicitud={sala.cabecera?.solicitud ?? null}
           desconectado={sala.desconectado}
           onVolver={volver}
         />
@@ -259,9 +294,9 @@ export default function ConversacionScreen() {
           {/* La barra se muestra aunque el historial esté cargando o haya fallado: el
               usuario puede escribir igual, y el envío no depende de haber podido leer. */}
           <BarraEscritura
-            foto={foto}
-            onElegirFoto={elegirFoto}
-            onQuitarFoto={() => setFoto(null)}
+            fotos={fotos}
+            onAdjuntar={() => setHojaAbierta(true)}
+            onQuitarFoto={quitarFoto}
             onEnviar={enviar}
             habilitada={sala.puedeEscribir}
           />
@@ -280,6 +315,12 @@ export default function ConversacionScreen() {
       {/* Un solo visor para toda la conversación: montar un Modal por burbuja sería un
           componente por mensaje para algo que sólo se ve de a uno. */}
       <VisorImagen uri={imagenAmpliada} onCerrar={() => setImagenAmpliada(null)} />
+
+      <HojaAdjuntos
+        visible={hojaAbierta}
+        onCerrar={() => setHojaAbierta(false)}
+        onElegirFoto={elegirFotos}
+      />
     </View>
   );
 }

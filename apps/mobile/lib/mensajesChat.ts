@@ -17,7 +17,7 @@
  */
 import type { ArchivoAdjunto } from '@/services/api';
 import { urlAbsoluta } from '@/services/api';
-import type { Mensaje } from '@/services/chats';
+import type { Mensaje, SolicitudEnChat } from '@/services/chats';
 import { etiquetaDia, inicioDelDia } from '@/shared/validation/dates';
 
 /** Un mensaje que el usuario mandó y todavía no confirmó el servidor. */
@@ -25,8 +25,8 @@ export interface MensajePendiente {
   /** Identidad local: es la clave de la lista y con la que se lo reemplaza al confirmar. */
   claveLocal: string;
   contenido: string;
-  /** Se conserva para poder reintentar sin que el usuario vuelva a elegir la foto. */
-  foto: ArchivoAdjunto | null;
+  /** Se conservan para poder reintentar sin que el usuario vuelva a elegir las fotos. */
+  fotos: ArchivoAdjunto[];
   /** `true` si el envío falló y la burbuja ofrece reintentar. */
   fallo: boolean;
 }
@@ -38,13 +38,22 @@ export interface MensajePendiente {
 export interface ItemChat {
   clave: string;
   contenido: string;
-  /** URL absoluta del servidor, o uri local mientras la foto sube. `null` si es sólo texto. */
-  imagen: string | null;
+  /**
+   * URLs absolutas del servidor, o uris locales mientras las fotos suben. Vacío si el
+   * mensaje es sólo texto.
+   */
+  imagenes: string[];
   esMio: boolean;
   /** ISO del servidor. `null` en un pendiente: todavía no hay hora oficial. */
   fecha: string | null;
-  /** Doble check. Sólo tiene sentido en los propios. */
+  /** Le llegó al destinatario. Sólo tiene sentido en los propios. */
+  entregado: boolean;
+  /** Lo leyó el destinatario. Sólo tiene sentido en los propios. */
   leido: boolean;
+  /** `SOLICITUD` se pinta como tarjeta y no como burbuja. */
+  tipo: 'TEXTO' | 'SOLICITUD';
+  /** Sólo en los de tipo `SOLICITUD`. */
+  solicitud: SolicitudEnChat | null;
   estado: 'enviado' | 'enviando' | 'error';
 }
 
@@ -82,18 +91,36 @@ export function mezclarPagina(lista: Mensaje[], pagina: Mensaje[]): Mensaje[] {
 }
 
 /**
- * Marca como leídos los mensajes PROPIOS: el otro abrió la sala (evento `chat:leido`).
+ * Avanza el acuse de los mensajes PROPIOS hasta la fecha que informó el evento
+ * (`chat:leido` o `chat:entregado`).
  *
- * Se marcan todos y no algunos porque leer es una operación de sala entera — el backend
- * hace exactamente lo mismo con un solo UPDATE.
+ * `hasta` acota el avance en vez de marcar la sala entera: si entró un mensaje nuestro
+ * justo después de que el otro leyera, ése tiene que seguir sin acusar. Leer implica haber
+ * recibido, así que una lectura también adelanta la entrega.
  */
-export function marcarMisMensajesLeidos(lista: Mensaje[], miUsuarioId: number): Mensaje[] {
-  if (!lista.some((mensaje) => mensaje.usuarioId === miUsuarioId && !mensaje.leido)) {
-    return lista;
-  }
+export function marcarMisMensajesAcusados(
+  lista: Mensaje[],
+  miUsuarioId: number,
+  acuse: 'entregado' | 'leido',
+  hasta: string,
+): Mensaje[] {
+  const tope = Date.parse(hasta);
+
+  const alcanza = (mensaje: Mensaje): boolean =>
+    mensaje.usuarioId === miUsuarioId &&
+    Date.parse(mensaje.fechaAlta) <= tope &&
+    !mensaje[acuse];
+
+  if (!lista.some(alcanza)) return lista;
 
   return lista.map((mensaje) =>
-    mensaje.usuarioId === miUsuarioId ? { ...mensaje, leido: true } : mensaje,
+    alcanza(mensaje)
+      ? {
+          ...mensaje,
+          entregado: true,
+          ...(acuse === 'leido' ? { leido: true, fechaLectura: hasta } : {}),
+        }
+      : mensaje,
   );
 }
 
@@ -116,7 +143,7 @@ export function quitarPendienteConfirmado(
     (pendiente) =>
       !pendiente.fallo &&
       pendiente.contenido === mensaje.contenido &&
-      (pendiente.foto !== null) === (mensaje.imagenUrl !== null),
+      pendiente.fotos.length === mensaje.imagenes.length,
   );
 
   if (indice === -1) return pendientes;
@@ -139,11 +166,14 @@ export function aItems(
     .map((pendiente) => ({
       clave: pendiente.claveLocal,
       contenido: pendiente.contenido,
-      // La miniatura sale de la uri local: la del servidor todavía no existe.
-      imagen: pendiente.foto?.uri ?? null,
+      // Las miniaturas salen de las uris locales: las del servidor todavía no existen.
+      imagenes: pendiente.fotos.map((foto) => foto.uri),
       esMio: true,
       fecha: null,
+      entregado: false,
       leido: false,
+      tipo: 'TEXTO' as const,
+      solicitud: null,
       estado: pendiente.fallo ? ('error' as const) : ('enviando' as const),
     }))
     // Los pendientes se guardan en orden de envío y la lista va al revés.
@@ -152,10 +182,15 @@ export function aItems(
   const enviados: ItemChat[] = confirmados.map((mensaje) => ({
     clave: String(mensaje.id),
     contenido: mensaje.contenido,
-    imagen: urlAbsoluta(mensaje.imagenUrl),
-    esMio: mensaje.usuarioId === miUsuarioId,
+    // `urlAbsoluta` devuelve null sólo con entrada vacía; acá nunca lo es.
+    imagenes: mensaje.imagenes.map((ruta) => urlAbsoluta(ruta) ?? ruta),
+    // Un mensaje de sistema lo emite SISTEMA, que no participa de la sala: nunca es propio.
+    esMio: mensaje.tipo === 'TEXTO' && mensaje.usuarioId === miUsuarioId,
     fecha: mensaje.fechaAlta,
+    entregado: mensaje.entregado,
     leido: mensaje.leido,
+    tipo: mensaje.tipo,
+    solicitud: mensaje.solicitud,
     estado: 'enviado' as const,
   }));
 

@@ -1,9 +1,14 @@
 /**
  * Las fotos de un mensaje (GUI-14, artboard 37).
  *
- * Una sola foto ocupa el ancho que le deja la burbuja. Varias se muestran de a dos por fila,
- * cuadradas, y si son más de las que entran la última lleva el velo con el "+N" — tocarla
- * abre el visor en esa posición, no oculta nada.
+ * La disposición depende de cuántas son, como en las apps de mensajería, para que nunca
+ * quede un hueco:
+ *
+ * - 1: ocupa el ancho que le deja la burbuja.
+ * - 2: dos cuadradas, lado a lado.
+ * - 3: una alta a la izquierda y dos cuadradas apiladas a la derecha.
+ * - 4 o más: 2×2 cuadradas; si hay más de cuatro, la última lleva el velo con el "+N".
+ *   Tocarla abre el visor en esa posición, no oculta nada.
  *
  * Medidas del artboard (sobre 262px, con el factor ×1,33): miniatura de 117 de lado con 7 de
  * separación, radio 20 y el "+N" en Caprasimo 20 sobre `rgba(43,22,9,.45)`.
@@ -39,53 +44,75 @@ export function GrillaFotosMensaje({
 }: GrillaFotosMensajeProps) {
   if (imagenes.length === 0) return null;
 
-  if (imagenes.length === 1) {
+  const miniatura = (indice: number, ancho: number, alto: number) => {
+    const uri = imagenes[indice]!;
+    const ocultas = imagenes.length - VISIBLES;
+    const conVelo = indice === VISIBLES - 1 && ocultas > 0;
+
     return (
-      <FotoMensaje
-        uri={imagenes[0]!}
-        ancho={anchoUnica}
-        alto={altoUnica}
-        subiendo={subiendo}
-        onAbrir={onAbrir ? () => onAbrir(0) : undefined}
-      />
+      <View key={`${uri}-${indice}`}>
+        <FotoMensaje
+          uri={uri}
+          ancho={ancho}
+          alto={alto}
+          subiendo={subiendo}
+          onAbrir={onAbrir ? () => onAbrir(indice) : undefined}
+        />
+
+        {/* El velo va ENCIMA y sin capturar el toque: la miniatura de abajo sigue abriendo
+            el visor, que es donde se ven las que no entraron. */}
+        {conVelo ? (
+          <View
+            pointerEvents="none"
+            style={{ backgroundColor: 'rgba(43,22,9,0.45)', borderRadius: 20 }}
+            className="absolute inset-0 items-center justify-center"
+          >
+            <Text className="font-titulo text-[20px] text-white">{`+${ocultas}`}</Text>
+          </View>
+        ) : null}
+      </View>
+    );
+  };
+
+  if (imagenes.length === 1) {
+    return miniatura(0, anchoUnica, altoUnica);
+  }
+
+  if (imagenes.length === 2) {
+    return (
+      <View style={{ gap: SEPARACION }} className="flex-row">
+        {miniatura(0, lado, lado)}
+        {miniatura(1, lado, lado)}
+      </View>
     );
   }
 
-  const visibles = imagenes.slice(0, VISIBLES);
-  const ocultas = imagenes.length - visibles.length;
+  // La alta mide lo mismo que las dos apiladas con su separación: los bordes de afuera
+  // quedan alineados y no hay hueco.
+  const altoColumna = lado * 2 + SEPARACION;
+
+  if (imagenes.length === 3) {
+    return (
+      <View style={{ gap: SEPARACION }} className="flex-row">
+        {miniatura(0, lado, altoColumna)}
+        <View style={{ gap: SEPARACION }}>
+          {miniatura(1, lado, lado)}
+          {miniatura(2, lado, lado)}
+        </View>
+      </View>
+    );
+  }
 
   return (
-    <View
-      style={{ width: lado * 2 + SEPARACION, gap: SEPARACION }}
-      className="flex-row flex-wrap"
-    >
-      {visibles.map((uri, indice) => {
-        const esUltimaVisible = indice === visibles.length - 1;
-
-        return (
-          <View key={`${uri}-${indice}`}>
-            <FotoMensaje
-              uri={uri}
-              ancho={lado}
-              alto={lado}
-              subiendo={subiendo}
-              onAbrir={onAbrir ? () => onAbrir(indice) : undefined}
-            />
-
-            {/* El velo va ENCIMA y sin capturar el toque: la miniatura de abajo sigue
-                abriendo el visor, que es donde se ven las que no entraron. */}
-            {esUltimaVisible && ocultas > 0 ? (
-              <View
-                pointerEvents="none"
-                style={{ backgroundColor: 'rgba(43,22,9,0.45)', borderRadius: 20 }}
-                className="absolute inset-0 items-center justify-center"
-              >
-                <Text className="font-titulo text-[20px] text-white">{`+${ocultas}`}</Text>
-              </View>
-            ) : null}
-          </View>
-        );
-      })}
+    <View style={{ gap: SEPARACION }} className="flex-row">
+      <View style={{ gap: SEPARACION }}>
+        {miniatura(0, lado, lado)}
+        {miniatura(2, lado, lado)}
+      </View>
+      <View style={{ gap: SEPARACION }}>
+        {miniatura(1, lado, lado)}
+        {miniatura(3, lado, lado)}
+      </View>
     </View>
   );
 }

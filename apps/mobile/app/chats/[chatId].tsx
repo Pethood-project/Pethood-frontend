@@ -60,8 +60,12 @@ export default function ConversacionScreen() {
   const [fotos, setFotos] = useState<ArchivoAdjunto[]>([]);
   /** Hoja "Enviar en el chat" del botón `+`. */
   const [hojaAbierta, setHojaAbierta] = useState(false);
-  /** Foto que se está viendo a pantalla completa, o `null`. Un solo visor para toda la lista. */
-  const [imagenAmpliada, setImagenAmpliada] = useState<string | null>(null);
+  /**
+   * Lo que se está viendo a pantalla completa: las fotos del mensaje tocado y cuál de
+   * ellas, o `null`. Un solo visor para toda la lista; recibe el mensaje entero para poder
+   * deslizar entre sus fotos sin volver a la conversación.
+   */
+  const [ampliado, setAmpliado] = useState<{ imagenes: string[]; indice: number } | null>(null);
 
   const sala = useSalaChat(chatId, usuario?.id ?? 0, token);
 
@@ -213,7 +217,7 @@ export default function ConversacionScreen() {
             item={fila.item}
             onReintentar={() => sala.reintentar(fila.item.clave)}
             onDescartar={() => sala.descartar(fila.item.clave)}
-            onAbrirImagen={(indice) => setImagenAmpliada(fila.item.imagenes[indice] ?? null)}
+            onAbrirImagen={(indice) => setAmpliado({ imagenes: fila.item.imagenes, indice })}
             onVerSolicitud={
               fila.item.solicitud
                 ? () => router.push(`/solicitudes/${fila.item.solicitud!.id}`)
@@ -314,7 +318,11 @@ export default function ConversacionScreen() {
 
       {/* Un solo visor para toda la conversación: montar un Modal por burbuja sería un
           componente por mensaje para algo que sólo se ve de a uno. */}
-      <VisorImagen uri={imagenAmpliada} onCerrar={() => setImagenAmpliada(null)} />
+      <VisorImagen
+        imagenes={ampliado?.imagenes ?? []}
+        indiceInicial={ampliado?.indice ?? null}
+        onCerrar={() => setAmpliado(null)}
+      />
 
       <HojaAdjuntos
         visible={hojaAbierta}

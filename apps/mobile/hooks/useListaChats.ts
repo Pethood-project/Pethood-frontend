@@ -18,7 +18,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSesion } from '@/hooks/useSesion';
 import { aplicarMensajeNuevo, aplicarNoLeidos, conoceChat } from '@/lib/listaChats';
 import { EVENTOS, adquirirSocket, type EventoNoLeidos } from '@/lib/socketChat';
-import { listarChats, type Conversacion, type Mensaje } from '@/services/chats';
+import {
+  listarChats,
+  marcarChatEntregado,
+  type Conversacion,
+  type Mensaje,
+} from '@/services/chats';
 
 const MENSAJE_ERROR_CARGA = 'No pudimos cargar tus conversaciones.';
 
@@ -108,6 +113,14 @@ export function useListaChats(): EstadoListaChats {
 
     const alMensajeNuevo = (mensaje: Mensaje): void => {
       if (!montado.current) return;
+
+      // Acuse de recibo: es el segundo tilde en la pantalla de quien escribió. Va acá y no
+      // sólo en la sala porque esta pestaña vive toda la sesión: es la que garantiza que
+      // "le llegó" se acuse aunque el usuario esté en cualquier otra pantalla. La sala lo
+      // vuelve a mandar si está abierta, y el backend ignora el segundo.
+      if (mensaje.usuarioId !== miUsuarioId) {
+        void marcarChatEntregado(mensaje.chatId).catch(() => undefined);
+      }
 
       // Una sala que el listado no conoce es un chat recién creado: la fila necesita el
       // contacto resuelto y eso sólo lo tiene el servidor.

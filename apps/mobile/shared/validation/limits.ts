@@ -28,6 +28,13 @@ export const LIMITES = {
     ubicacion: { max: 80 },
   },
 
+  consultaSoporte: {
+    nombreCompleto: { min: 2, max: 100 },
+    email: { max: 100 },
+    asunto: { min: 5, max: 100 },
+    mensaje: { min: 10, max: 1000 },
+  },
+
   fecha: { anioMinimo: 1900 },
 
   imagen: {

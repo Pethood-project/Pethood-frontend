@@ -8,10 +8,27 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Animated, Platform, Pressable, Text } from 'react-native';
+import { Dimensions, Pressable, Text } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { PALETA } from '@/constants/theme';
+
+const ANCHO_PANTALLA = Dimensions.get('window').width;
+
+/** Cuánto hay que arrastrar (o qué tan rápido) para descartar el toast, igual que se desliza
+ * una notificación del teléfono para el costado. */
+const UMBRAL_DISTANCIA = ANCHO_PANTALLA * 0.25;
+const UMBRAL_VELOCIDAD = 800;
 
 export type TipoToast = 'exito' | 'advertencia' | 'error';
 
@@ -63,46 +80,93 @@ export function useToast(): ContextoToast {
 }
 
 function ToastVisible({ toast, onCerrar }: { toast: Toast; onCerrar: () => void }) {
-  const opacidad = useRef(new Animated.Value(0)).current;
   const estilo = ESTILOS[toast.tipo];
   const { accion } = toast;
 
+  const opacidadEntrada = useSharedValue(0);
+  const x = useSharedValue(0);
+  // Evita que el gesto dispare el cierre dos veces (ej. soltar ya en pleno vuelo de salida).
+  const cerrando = useSharedValue(false);
+
   useEffect(() => {
-    Animated.timing(opacidad, {
-      toValue: 1,
-      duration: 200,
-      // En web no existe el módulo nativo de animación; en iOS/Android sí.
-      useNativeDriver: Platform.OS !== 'web',
-    }).start();
-  }, [opacidad]);
+    opacidadEntrada.value = withTiming(1, { duration: 200 });
+  }, [opacidadEntrada]);
+
+  /** Anima la salida hacia el costado del arrastre y recién ahí saca el toast de la lista. */
+  const descartar = useCallback(
+    (haciaLaDerecha: boolean) => {
+      'worklet';
+      if (cerrando.value) return;
+      cerrando.value = true;
+
+      x.value = withTiming(haciaLaDerecha ? ANCHO_PANTALLA : -ANCHO_PANTALLA, { duration: 200 }, (terminada) => {
+        if (terminada) scheduleOnRN(onCerrar);
+      });
+    },
+    [cerrando, onCerrar, x],
+  );
+
+  const arrastre = Gesture.Pan()
+    // Requiere un mínimo de movimiento horizontal antes de activarse: así un tap simple
+    // sigue llegando a los Pressable de abajo en vez de que el pan se lo quede.
+    .activeOffsetX([-10, 10])
+    .onUpdate((evento) => {
+      if (cerrando.value) return;
+      x.value = evento.translationX;
+    })
+    .onEnd((evento) => {
+      if (cerrando.value) return;
+
+      const superaDistancia = Math.abs(evento.translationX) > UMBRAL_DISTANCIA;
+      const superaVelocidad = Math.abs(evento.velocityX) > UMBRAL_VELOCIDAD;
+
+      if (!superaDistancia && !superaVelocidad) {
+        x.value = withSpring(0);
+        return;
+      }
+
+      descartar(superaVelocidad ? evento.velocityX > 0 : evento.translationX > 0);
+    });
+
+  const estiloArrastre = useAnimatedStyle(() => ({
+    opacity: opacidadEntrada.value * interpolate(
+      Math.abs(x.value),
+      [0, ANCHO_PANTALLA],
+      [1, 0],
+      Extrapolation.CLAMP,
+    ),
+    transform: [{ translateX: x.value }],
+  }));
 
   return (
-    <Animated.View style={{ opacity: opacidad }} className="mb-2">
-      <Pressable
-        onPress={onCerrar}
-        accessibilityRole="alert"
-        className={`flex-row items-center rounded-2xl px-4 py-3.5 shadow-lg ${estilo.fondo}`}
-      >
-        <Ionicons name={estilo.icono} size={22} color={PALETA.blanco} />
-        <Text className="ml-3 flex-1 text-base font-medium text-white">{toast.mensaje}</Text>
+    <GestureDetector gesture={arrastre}>
+      <Animated.View style={estiloArrastre} className="mb-2">
+        <Pressable
+          onPress={onCerrar}
+          accessibilityRole="alert"
+          className={`flex-row items-center rounded-2xl px-4 py-3.5 shadow-lg ${estilo.fondo}`}
+        >
+          <Ionicons name={estilo.icono} size={22} color={PALETA.blanco} />
+          <Text className="ml-3 flex-1 text-base font-medium text-white">{toast.mensaje}</Text>
 
-        {/* Pressable anidado: en RN el hijo captura el toque y no burbujea al padre, así
-            que tocar la acción no dispara el cierre por tap del toast entero. */}
-        {accion ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => {
-              accion.onPress();
-              onCerrar();
-            }}
-            hitSlop={8}
-            className="ml-3 rounded-full bg-white/25 px-3 py-1.5 active:opacity-70"
-          >
-            <Text className="text-sm font-bold text-white">{accion.etiqueta}</Text>
-          </Pressable>
-        ) : null}
-      </Pressable>
-    </Animated.View>
+          {/* Pressable anidado: en RN el hijo captura el toque y no burbujea al padre, así
+              que tocar la acción no dispara el cierre por tap del toast entero. */}
+          {accion ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                accion.onPress();
+                onCerrar();
+              }}
+              hitSlop={8}
+              className="ml-3 rounded-full bg-white/25 px-3 py-1.5 active:opacity-70"
+            >
+              <Text className="text-sm font-bold text-white">{accion.etiqueta}</Text>
+            </Pressable>
+          ) : null}
+        </Pressable>
+      </Animated.View>
+    </GestureDetector>
   );
 }
 

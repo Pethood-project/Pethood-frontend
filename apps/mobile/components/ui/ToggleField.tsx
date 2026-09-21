@@ -54,6 +54,7 @@ export function ToggleField({
         trackColor={{ false: PALETA.gris[200], true: esCaja ? PALETA.accent[600] : PALETA.pethood.naranja }}
         thumbColor={PALETA.blanco}
         ios_backgroundColor={PALETA.gris[200]}
+        style={grande ? { transform: [{ scale: 1.15 }] } : undefined}
       />
     </View>
   );

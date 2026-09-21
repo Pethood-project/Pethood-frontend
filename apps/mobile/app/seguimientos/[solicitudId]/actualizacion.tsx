@@ -147,23 +147,25 @@ export default function ActualizacionSeguimientoScreen() {
   const restante = plazo ? tiempoHasta(plazo) : null;
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-4 py-3">
+        <View className="flex-row items-center gap-3 bg-organic-accent-600 px-5 pb-[14px] pt-[9px]">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Volver"
             onPress={() => router.back()}
             hitSlop={8}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-80"
+            className="h-11 w-11 items-center justify-center rounded-full bg-white/20 active:opacity-80"
           >
-            <Ionicons name="chevron-back" size={20} color={PALETA.gris[600]} />
+            <Ionicons name="chevron-back" size={22} color={PALETA.blanco} />
           </Pressable>
 
           <View className="flex-1">
-            <Text className="text-2xl font-bold text-pethood-orange">Subir actualización</Text>
+            <Text className="font-titulo text-[22px] leading-[26px] text-white">
+              Subir actualización
+            </Text>
             {detalle ? (
-              <Text className="text-xs text-gray-500" numberOfLines={1}>
+              <Text className="mt-0.5 text-[13px] text-white/80" numberOfLines={1}>
                 {detalle.mascota.nombre ?? 'Tu mascota'} · Seguimiento
               </Text>
             ) : null}
@@ -209,19 +211,19 @@ export default function ActualizacionSeguimientoScreen() {
               {/* Chip de contexto del diseño: en la maqueta dice el día de convivencia, pero
                   la API no manda la fecha de la adopción. Se muestra lo que sí sabemos y es
                   lo accionable: qué número de pedido es y cuánto queda del plazo de 48 h. */}
-              <View className="mb-3 flex-row items-center gap-2 self-start rounded-xl bg-orange-50 px-3 py-2">
-                <Ionicons name="calendar" size={13} color={PALETA.pethood.naranjaIntensa} />
-                <Text className="text-[11px] font-semibold text-orange-800">
+              <View className="mb-3.5 flex-row items-center gap-2.5 self-start rounded-2xl bg-organic-accent-200 px-4 py-2.5">
+                <Ionicons name="calendar" size={17} color={PALETA.accent[700]} />
+                <Text className="text-[13px] font-semibold text-organic-accent-700">
                   Pedido {pendiente.numero}
                   {restante ? ` · te quedan ${restante}` : ''}
                 </Text>
               </View>
 
-              <View className="mb-3 rounded-2xl bg-organic-surface p-3.5">
-                <Text className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+              <View className="mb-3.5 rounded-2xl bg-organic-surface p-4">
+                <Text className="text-[12px] font-semibold uppercase tracking-wide text-organic-neutral-400">
                   Pregunta
                 </Text>
-                <Text className="mt-1.5 text-base font-bold leading-6 text-gray-900">
+                <Text className="mt-2 font-titulo text-[18px] leading-6 text-organic-neutral-900">
                   {pendiente.pregunta}
                 </Text>
               </View>
@@ -241,6 +243,7 @@ export default function ActualizacionSeguimientoScreen() {
                         ? (errorDescripcion ?? undefined)
                         : undefined
                     }
+                    grande
                   />
                 </FormCardRow>
 
@@ -257,6 +260,7 @@ export default function ActualizacionSeguimientoScreen() {
               <View className="mt-5">
                 <CustomButton
                   title="Guardar respuesta"
+                  variant="acento"
                   loading={guardando}
                   disabled={!formularioValido}
                   onPress={() => void guardar()}

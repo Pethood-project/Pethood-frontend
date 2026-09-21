@@ -128,7 +128,7 @@ export function CapturaPruebaDeVida({
         <View className="relative">
           <Image
             source={{ uri: foto.uri }}
-            className="h-52 w-full rounded-3xl"
+            className="h-60 w-full rounded-3xl"
             accessibilityLabel="Foto de prueba que acabás de sacar"
           />
 
@@ -137,10 +137,10 @@ export function CapturaPruebaDeVida({
             accessibilityLabel="Sacar la foto de nuevo"
             disabled={bloqueado}
             onPress={() => void capturar()}
-            className="absolute bottom-3 right-3 flex-row items-center gap-1.5 rounded-full bg-black/50 px-3 py-2 active:opacity-80"
+            className="absolute bottom-3 right-3 flex-row items-center gap-2 rounded-full bg-black/50 px-3.5 py-2.5 active:opacity-80"
           >
-            <Ionicons name="camera-outline" size={16} color={PALETA.blanco} />
-            <Text className="text-xs font-medium text-white">Sacar de nuevo</Text>
+            <Ionicons name="camera-outline" size={18} color={PALETA.blanco} />
+            <Text className="text-sm font-medium text-white">Sacar de nuevo</Text>
           </Pressable>
         </View>
       ) : (
@@ -150,12 +150,12 @@ export function CapturaPruebaDeVida({
           accessibilityState={{ disabled: bloqueado }}
           disabled={deshabilitado}
           onPress={() => void capturar()}
-          className={`h-16 flex-row items-center justify-center gap-2 rounded-2xl border-2 border-dashed ${
-            error ? 'border-red-300 bg-red-50' : 'border-pethood-beige-dark bg-white'
+          className={`h-20 flex-row items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed ${
+            error ? 'border-red-300 bg-red-50' : 'border-organic-accent-300 bg-organic-surface'
           } ${bloqueado ? 'opacity-60' : 'active:opacity-80'}`}
         >
-          <Ionicons name="camera" size={18} color={PALETA.grisCalido[400]} />
-          <Text className="text-sm font-medium text-gray-500">Sacar foto ahora</Text>
+          <Ionicons name="camera" size={24} color={PALETA.accent[600]} />
+          <Text className="text-base font-medium text-organic-neutral-700">Sacar foto ahora</Text>
         </Pressable>
       )}
 

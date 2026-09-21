@@ -109,49 +109,56 @@ export default function PerfilScreen() {
   const incompleto = !visible?.imagenUrl || !visible?.telefono || !visible?.ubicacion;
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center justify-between px-5 pb-2 pt-3">
-          <Text className="text-2xl font-bold text-pethood-orange">Mi Perfil</Text>
+        <View className="flex-row items-center justify-between border-b border-organic-neutral-300 bg-organic-neutral-100 px-[21px] py-[13px]">
+          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
+            Mi Perfil
+          </Text>
+          {/* El ícono sigue siendo el de perfil (no una ruedita de configuración): entra a
+              "Ver y editar mi perfil", donde viven los datos completos y las acciones sensibles. */}
           <BotonCircular
             icono="person-circle-outline"
             etiqueta="Ver y editar mi perfil"
-            variante="clasico"
+            variante="organic"
             onPress={() => router.push('/perfil/editar' as Href)}
           />
         </View>
 
         {cargando && !visible ? (
           <View className="flex-1 items-center justify-center">
-            <ActivityIndicator color={PALETA.pethood.naranja} />
+            <ActivityIndicator color={PALETA.accent[600]} />
           </View>
         ) : (
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerClassName="px-5 pb-8 pt-2"
+            contentContainerClassName="px-5 pb-8 pt-3"
           >
             {incompleto ? (
               <Pressable
                 onPress={() => router.push('/perfil/editar' as Href)}
-                className="mb-4 rounded-2xl bg-orange-50 px-4 py-3"
+                className="mb-4 flex-row items-center gap-3 rounded-[22px] border border-organic-accent-300 bg-organic-accent-100 px-4 py-3.5"
               >
-                <Text className="text-base font-medium text-orange-800">
+                <Ionicons name="person-add-outline" size={20} color={PALETA.accent[700]} />
+                <Text className="flex-1 font-cuerpo-semi text-[15px] text-organic-accent-700">
                   Completá tu perfil con foto e información personal
                 </Text>
               </Pressable>
             ) : null}
 
-            <View className="rounded-[28px] bg-white p-5 shadow-sm">
+            <View className="rounded-[30px] bg-organic-surface p-6 shadow-sm">
               <View className="flex-row items-center">
                 <Avatar
                   uri={foto}
                   nombre={visible?.nombre}
                   apellido={visible?.apellido}
-                  tamanio={80}
+                  tamanio={92}
+                  variante="organic"
+                  tono={esRefugio ? 'acento' : 'neutro'}
                 />
 
                 <View className="ml-4 flex-1">
-                  <Text className="text-2xl font-bold text-gray-900">
+                  <Text className="font-titulo text-[24px] leading-[27px] text-organic-neutral-900">
                     {visible?.nombre} {visible?.apellido}
                   </Text>
                   {/* El mail no va acá: se ve recién dentro de "Ver y editar mi perfil". */}
@@ -161,51 +168,59 @@ export default function PerfilScreen() {
                 </View>
               </View>
 
-              <View className="mt-5 flex-row border-t border-gray-100 pt-4">
+              <View className="mt-5 flex-row border-t border-organic-neutral-200 pt-5">
                 <View className="flex-1 items-center">
-                  <Text className="text-2xl font-bold text-pethood-orange">
+                  <Text className="font-titulo text-[26px] leading-[29px] text-organic-accent-600">
                     {perfil?.mascotas ?? 0}
                   </Text>
-                  <Text className="mt-0.5 text-sm text-gray-500">Mascotas</Text>
+                  <Text className="mt-1 font-cuerpo text-[13px] text-organic-neutral-600">
+                    Mascotas
+                  </Text>
                 </View>
                 <View className="flex-1 items-center">
-                  <Text className="text-2xl font-bold text-pethood-orange">
+                  <Text className="font-titulo text-[26px] leading-[29px] text-organic-accent-600">
                     {perfil?.favoritos ?? 0}
                   </Text>
-                  <Text className="mt-0.5 text-sm text-gray-500">Favoritos</Text>
+                  <Text className="mt-1 font-cuerpo text-[13px] text-organic-neutral-600">
+                    Favoritos
+                  </Text>
                 </View>
                 <View className="flex-1 items-center">
-                  <Text className="text-2xl font-bold text-pethood-orange">
+                  <Text className="font-titulo text-[26px] leading-[29px] text-organic-accent-600">
                     {formatearValoracion(perfil?.valoracion)}
                   </Text>
-                  <Text className="mt-0.5 text-sm text-gray-500">Valoración</Text>
+                  <Text className="mt-1 font-cuerpo text-[13px] text-organic-neutral-600">
+                    Valoración
+                  </Text>
                 </View>
               </View>
             </View>
 
             {/* Solo para quien administra un refugio: el resto no tiene qué alternar. */}
             {esRefugio ? (
-              <View className="mt-4">
+              <View className="mt-5">
                 <SwitchRefugio activo={vistaRefugio} onCambiar={alternarVista} />
               </View>
             ) : null}
 
-            <View className="mt-4 overflow-hidden rounded-[28px] bg-white shadow-sm">
+            <View className="mt-5 overflow-hidden rounded-[26px] bg-organic-surface shadow-sm">
               {MENU.map(({ icono, label, ruta }, index) => (
                 <Pressable
                   key={label}
                   accessibilityRole="button"
                   disabled={!ruta}
                   onPress={ruta ? () => router.push(ruta) : undefined}
-                  className={`flex-row items-center px-4 py-3.5 ${
-                    index < MENU.length - 1 ? 'border-b border-gray-100' : ''
-                  } ${ruta ? 'active:bg-gray-50' : 'opacity-40'}`}
+                  className={`flex-row items-center px-5 py-4 ${
+                    index < MENU.length - 1 ? 'border-b border-organic-neutral-200' : ''
+                  } ${ruta ? 'active:bg-organic-neutral-100' : 'opacity-40'}`}
                 >
-                  <View className="h-9 w-9 items-center justify-center rounded-xl bg-orange-50">
-                    <Ionicons name={icono} size={18} color={PALETA.pethood.naranja} />
+                  <View className="h-11 w-11 items-center justify-center rounded-2xl bg-organic-calido-amarilloClaro">
+                    <Ionicons name={icono} size={21} color={PALETA.accent[600]} />
                   </View>
-                  <Text className="ml-3 flex-1 text-lg text-gray-800">{label}</Text>
-                  <Ionicons name="chevron-forward" size={18} color={PALETA.gris[300]} />
+                  <Text className="ml-4 flex-1 font-cuerpo-semi text-[17px] text-organic-neutral-900">
+                    {label}
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color={PALETA.neutral[400]} />
                 </Pressable>
               ))}
             </View>

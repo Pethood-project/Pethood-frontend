@@ -156,7 +156,7 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
           accessibilityLabel="Agregar fotos"
           onPress={elegir}
           disabled={cargando}
-          className={`h-32 items-center justify-center rounded-3xl border-2 border-dashed ${
+          className={`h-40 items-center justify-center rounded-3xl border-2 border-dashed ${
             error ? 'border-red-300 bg-red-50' : 'border-pethood-orange/40 bg-white/60'
           }`}
         >
@@ -164,9 +164,9 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
             <ActivityIndicator color={PALETA.pethood.naranja} />
           ) : (
             <>
-              <Ionicons name="camera-outline" size={28} color={PALETA.pethood.naranja} />
-              <Text className="mt-1.5 text-sm font-medium text-gray-500">Agregar fotos</Text>
-              <Text className="mt-0.5 text-xs text-gray-400">Hasta {maximo}</Text>
+              <Ionicons name="camera-outline" size={36} color={PALETA.pethood.naranja} />
+              <Text className="mt-2 text-base font-medium text-gray-500">Agregar fotos</Text>
+              <Text className="mt-0.5 text-sm text-gray-400">Hasta {maximo}</Text>
             </>
           )}
         </Pressable>
@@ -174,13 +174,13 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
         <View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-mx-1">
             {fotos.map((foto, indice) => (
-              <View key={foto.uri} className="mx-1 w-32">
+              <View key={foto.uri} className="mx-1 w-36">
                 <View className="relative">
-                  <Image source={{ uri: foto.uri }} className="h-32 w-32 rounded-2xl" />
+                  <Image source={{ uri: foto.uri }} className="h-36 w-36 rounded-2xl" />
 
                   {indice === 0 ? (
-                    <View className="absolute left-2 top-2 rounded-full bg-pethood-orange px-2 py-0.5">
-                      <Text className="text-[10px] font-semibold text-white">Portada</Text>
+                    <View className="absolute left-2 top-2 rounded-full bg-pethood-orange px-2.5 py-1">
+                      <Text className="text-xs font-semibold text-white">Portada</Text>
                     </View>
                   ) : null}
 
@@ -189,24 +189,24 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
                     accessibilityLabel={`Quitar foto ${indice + 1}`}
                     onPress={() => quitar(indice)}
                     hitSlop={6}
-                    className="absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-black/50 active:opacity-80"
+                    className="absolute right-1.5 top-1.5 h-8 w-8 items-center justify-center rounded-full bg-black/50 active:opacity-80"
                   >
-                    <Ionicons name="close" size={16} color={PALETA.blanco} />
+                    <Ionicons name="close" size={18} color={PALETA.blanco} />
                   </Pressable>
                 </View>
 
-                <View className="mt-1.5 flex-row justify-center gap-2">
+                <View className="mt-2 flex-row justify-center gap-2">
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={`Mover foto ${indice + 1} hacia la izquierda`}
                     disabled={indice === 0}
                     onPress={() => mover(indice, indice - 1)}
                     hitSlop={6}
-                    className={`h-7 w-9 items-center justify-center rounded-lg bg-white ${
+                    className={`h-8 w-10 items-center justify-center rounded-lg bg-white ${
                       indice === 0 ? 'opacity-30' : 'active:opacity-70'
                     }`}
                   >
-                    <Ionicons name="chevron-back" size={16} color={PALETA.gris[500]} />
+                    <Ionicons name="chevron-back" size={18} color={PALETA.gris[500]} />
                   </Pressable>
 
                   <Pressable
@@ -215,11 +215,11 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
                     disabled={indice === fotos.length - 1}
                     onPress={() => mover(indice, indice + 1)}
                     hitSlop={6}
-                    className={`h-7 w-9 items-center justify-center rounded-lg bg-white ${
+                    className={`h-8 w-10 items-center justify-center rounded-lg bg-white ${
                       indice === fotos.length - 1 ? 'opacity-30' : 'active:opacity-70'
                     }`}
                   >
-                    <Ionicons name="chevron-forward" size={16} color={PALETA.gris[500]} />
+                    <Ionicons name="chevron-forward" size={18} color={PALETA.gris[500]} />
                   </Pressable>
                 </View>
               </View>
@@ -231,21 +231,21 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
                 accessibilityLabel="Agregar otra foto"
                 onPress={elegir}
                 disabled={cargando}
-                className="mx-1 h-32 w-32 items-center justify-center rounded-2xl border-2 border-dashed border-pethood-orange/40 bg-white/60"
+                className="mx-1 h-36 w-36 items-center justify-center rounded-2xl border-2 border-dashed border-pethood-orange/40 bg-white/60"
               >
                 {cargando ? (
                   <ActivityIndicator color={PALETA.pethood.naranja} />
                 ) : (
                   <>
-                    <Ionicons name="add" size={26} color={PALETA.pethood.naranja} />
-                    <Text className="mt-1 text-xs text-gray-500">Agregar</Text>
+                    <Ionicons name="add" size={30} color={PALETA.pethood.naranja} />
+                    <Text className="mt-1 text-sm text-gray-500">Agregar</Text>
                   </>
                 )}
               </Pressable>
             ) : null}
           </ScrollView>
 
-          <Text className="mt-2 text-xs text-gray-400">
+          <Text className="mt-2.5 text-sm text-gray-400">
             {fotos.length} de {maximo} · la primera es la portada
           </Text>
         </View>

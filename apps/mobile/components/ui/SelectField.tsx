@@ -66,7 +66,11 @@ export function SelectField<T extends string | number>({
         >
           {seleccionada?.etiqueta ?? textoVacio}
         </Text>
-        <Ionicons name="chevron-down" size={18} color={deshabilitado ? PALETA.gris[300] : PALETA.gris[400]} />
+        <Ionicons
+          name="chevron-down"
+          size={grande ? 22 : 18}
+          color={deshabilitado ? PALETA.gris[300] : PALETA.gris[400]}
+        />
       </Pressable>
 
       <Modal
@@ -86,7 +90,9 @@ export function SelectField<T extends string | number>({
           />
 
           <View className="max-h-[60%] rounded-t-3xl bg-white pb-8 pt-5">
-            <Text className="mb-3 px-6 text-lg font-bold text-gray-900">{label}</Text>
+            <Text className={`mb-3 px-6 font-bold text-gray-900 ${grande ? 'text-xl' : 'text-lg'}`}>
+              {label}
+            </Text>
 
             <FlatList
               data={opciones}
@@ -107,14 +113,16 @@ export function SelectField<T extends string | number>({
                       onChange(item.valor);
                       setAbierto(false);
                     }}
-                    className="flex-row items-center justify-between px-6 py-4 active:bg-gray-50"
+                    className={`flex-row items-center justify-between px-6 active:bg-gray-50 ${grande ? 'py-5' : 'py-4'}`}
                   >
                     <Text
-                      className={`${grande ? 'text-lg' : 'text-base'} ${activa ? 'font-semibold text-pethood-orange' : 'text-gray-800'}`}
+                      className={`${grande ? 'text-xl' : 'text-base'} ${activa ? 'font-semibold text-pethood-orange' : 'text-gray-800'}`}
                     >
                       {item.etiqueta}
                     </Text>
-                    {activa ? <Ionicons name="checkmark" size={20} color={PALETA.pethood.naranja} /> : null}
+                    {activa ? (
+                      <Ionicons name="checkmark" size={grande ? 24 : 20} color={PALETA.pethood.naranja} />
+                    ) : null}
                   </Pressable>
                 );
               }}

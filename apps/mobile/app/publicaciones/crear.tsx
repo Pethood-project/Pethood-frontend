@@ -205,9 +205,9 @@ export default function CrearPublicacionScreen() {
   return (
     // Transición chica de entrada además de la del stack: refuerza que se navegó a otra
     // pantalla en vez de que "todo cambió de golpe".
-    <Animated.View entering={FadeInDown.duration(220)} className="flex-1 bg-pethood-beige">
+    <Animated.View entering={FadeInDown.duration(220)} className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-4 py-3">
+        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-5 py-[13px]">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Volver"
@@ -217,12 +217,14 @@ export default function CrearPublicacionScreen() {
               router.canGoBack() ? router.back() : router.replace('/(tabs)/mis-mascotas' as Href)
             }
             hitSlop={8}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-80"
+            className="h-11 w-11 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100 active:opacity-80"
           >
-            <Ionicons name="chevron-back" size={20} color={PALETA.gris[600]} />
+            <Ionicons name="chevron-back" size={22} color={PALETA.neutral[700]} />
           </Pressable>
 
-          <Text className="text-2xl font-bold text-pethood-orange">Poner en adopción</Text>
+          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
+            Poner en adopción
+          </Text>
         </View>
 
         {cargandoMascotas ? (
@@ -339,6 +341,7 @@ export default function CrearPublicacionScreen() {
               <View className="mt-5">
                 <CustomButton
                   title="Publicar en adopción"
+                  variant="acento"
                   loading={publicando}
                   disabled={!formularioValido}
                   onPress={() => void publicar()}

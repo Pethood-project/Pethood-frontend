@@ -48,18 +48,20 @@ function TarjetaMascota({
   const foto = urlAbsoluta(mascota.imagenUrl);
 
   return (
-    <View className="mb-3 flex-row gap-3 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
+    <View className="mb-3.5 flex-row gap-3.5 rounded-[26px] bg-organic-surface p-3.5 shadow-sm">
       {foto ? (
-        <Image source={{ uri: foto }} className="h-28 w-28 rounded-xl" />
+        <Image source={{ uri: foto }} className="h-32 w-32 rounded-[20px]" />
       ) : (
-        <View className="h-28 w-28 items-center justify-center rounded-xl bg-gray-100">
-          <Ionicons name="paw-outline" size={28} color={PALETA.gris[400]} />
+        <View className="h-32 w-32 items-center justify-center rounded-[20px] bg-organic-calido-amarilloClaro">
+          <Ionicons name="paw-outline" size={36} color={PALETA.accent[600]} />
         </View>
       )}
 
       <View className="flex-1 justify-center">
-        <Text className="text-base font-bold text-gray-900">{mascota.nombre}</Text>
-        <Text className="mt-0.5 text-sm text-gray-500">
+        <Text className="font-titulo text-[19px] leading-[22px] text-organic-neutral-900">
+          {mascota.nombre}
+        </Text>
+        <Text className="mt-1 font-cuerpo text-[15px] text-organic-neutral-600">
           {[
             mascota.especie.nombre,
             edad(mascota.fechaNacimiento),
@@ -69,21 +71,21 @@ function TarjetaMascota({
             .join(' · ')}
         </Text>
 
-        <View className="mt-2 flex-row items-center justify-between">
+        <View className="mt-3 flex-row items-center justify-between">
           <EstadoMascotaBadge estado={mascota.estado.nombre} />
 
-          <View className="flex-row gap-1.5">
+          <View className="flex-row gap-2">
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={`Historia clínica de ${mascota.nombre}`}
               onPress={onVerHistoriaClinica}
               hitSlop={6}
-              className="h-9 w-9 items-center justify-center rounded-full bg-orange-50 active:opacity-70"
+              className="h-10 w-10 items-center justify-center rounded-full bg-organic-calido-amarilloClaro active:opacity-70"
             >
               <MaterialCommunityIcons
                 name="clipboard-pulse-outline"
-                size={17}
-                color={PALETA.pethood.naranjaIntensa}
+                size={19}
+                color={PALETA.accent[600]}
               />
             </Pressable>
 
@@ -94,9 +96,9 @@ function TarjetaMascota({
                   accessibilityLabel={`Editar ${mascota.nombre}`}
                   onPress={onEditar}
                   hitSlop={6}
-                  className="h-9 w-9 items-center justify-center rounded-full bg-gray-100 active:opacity-70"
+                  className="h-10 w-10 items-center justify-center rounded-full bg-organic-neutral-200 active:opacity-70"
                 >
-                  <Ionicons name="pencil" size={16} color={PALETA.gris[600]} />
+                  <Ionicons name="pencil" size={18} color={PALETA.neutral[700]} />
                 </Pressable>
 
                 <Pressable
@@ -104,9 +106,9 @@ function TarjetaMascota({
                   accessibilityLabel={`Eliminar ${mascota.nombre}`}
                   onPress={onEliminar}
                   hitSlop={6}
-                  className="h-9 w-9 items-center justify-center rounded-full bg-red-50 active:opacity-70"
+                  className="h-10 w-10 items-center justify-center rounded-full bg-red-50 active:opacity-70"
                 >
-                  <Ionicons name="trash-outline" size={16} color={PALETA.estado.error} />
+                  <Ionicons name="trash-outline" size={18} color={PALETA.estado.error} />
                 </Pressable>
               </>
             ) : null}
@@ -120,22 +122,24 @@ function TarjetaMascota({
 function ListaVacia() {
   return (
     <View className="items-center px-8 py-16">
-      <View className="mb-5 h-24 w-24 items-center justify-center rounded-full bg-white">
-        <Ionicons name="paw-outline" size={44} color={PALETA.pethood.naranja} />
+      <View className="mb-6 h-28 w-28 items-center justify-center rounded-full bg-organic-surface">
+        <Ionicons name="paw-outline" size={52} color={PALETA.accent[600]} />
       </View>
 
-      <Text className="text-center text-lg font-bold text-gray-900">
+      <Text className="text-center font-titulo text-[20px] leading-[24px] text-organic-neutral-900">
         Todavía no tenés ninguna mascota
       </Text>
-      <Text className="mt-2 text-center text-base leading-6 text-gray-500">
+      <Text className="mt-2 text-center font-cuerpo text-[15px] leading-6 text-organic-neutral-600">
         Registrá la primera para tenerla en tu perfil o para publicarla en adopción.
       </Text>
 
-      <View className="mt-5 flex-row items-center gap-2 rounded-full bg-white px-4 py-2.5">
-        <View className="h-7 w-7 items-center justify-center rounded-full bg-pethood-orange">
-          <Ionicons name="add" size={18} color={PALETA.blanco} />
+      <View className="mt-5 flex-row items-center gap-2.5 rounded-full bg-organic-surface px-4 py-3">
+        <View className="h-8 w-8 items-center justify-center rounded-full bg-organic-accent-600">
+          <Ionicons name="add" size={20} color={PALETA.blanco} />
         </View>
-        <Text className="text-sm text-gray-600">Tocá el botón para empezar</Text>
+        <Text className="font-cuerpo-semi text-[15px] text-organic-neutral-700">
+          Tocá el botón para empezar
+        </Text>
       </View>
     </View>
   );
@@ -212,11 +216,13 @@ export default function MisMascotasScreen() {
   };
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="border-b border-gray-200 bg-white px-5 py-4">
-          <Text className="text-xl font-bold text-gray-900">Mis mascotas</Text>
-          <Text className="text-sm text-gray-600">
+        <View className="border-b border-organic-neutral-300 bg-organic-neutral-100 px-[21px] py-[13px]">
+          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
+            Mis mascotas
+          </Text>
+          <Text className="mt-[4px] font-cuerpo text-[13px] text-organic-neutral-600">
             {cargando ? 'Cargando…' : `${mascotas.length} ${mascotas.length === 1 ? 'mascota' : 'mascotas'}`}
           </Text>
         </View>
@@ -260,7 +266,7 @@ export default function MisMascotasScreen() {
                   setRefrescando(true);
                   void cargar();
                 }}
-                tintColor={PALETA.pethood.naranja}
+                tintColor={PALETA.accent[600]}
               />
             }
           />
@@ -271,9 +277,9 @@ export default function MisMascotasScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={esRefugio ? 'Crear mascota del refugio' : 'Crear mascota'}
-            className="absolute bottom-6 right-6 h-16 w-16 items-center justify-center rounded-full bg-pethood-orange shadow-lg active:opacity-90"
+            className="absolute bottom-6 right-6 h-[68px] w-[68px] items-center justify-center rounded-full bg-organic-accent-600 shadow-lg active:opacity-90"
           >
-            <Ionicons name="add" size={32} color={PALETA.blanco} />
+            <Ionicons name="add" size={34} color={PALETA.blanco} />
           </Pressable>
         </Link>
       </SafeAreaView>

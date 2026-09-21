@@ -108,7 +108,7 @@ export function TagInputField({
                 onPress={() => quitar(etiqueta)}
                 hitSlop={6}
               >
-                <Ionicons name="close-circle" size={16} color={PALETA.pethood.naranja} />
+                <Ionicons name="close-circle" size={grande ? 18 : 16} color={PALETA.pethood.naranja} />
               </Pressable>
             </View>
           ))}

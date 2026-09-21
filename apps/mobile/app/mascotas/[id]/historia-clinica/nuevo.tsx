@@ -142,20 +142,25 @@ export default function NuevaHistoriaClinicaScreen() {
   };
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-4 py-3">
+        <View className="flex-row items-center gap-3 bg-organic-accent-600 px-5 pb-[14px] pt-[9px]">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Volver"
             onPress={() => router.back()}
             hitSlop={8}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-80"
+            className="h-11 w-11 items-center justify-center rounded-full bg-white/20 active:opacity-80"
           >
-            <Ionicons name="chevron-back" size={20} color="#4B5563" />
+            <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
           </Pressable>
 
-          <Text className="text-2xl font-bold text-pethood-orange">Nuevo registro</Text>
+          <View className="flex-1">
+            <Text className="font-titulo text-[22px] leading-[26px] text-white">
+              Nuevo registro
+            </Text>
+            <Text className="mt-0.5 text-[13px] text-white/80">Ficha médica</Text>
+          </View>
         </View>
 
         <KeyboardAvoidingView
@@ -179,6 +184,7 @@ export default function NuevaHistoriaClinicaScreen() {
                   onBlur={() => marcarTocado('titulo')}
                   maxLength={LIMITES.historiaClinica.titulo.max}
                   error={errorDe('titulo')}
+                  grande
                 />
               </FormCardRow>
 
@@ -193,6 +199,7 @@ export default function NuevaHistoriaClinicaScreen() {
                     onBlur={() => marcarTocado('fechaVisita')}
                     mostrarEdad={false}
                     error={errorDe('fechaVisita')}
+                    grande
                   />
 
                   <DateField
@@ -205,6 +212,7 @@ export default function NuevaHistoriaClinicaScreen() {
                     fechaMinima={MANANA}
                     fechaMaxima={new Date(2100, 0, 1)}
                     error={errorDe('fechaProxima')}
+                    grande
                   />
                 </FormCardColumns>
               </FormCardRow>
@@ -214,12 +222,18 @@ export default function NuevaHistoriaClinicaScreen() {
                   label="Requiere revisión"
                   valor={requiereRevision}
                   onChange={setRequiereRevision}
+                  grande
                 />
               </FormCardRow>
 
               <FormCardRow>
-                <ToggleField label="¿Es vacuna?" valor={vacunacion} onChange={setVacunacion} />
-                <Text className="mt-1.5 text-[10px] text-gray-400">
+                <ToggleField
+                  label="¿Es vacuna?"
+                  valor={vacunacion}
+                  onChange={setVacunacion}
+                  grande
+                />
+                <Text className="mt-2 text-[13px] text-gray-400">
                   Se va a mostrar en la ficha de la mascota
                 </Text>
               </FormCardRow>
@@ -234,17 +248,19 @@ export default function NuevaHistoriaClinicaScreen() {
                   onBlur={() => marcarTocado('descripcion')}
                   maximo={LIMITES.historiaClinica.descripcion.max}
                   error={errorDe('descripcion')}
+                  grande
                 />
               </FormCardRow>
 
               <FormCardRow ultima>
-                <DocumentField documento={documento} onChange={setDocumento} />
+                <DocumentField documento={documento} onChange={setDocumento} grande />
               </FormCardRow>
             </FormCard>
 
             <View className="mt-5">
               <CustomButton
                 title="Guardar registro"
+                variant="acento"
                 loading={guardando}
                 disabled={!formularioValido}
                 onPress={() => void guardar()}

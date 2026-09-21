@@ -114,7 +114,7 @@ export function Chip({
   const contenido = (
     <>
       {variante === 'multiple' && activa ? (
-        <Ionicons name="checkmark" size={13} color={PALETA.pethood.naranjaIntensa} />
+        <Ionicons name="checkmark" size={grande ? 15 : 13} color={PALETA.pethood.naranjaIntensa} />
       ) : null}
       {texto}
     </>

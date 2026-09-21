@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import "./landing.css";
+import { SiteNav } from "./SiteNav";
 
 export function Marca() {
   return (
@@ -18,16 +19,7 @@ export function SiteHeader() {
         <Link href="/">
           <Marca />
         </Link>
-        <nav>
-          <Link href="/#funciones">Qué hacemos</Link>
-          <Link href="/#registro">Registrá tu refugio</Link>
-          <Link href="/faq">Preguntas frecuentes</Link>
-          <Link href="/equipo">Equipo</Link>
-          <Link href="/equipo#contacto">Contacto</Link>
-          <Link href="/login" className="btn">
-            Ingresar
-          </Link>
-        </nav>
+        <SiteNav />
       </div>
     </header>
   );

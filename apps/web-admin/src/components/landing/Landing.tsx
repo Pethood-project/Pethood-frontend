@@ -68,7 +68,7 @@ function Grupo({ titulo, children }: { titulo: string; children: ReactNode }) {
 }
 
 // GUI-1000 — Presentación + registro de refugio/ONG (maqueta: el formulario todavía no envía nada).
-export default function PresentacionGUI1000() {
+export default function Landing() {
   return (
     <div className="scroll-smooth">
       <header className="sticky top-0 z-10 border-b border-pethood-accent-600/10 bg-background/90 backdrop-blur">
@@ -77,6 +77,7 @@ export default function PresentacionGUI1000() {
           <nav className="flex items-center gap-5 text-sm font-medium text-neutral-700">
             <a href="#funciones" className="hidden hover:text-pethood-accent-600 md:inline">Qué hacemos</a>
             <a href="#registro" className="hidden hover:text-pethood-accent-600 md:inline">Registrá tu refugio</a>
+            <Link href="/faq" className="hidden hover:text-pethood-accent-600 md:inline">Preguntas frecuentes</Link>
             <Link href="/login" className={`${btnPrimario} !px-4 !py-2 !text-sm`}>Ingresar</Link>
           </nav>
         </div>
@@ -210,6 +211,7 @@ export default function PresentacionGUI1000() {
           <p className="mt-2 max-w-[560px] text-sm">
             Proyecto final de Ingeniería en Sistemas de Información — UTN Regional Mendoza, pensado para funcionar como producto real, no solo como entrega académica.
           </p>
+          <Link href="/faq" className="mt-4 inline-block text-sm underline hover:text-white">Preguntas frecuentes</Link>
           <h4 className="mt-5 text-xs uppercase tracking-wider text-neutral-500">Equipo</h4>
           <ul className="mt-1 flex flex-wrap gap-x-5 gap-y-1 text-sm">
             {EQUIPO.map((n) => <li key={n}>{n}</li>)}

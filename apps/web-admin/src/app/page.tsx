@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { AUTH_COOKIE, decodeSesion, tieneRol } from "@/lib/auth";
-import PresentacionGUI1000 from "@/components/landing/PresentacionGUI1000";
+import Landing from "@/components/landing/Landing";
 
 // "/" = GUI-1000 Presentación para visitantes; con sesión válida reenvía al dashboard del rol.
 export default async function Home() {
@@ -10,5 +10,5 @@ export default async function Home() {
 
   if (token && !sesion) redirect("/salir");
   if (sesion) redirect(tieneRol(sesion, "ADMIN") ? "/admin/dashboard" : "/refugio/dashboard");
-  return <PresentacionGUI1000 />;
+  return <Landing />;
 }

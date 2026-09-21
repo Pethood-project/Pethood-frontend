@@ -31,6 +31,8 @@ interface PhotoPickerProps {
    * ninguna — así que ahí la cruz solo aparece cuando hay una foto nueva que descartar.
    */
   permiteQuitar?: boolean;
+  /** Caja e íconos más grandes, para el alta de mascota. */
+  grande?: boolean;
 }
 
 const EXTENSION_POR_TIPO: Record<string, string> = {
@@ -58,6 +60,7 @@ export function PhotoPicker({
   onChange,
   error,
   permiteQuitar = true,
+  grande = false,
 }: PhotoPickerProps) {
   /** Foto recién elegida, en revisión en el modal de vista previa antes de confirmarse. */
   const [pendiente, setPendiente] = useState<FotoElegida | null>(null);
@@ -111,7 +114,7 @@ export function PhotoPicker({
         <View className="relative">
           <Image
             source={{ uri: foto.uri }}
-            className="h-44 w-full rounded-3xl"
+            className={`w-full rounded-3xl ${grande ? 'h-56' : 'h-44'}`}
             accessibilityLabel="Vista previa de la foto elegida"
           />
 
@@ -121,9 +124,11 @@ export function PhotoPicker({
               accessibilityLabel="Quitar la foto"
               onPress={() => onChange(null)}
               hitSlop={8}
-              className="absolute right-3 top-3 h-9 w-9 items-center justify-center rounded-full bg-black/50 active:opacity-80"
+              className={`absolute right-3 top-3 items-center justify-center rounded-full bg-black/50 active:opacity-80 ${
+                grande ? 'h-11 w-11' : 'h-9 w-9'
+              }`}
             >
-              <Ionicons name="close" size={20} color={PALETA.blanco} />
+              <Ionicons name="close" size={grande ? 24 : 20} color={PALETA.blanco} />
             </Pressable>
           ) : null}
 
@@ -132,8 +137,8 @@ export function PhotoPicker({
             onPress={elegir}
             className="absolute bottom-3 right-3 flex-row items-center gap-1.5 rounded-full bg-black/50 px-3 py-2 active:opacity-80"
           >
-            <Ionicons name="camera-outline" size={16} color={PALETA.blanco} />
-            <Text className="text-xs font-medium text-white">Cambiar</Text>
+            <Ionicons name="camera-outline" size={grande ? 19 : 16} color={PALETA.blanco} />
+            <Text className={`font-medium text-white ${grande ? 'text-sm' : 'text-xs'}`}>Cambiar</Text>
           </Pressable>
         </View>
       ) : (
@@ -141,12 +146,14 @@ export function PhotoPicker({
           accessibilityRole="button"
           accessibilityLabel="Agregar fotos"
           onPress={elegir}
-          className={`h-32 items-center justify-center rounded-3xl border-2 border-dashed ${
-            error ? 'border-red-300 bg-red-50' : 'border-pethood-orange/40 bg-white/60'
-          }`}
+          className={`items-center justify-center rounded-3xl border-2 border-dashed ${
+            grande ? 'h-40' : 'h-32'
+          } ${error ? 'border-red-300 bg-red-50' : 'border-pethood-orange/40 bg-white/60'}`}
         >
-          <Ionicons name="camera-outline" size={28} color={PALETA.pethood.naranja} />
-          <Text className="mt-1.5 text-sm font-medium text-gray-500">Agregar fotos</Text>
+          <Ionicons name="camera-outline" size={grande ? 36 : 28} color={PALETA.pethood.naranja} />
+          <Text className={`mt-1.5 font-medium text-gray-500 ${grande ? 'text-base' : 'text-sm'}`}>
+            Agregar fotos
+          </Text>
         </Pressable>
       )}
 

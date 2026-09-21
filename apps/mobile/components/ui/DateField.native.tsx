@@ -74,7 +74,7 @@ export function DateField({
         <Text className={`flex-1 ${claseValor(Boolean(error), !valor, grande)}`}>
           {valor ? aFechaVisible(valor) : placeholder}
         </Text>
-        <Ionicons name="calendar-outline" size={18} color={PALETA.gris[400]} />
+        <Ionicons name="calendar-outline" size={grande ? 22 : 18} color={PALETA.gris[400]} />
       </Pressable>
 
       {/* En Android es un diálogo y no ocupa lugar; en iOS se muestra embebido y necesita
@@ -96,7 +96,9 @@ export function DateField({
 
           {Platform.OS === 'ios' ? (
             <Pressable accessibilityRole="button" onPress={cerrar} className="items-center py-2">
-              <Text className="text-base font-semibold text-pethood-orange">Listo</Text>
+              <Text className={`font-semibold text-pethood-orange ${grande ? 'text-lg' : 'text-base'}`}>
+                Listo
+              </Text>
             </Pressable>
           ) : null}
         </>

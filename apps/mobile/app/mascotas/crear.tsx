@@ -328,20 +328,22 @@ export default function CrearMascotaScreen() {
   };
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-4 py-3">
+        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-5 py-[13px]">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Volver"
             onPress={() => router.back()}
             hitSlop={8}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-80"
+            className="h-11 w-11 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100 active:opacity-80"
           >
-            <Ionicons name="chevron-back" size={20} color={PALETA.gris[600]} />
+            <Ionicons name="chevron-back" size={22} color={PALETA.neutral[700]} />
           </Pressable>
 
-          <Text className="text-2xl font-bold text-pethood-orange">Nueva Mascota</Text>
+          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
+            Nueva Mascota
+          </Text>
         </View>
 
         {cargandoCatalogos ? (
@@ -357,7 +359,7 @@ export default function CrearMascotaScreen() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
-              <PhotoPicker foto={foto} onChange={setFoto} error={errorDe('foto')} />
+              <PhotoPicker foto={foto} onChange={setFoto} error={errorDe('foto')} grande />
 
               <FormCard>
                 <FormCardRow>
@@ -529,6 +531,7 @@ export default function CrearMascotaScreen() {
                 {mostrarCrearMascota ? (
                   <CustomButton
                     title="Crear mascota"
+                    variant="acento"
                     loading={guardando}
                     disabled={!formularioValido}
                     onPress={() => void guardar(false)}
@@ -539,10 +542,10 @@ export default function CrearMascotaScreen() {
                 {mostrarCrearPublicacion ? (
                   <CustomButton
                     title="Crear publicación"
-                    // Naranja y llamativo cuando es la única acción posible (adoptante que
-                    // eligió "Para adopción"); en el refugio conviven las dos, así que se
-                    // mantiene como acción secundaria.
-                    variant={mostrarCrearMascota ? 'secondary' : 'primary'}
+                    // Llamativo cuando es la única acción posible (adoptante que eligió
+                    // "Para adopción"); en el refugio conviven las dos, así que se mantiene
+                    // como acción secundaria.
+                    variant={mostrarCrearMascota ? 'acento-borde' : 'acento'}
                     disabled={!formularioValido || !permitePublicar || guardando}
                     onPress={() => void guardar(true)}
                     onPressDeshabilitado={explicarQueFalta}

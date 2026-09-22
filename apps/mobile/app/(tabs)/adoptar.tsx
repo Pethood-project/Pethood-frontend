@@ -25,11 +25,13 @@ import {
 import { useToast } from '@/components/feedback/Toast';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { PALETA } from '@/constants/theme';
+import { useSesion } from '@/hooks/useSesion';
 import { agregarFavorito } from '@/services/favoritos';
 import {
   contarFiltrosActivos,
   listarFeed,
   SIN_FILTROS,
+  TAMANIO_PAGINA,
   type FiltrosAdopcion,
   type PublicacionFeed,
 } from '@/services/publicaciones';
@@ -41,6 +43,10 @@ export default function AdoptarScreen() {
   const router = useRouter();
   const toast = useToast();
   const pila = useRef<PilaAdopcionRef>(null);
+  const { vistaRefugio } = useSesion();
+  // El switch "vista refugio" hace de cuenta que son dos cuentas: en REFUGIO el mazo
+  // también excluye lo que publicó el propio refugio, en PERSONAL no.
+  const ambito = vistaRefugio ? 'REFUGIO' : 'PERSONAL';
 
   const [publicaciones, setPublicaciones] = useState<PublicacionFeed[]>([]);
   const [total, setTotal] = useState(0);
@@ -68,7 +74,7 @@ export default function AdoptarScreen() {
     rechazadas.current = 0;
 
     try {
-      const feed = await listarFeed(filtrosActivos);
+      const feed = await listarFeed(filtrosActivos, 0, TAMANIO_PAGINA, ambito);
       setPublicaciones(feed.publicaciones);
       setTotal(feed.total);
     } catch (err) {
@@ -78,7 +84,7 @@ export default function AdoptarScreen() {
     } finally {
       setCargando(false);
     }
-  }, []);
+  }, [ambito]);
 
   useEffect(() => {
     void cargarPrimeraPagina(filtros);
@@ -90,7 +96,7 @@ export default function AdoptarScreen() {
 
     try {
       const desplazamiento = rechazadas.current + publicaciones.length;
-      const feed = await listarFeed(filtros, desplazamiento);
+      const feed = await listarFeed(filtros, desplazamiento, TAMANIO_PAGINA, ambito);
 
       // Se filtran por id los que ya estén en el mazo: si entre el cálculo del
       // desplazamiento y la respuesta cambió algo del lado del servidor, el solapamiento
@@ -106,7 +112,7 @@ export default function AdoptarScreen() {
     } finally {
       pidiendoPagina.current = false;
     }
-  }, [filtros, publicaciones.length]);
+  }, [filtros, publicaciones.length, ambito]);
 
   // Quedan páginas mientras lo consumido no llegue al total que informó el servidor.
   const hayMasPaginas = rechazadas.current + publicaciones.length < total;
@@ -136,7 +142,7 @@ export default function AdoptarScreen() {
 
       const nombre = publicacion.mascota.nombre ?? 'la mascota';
 
-      void agregarFavorito(publicacion.mascota.id)
+      void agregarFavorito(publicacion.mascota.id, ambito)
         .then(() => {
           toast.mostrarExito(`Guardamos a ${nombre} en favoritos.`);
         })
@@ -148,7 +154,7 @@ export default function AdoptarScreen() {
           );
         });
     },
-    [reponer, toast],
+    [reponer, toast, ambito],
   );
 
   const abrirFicha = useCallback(

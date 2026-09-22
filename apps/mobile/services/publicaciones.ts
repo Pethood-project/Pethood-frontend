@@ -5,7 +5,7 @@
  * favoritos: el cliente no vuelve a filtrar nada, solo pagina.
  */
 import { get } from './api';
-import type { Genero, Tamanio } from './mascotas';
+import type { AmbitoMascotas, Genero, Tamanio } from './mascotas';
 
 export interface MascotaPublicada {
   id: number;
@@ -40,6 +40,13 @@ export interface PublicacionFeed {
   /** Null cuando publica un adoptante particular. */
   refugio: { id: number; nombre: string; direccion: string } | null;
   enFavoritos: boolean;
+  /**
+   * Si la mascota es del usuario que consulta (o de su mismo refugio). El feed nunca la
+   * devuelve en `true`: ya excluye esas publicaciones. La ficha sí puede, y la pantalla usa
+   * este campo para no ofrecer "Solicitar adopción" ni el corazón de favoritos sobre la
+   * propia mascota.
+   */
+  esPropia: boolean;
 }
 
 export interface FeedPublicaciones {
@@ -85,7 +92,12 @@ export function contarFiltrosActivos(filtros: FiltrosAdopcion): number {
 }
 
 /** Las banderas en false no viajan: su ausencia ya significa "no filtrar por esto". */
-function aQueryString(filtros: FiltrosAdopcion, limite: number, desplazamiento: number): string {
+function aQueryString(
+  filtros: FiltrosAdopcion,
+  limite: number,
+  desplazamiento: number,
+  ambito: AmbitoMascotas,
+): string {
   const params = new URLSearchParams();
 
   if (filtros.especieId !== undefined) params.set('especieId', String(filtros.especieId));
@@ -99,6 +111,7 @@ function aQueryString(filtros: FiltrosAdopcion, limite: number, desplazamiento: 
 
   params.set('limite', String(limite));
   params.set('desplazamiento', String(desplazamiento));
+  params.set('ambito', ambito);
 
   return params.toString();
 }
@@ -106,14 +119,23 @@ function aQueryString(filtros: FiltrosAdopcion, limite: number, desplazamiento: 
 /** Tamaño de página del feed. Coincide con el default del backend. */
 export const TAMANIO_PAGINA = 20;
 
+/**
+ * `ambito` decide, junto con `usuarioId`, qué mascotas excluye el feed como "propias": en
+ * REFUGIO también las de su refugio (aunque las haya cargado otro miembro), en PERSONAL
+ * solo las que el usuario mismo publicó — ver `shared/ambito.ts` del backend.
+ */
 export function listarFeed(
   filtros: FiltrosAdopcion = SIN_FILTROS,
   desplazamiento = 0,
   limite = TAMANIO_PAGINA,
+  ambito: AmbitoMascotas = 'PERSONAL',
 ): Promise<FeedPublicaciones> {
-  return get(`/publicaciones?${aQueryString(filtros, limite, desplazamiento)}`);
+  return get(`/publicaciones?${aQueryString(filtros, limite, desplazamiento, ambito)}`);
 }
 
-export function obtenerPublicacion(id: number): Promise<PublicacionFeed> {
-  return get(`/publicaciones/${id}`);
+export function obtenerPublicacion(
+  id: number,
+  ambito: AmbitoMascotas = 'PERSONAL',
+): Promise<PublicacionFeed> {
+  return get(`/publicaciones/${id}?ambito=${ambito}`);
 }

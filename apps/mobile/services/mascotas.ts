@@ -72,7 +72,23 @@ export function listarMisMascotas(ambito: AmbitoMascotas = 'PERSONAL'): Promise<
   return get(`/mascotas/mias?ambito=${ambito}`);
 }
 
-/** No hay endpoint `GET /mascotas/:id`: la ficha propia se busca dentro del listado. */
+export interface FichaMascota extends Mascota {
+  /** Id de la publicación activa de esta mascota, o `null` si no está publicada. */
+  publicacionActivaId: number | null;
+}
+
+/**
+ * Ficha individual (HU-6.4). El backend autoriza a quien la creó o a un compañero del mismo
+ * refugio; a cualquier otro usuario le devuelve 403/404, que la pantalla traduce a su mensaje.
+ */
+export function obtenerMascota(id: number): Promise<FichaMascota> {
+  return get(`/mascotas/${id}`);
+}
+
+/**
+ * El formulario de edición precarga por acá en vez de `obtenerMascota`: ya trae el ámbito
+ * (personal vs. refugio) resuelto, que la ficha de detalle no necesita.
+ */
 export async function obtenerMiMascota(
   id: number,
   ambito: AmbitoMascotas = 'PERSONAL',

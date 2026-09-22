@@ -23,7 +23,9 @@ import { useToast } from '@/components/feedback/Toast';
 import { BotonSolicitar } from '@/components/solicitudes/BotonSolicitar';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
+import { ESTADO_SOLICITABLE } from '@/constants/Mascotas';
 import { PALETA } from '@/constants/theme';
+import { useSesion } from '@/hooks/useSesion';
 import { urlAbsoluta } from '@/services/api';
 import {
   agregarFavorito,
@@ -109,7 +111,7 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
               <Image source={{ uri: foto }} className="h-full w-full" resizeMode="cover" />
             ) : (
               <View className="h-full w-full items-center justify-center">
-                <Ionicons name="paw-outline" size={28} color={PALETA.neutral[400]} />
+                <Ionicons name="paw-outline" size={36} color={PALETA.neutral[400]} />
               </View>
             )}
           </Pressable>
@@ -119,9 +121,9 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
             accessibilityLabel={`Quitar a ${mascota.nombre ?? 'esta mascota'} de favoritos`}
             onPress={onQuitar}
             hitSlop={10}
-            className="absolute right-1.5 top-1.5 h-7 w-7 items-center justify-center rounded-full bg-white/90 active:opacity-70"
+            className="absolute right-2 top-2 h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
           >
-            <Ionicons name="heart" size={15} color={PALETA.accent[600]} />
+            <Ionicons name="heart" size={20} color={PALETA.accent[600]} />
           </Pressable>
         </View>
 
@@ -130,30 +132,36 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
           accessibilityLabel={`Ver a ${mascota.nombre ?? 'esta mascota'}`}
           disabled={mascota.publicacionId === null}
           onPress={irADetalle}
-          className="p-2.5 active:opacity-90"
+          className="p-3 active:opacity-90"
         >
-          <Text numberOfLines={1} className="font-cuerpo-bold text-sm text-organic-neutral-900">
+          <Text numberOfLines={1} className="font-cuerpo-bold text-lg text-organic-neutral-900">
             {mascota.nombre ?? 'Sin nombre'}
           </Text>
           {edadTexto ? (
-            <Text className="mt-0.5 font-cuerpo text-xs text-organic-neutral-600">
+            <Text className="mt-0.5 font-cuerpo text-sm text-organic-neutral-600">
               {edadTexto}
             </Text>
           ) : null}
 
-          <View className="mt-1.5">
-            <EstadoMascotaBadge estado={mascota.estado.nombre} />
+          <View className="mt-2">
+            <EstadoMascotaBadge estado={mascota.estado.nombre} tamanio="md" />
           </View>
         </Pressable>
 
-        {mascota.publicacionId !== null ? (
-          <View className="px-2.5 pb-2.5">
+        {/* Sin publicación no hay nada que solicitar. Con publicación pero en un estado no
+            solicitable (En_Tratamiento, En_Transito, Adoptado…) tampoco, salvo que ya haya
+            una solicitud en curso: esa se sigue mostrando aunque la mascota haya cambiado
+            de estado mientras tanto (`BotonSolicitar` decide ese caso puntual). */}
+        {mascota.publicacionId !== null &&
+        (mascota.estado.nombre === ESTADO_SOLICITABLE || mascota.solicitudAbiertaId !== null) ? (
+          <View className="px-3 pb-3">
             <BotonSolicitar
               variante="tarjeta"
               mascota={{
                 publicacionId: mascota.publicacionId,
                 nombre: mascota.nombre,
                 imagenUrl: mascota.imagenUrl,
+                estado: mascota.estado.nombre,
               }}
               solicitudAbiertaId={mascota.solicitudAbiertaId}
               onCreada={onSolicitada}
@@ -178,6 +186,8 @@ function ListaVacia() {
 export default function FavoritosScreen() {
   const router = useRouter();
   const toast = useToast();
+  const { vistaRefugio } = useSesion();
+  const ambito = vistaRefugio ? 'REFUGIO' : 'PERSONAL';
 
   const [favoritos, setFavoritos] = useState<MascotaFavorita[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -235,7 +245,7 @@ export default function FavoritosScreen() {
       setFavoritos((actuales) => reponerOrdenado(actuales, mascota));
       pendientes.current += 1;
 
-      void encolar(mascota.id, () => agregarFavorito(mascota.id))
+      void encolar(mascota.id, () => agregarFavorito(mascota.id, ambito))
         .catch((err: unknown) => {
           // No se pudo reponer: se vuelve a sacar para no mentirle al usuario.
           setFavoritos((actuales) => actuales.filter((item) => item.id !== mascota.id));
@@ -247,7 +257,7 @@ export default function FavoritosScreen() {
           pendientes.current -= 1;
         });
     },
-    [encolar, toast],
+    [encolar, toast, ambito],
   );
 
   /**
@@ -295,14 +305,14 @@ export default function FavoritosScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-[22px] pb-3.5 pt-2">
-          <BotonCircular icono="arrow-back" etiqueta="Volver" onPress={volver} />
+        <View className="flex-row items-center gap-3 px-[22px] pb-4 pt-2">
+          <BotonCircular icono="arrow-back" etiqueta="Volver" onPress={volver} grande />
 
           <View>
-            <Text className="font-titulo text-[22px] leading-[22px] text-organic-accent-600">
+            <Text className="font-titulo text-[28px] leading-[28px] text-organic-accent-600">
               Favoritos
             </Text>
-            <Text className="mt-1 font-cuerpo text-[13px] text-organic-neutral-700">
+            <Text className="mt-1.5 font-cuerpo text-base text-organic-neutral-700">
               {cargando ? 'Cargando…' : subtituloContador(favoritos.length)}
             </Text>
           </View>

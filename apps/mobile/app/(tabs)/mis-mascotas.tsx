@@ -1,6 +1,8 @@
 /**
  * GUI-04 Mascotas Adoptante — listado de las mascotas propias, acceso a la creación y
- * punto de entrada a editar (HU-6.2) y eliminar (HU-6.3) cada una.
+ * punto de entrada a editar (HU-6.2). Eliminar (HU-6.3) no vive acá: se hace desde adentro
+ * de la ficha de cada mascota (`mascotas/[id]/index.tsx`) para que la baja no quede a un
+ * toque de distancia mientras se navega la lista.
  */
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useFocusEffect, useRouter } from 'expo-router';
@@ -9,13 +11,11 @@ import { FlatList, Image, Pressable, RefreshControl, Text, View } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantalla';
-import { useToast } from '@/components/feedback/Toast';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
-import { ApiError, urlAbsoluta } from '@/services/api';
-import { eliminarMascota, listarMisMascotas, type Mascota } from '@/services/mascotas';
+import { urlAbsoluta } from '@/services/api';
+import { listarMisMascotas, type Mascota } from '@/services/mascotas';
 import { edadEnTexto, parsearFecha } from '@/shared/validation/dates';
 
 const ETIQUETA_TAMANIO = {
@@ -31,45 +31,63 @@ function edad(fechaNacimiento: string | null): string | null {
 
 interface TarjetaMascotaProps {
   mascota: Mascota;
-  /** Solo el creador del registro ve las acciones (misma regla que en publicaciones). */
+  /** Solo el creador del registro ve editar (misma regla que en publicaciones). */
   esPropia: boolean;
+  onVer: () => void;
   onEditar: () => void;
-  onEliminar: () => void;
   onVerHistoriaClinica: () => void;
 }
 
 function TarjetaMascota({
   mascota,
   esPropia,
+  onVer,
   onEditar,
-  onEliminar,
   onVerHistoriaClinica,
 }: TarjetaMascotaProps) {
   const foto = urlAbsoluta(mascota.imagenUrl);
+  const nombre = mascota.nombre ?? 'esta mascota';
 
   return (
     <View className="mb-3.5 flex-row gap-3.5 rounded-[26px] bg-organic-surface p-3.5 shadow-sm">
-      {foto ? (
-        <Image source={{ uri: foto }} className="h-32 w-32 rounded-[20px]" />
-      ) : (
-        <View className="h-32 w-32 items-center justify-center rounded-[20px] bg-organic-calido-amarilloClaro">
-          <Ionicons name="paw-outline" size={36} color={PALETA.accent[600]} />
-        </View>
-      )}
+      {/* Foto y datos son Pressables hermanos de los botones de acción, no un Pressable
+          contenedor: uno anidado dentro de otro dispara onPress apenas se monta en web
+          (React 19), como ya documenta favoritos.tsx. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Ver a ${nombre}`}
+        onPress={onVer}
+        className="active:opacity-90"
+      >
+        {foto ? (
+          <Image source={{ uri: foto }} className="h-32 w-32 rounded-[20px]" />
+        ) : (
+          <View className="h-32 w-32 items-center justify-center rounded-[20px] bg-organic-calido-amarilloClaro">
+            <Ionicons name="paw-outline" size={36} color={PALETA.accent[600]} />
+          </View>
+        )}
+      </Pressable>
 
       <View className="flex-1 justify-center">
-        <Text className="font-titulo text-[19px] leading-[22px] text-organic-neutral-900">
-          {mascota.nombre}
-        </Text>
-        <Text className="mt-1 font-cuerpo text-[15px] text-organic-neutral-600">
-          {[
-            mascota.especie.nombre,
-            edad(mascota.fechaNacimiento),
-            mascota.tamanio ? ETIQUETA_TAMANIO[mascota.tamanio] : null,
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Ver a ${nombre}`}
+          onPress={onVer}
+          className="active:opacity-90"
+        >
+          <Text className="font-titulo text-[19px] leading-[22px] text-organic-neutral-900">
+            {mascota.nombre}
+          </Text>
+          <Text className="mt-1 font-cuerpo text-[15px] text-organic-neutral-600">
+            {[
+              mascota.especie.nombre,
+              edad(mascota.fechaNacimiento),
+              mascota.tamanio ? ETIQUETA_TAMANIO[mascota.tamanio] : null,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </Text>
+        </Pressable>
 
         <View className="mt-3 flex-row items-center justify-between">
           <EstadoMascotaBadge estado={mascota.estado.nombre} />
@@ -90,27 +108,15 @@ function TarjetaMascota({
             </Pressable>
 
             {esPropia ? (
-              <>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Editar ${mascota.nombre}`}
-                  onPress={onEditar}
-                  hitSlop={6}
-                  className="h-10 w-10 items-center justify-center rounded-full bg-organic-neutral-200 active:opacity-70"
-                >
-                  <Ionicons name="pencil" size={18} color={PALETA.neutral[700]} />
-                </Pressable>
-
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Eliminar ${mascota.nombre}`}
-                  onPress={onEliminar}
-                  hitSlop={6}
-                  className="h-10 w-10 items-center justify-center rounded-full bg-red-50 active:opacity-70"
-                >
-                  <Ionicons name="trash-outline" size={18} color={PALETA.estado.error} />
-                </Pressable>
-              </>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Editar ${mascota.nombre}`}
+                onPress={onEditar}
+                hitSlop={6}
+                className="h-10 w-10 items-center justify-center rounded-full bg-organic-neutral-200 active:opacity-70"
+              >
+                <Ionicons name="pencil" size={18} color={PALETA.neutral[700]} />
+              </Pressable>
             ) : null}
           </View>
         </View>
@@ -148,18 +154,11 @@ function ListaVacia() {
 export default function MisMascotasScreen() {
   const { esRefugio, usuario } = useSesion();
   const router = useRouter();
-  const toast = useToast();
 
   const [mascotas, setMascotas] = useState<Mascota[]>([]);
   const [cargando, setCargando] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  /** Mascota esperando confirmación de baja; null cuando el modal está cerrado. */
-  const [aEliminar, setAEliminar] = useState<Mascota | null>(null);
-  const [eliminando, setEliminando] = useState(false);
-  /** Mensaje del 409: la baja quedó bloqueada por solicitudes sin responder. */
-  const [bloqueo, setBloqueo] = useState<string | null>(null);
 
   const cargar = useCallback(async (): Promise<void> => {
     try {
@@ -173,47 +172,12 @@ export default function MisMascotasScreen() {
     }
   }, []);
 
-  // Se recarga al volver de crear o editar una mascota, para reflejar los cambios.
+  // Se recarga al volver de crear, editar o eliminar una mascota, para reflejar los cambios.
   useFocusEffect(
     useCallback(() => {
       void cargar();
     }, [cargar]),
   );
-
-  const confirmarEliminacion = async (): Promise<void> => {
-    if (!aEliminar) return;
-
-    const nombre = aEliminar.nombre ?? 'La mascota';
-    setEliminando(true);
-
-    try {
-      const resultado = await eliminarMascota(aEliminar.id);
-      setAEliminar(null);
-
-      toast.mostrarExito(
-        resultado.publicacionesDadasDeBaja > 0
-          ? `Eliminamos a ${nombre} y retiramos su publicación en adopción.`
-          : `Eliminamos a ${nombre} de tus mascotas.`,
-      );
-
-      await cargar();
-    } catch (err) {
-      setAEliminar(null);
-
-      // El 409 no es un error del usuario sino un bloqueo con salida: se explica en un
-      // diálogo aparte en vez de un toast rojo.
-      if (err instanceof ApiError && err.codigo === 'SOLICITUDES_ABIERTAS') {
-        setBloqueo(err.message);
-        return;
-      }
-
-      toast.mostrarError(
-        err instanceof Error ? err.message : 'No pudimos eliminar la mascota. Intentalo de nuevo.',
-      );
-    } finally {
-      setEliminando(false);
-    }
-  };
 
   return (
     <View className="flex-1 bg-organic-bg">
@@ -245,10 +209,10 @@ export default function MisMascotasScreen() {
               <TarjetaMascota
                 mascota={item}
                 esPropia={item.usuarioId === usuario?.id}
+                onVer={() => router.push({ pathname: '/mascotas/[id]', params: { id: item.id } })}
                 onEditar={() =>
                   router.push({ pathname: '/mascotas/[id]/editar', params: { id: item.id } })
                 }
-                onEliminar={() => setAEliminar(item)}
                 onVerHistoriaClinica={() =>
                   router.push({
                     pathname: '/mascotas/[id]/historia-clinica',
@@ -283,34 +247,6 @@ export default function MisMascotasScreen() {
           </Pressable>
         </Link>
       </SafeAreaView>
-
-      {/* Regla transversal 6 de CLAUDE.md: confirmación antes de una acción crítica. */}
-      <ConfirmDialog
-        visible={aEliminar !== null}
-        tono="peligro"
-        titulo={`¿Eliminar a ${aEliminar?.nombre ?? 'esta mascota'}?`}
-        mensaje="Se va a retirar de la plataforma junto con su publicación en adopción, si tiene una."
-        detalle="Esta acción no se puede deshacer desde la app."
-        textoConfirmar="Eliminar"
-        cargando={eliminando}
-        onConfirmar={() => void confirmarEliminacion()}
-        onCerrar={() => setAEliminar(null)}
-      />
-
-      <ConfirmDialog
-        visible={bloqueo !== null}
-        tono="advertencia"
-        titulo="No se puede eliminar todavía"
-        mensaje={bloqueo ?? ''}
-        detalle="Resolvélas desde la bandeja de solicitudes para poder eliminarla."
-        textoConfirmar="Ver solicitudes"
-        textoCancelar="Entendido"
-        onConfirmar={() => {
-          setBloqueo(null);
-          router.push('/solicitudes');
-        }}
-        onCerrar={() => setBloqueo(null)}
-      />
     </View>
   );
 }

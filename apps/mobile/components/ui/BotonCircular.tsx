@@ -30,6 +30,23 @@ const VARIANTES: Record<
   },
 };
 
+/** Mismas variantes, un 20% más grandes: pantallas más densas como Favoritos la piden. */
+const VARIANTES_GRANDE: Record<
+  VarianteBoton,
+  { contenedor: string; color: string; tamanoIcono: number }
+> = {
+  organic: {
+    contenedor: 'h-[50px] w-[50px] border border-organic-accent-300 bg-organic-accent-100',
+    color: PALETA.accent[700],
+    tamanoIcono: 23,
+  },
+  clasico: {
+    contenedor: 'h-12 w-12 bg-white',
+    color: PALETA.pethood.naranja,
+    tamanoIcono: 26,
+  },
+};
+
 interface BotonCircularProps {
   icono: NombreIcono;
   /** Se lee en voz alta y describe la acción, no el ícono. */
@@ -38,6 +55,8 @@ interface BotonCircularProps {
   variante?: VarianteBoton;
   /** Pastilla con un número sobre el ícono. En cero o sin valor no se dibuja. */
   contador?: number;
+  /** Versión más grande del mismo botón, sin cambiar de variante. */
+  grande?: boolean;
 }
 
 export function BotonCircular({
@@ -46,8 +65,9 @@ export function BotonCircular({
   onPress,
   variante = 'organic',
   contador,
+  grande = false,
 }: BotonCircularProps) {
-  const { contenedor, color, tamanoIcono } = VARIANTES[variante];
+  const { contenedor, color, tamanoIcono } = (grande ? VARIANTES_GRANDE : VARIANTES)[variante];
   const clases = `${contenedor} items-center justify-center rounded-full`;
 
   const contenido = (

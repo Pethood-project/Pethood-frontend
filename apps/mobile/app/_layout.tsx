@@ -76,6 +76,8 @@ function RootNavigator() {
             el Perfil, y el back tiene que volver al origen real. */}
         <Stack.Screen name="favoritos" />
         <Stack.Screen name="mascotas/crear" options={{ presentation: 'card' }} />
+        {/* HU-6.4. Se abre tocando una tarjeta de "Mis mascotas". */}
+        <Stack.Screen name="mascotas/[id]/index" options={{ presentation: 'card' }} />
         <Stack.Screen name="mascotas/[id]/editar" options={{ presentation: 'card' }} />
         <Stack.Screen name="publicaciones/crear" options={{ presentation: 'card' }} />
         {/* Se abre tocando una tarjeta del mazo de Adoptar, sin descartarla. */}

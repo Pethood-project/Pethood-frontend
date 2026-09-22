@@ -6,6 +6,13 @@
 import type { Genero, Tamanio } from '@/services/mascotas';
 import { edadEnTexto, parsearFecha } from '@/shared/validation/dates';
 
+/**
+ * Único estado desde el que se puede solicitar adopción o tránsito (HU-7.1). Mismo nombre
+ * que `ESTADO_SOLICITABLE` en `solicitudes.service.ts` del backend: si cambia allá, el botón
+ * de acá tiene que cambiar junto.
+ */
+export const ESTADO_SOLICITABLE = 'Disponible';
+
 const TAMANIOS: Record<Tamanio, string> = {
   PEQUENO: 'Pequeño',
   MEDIANO: 'Mediano',

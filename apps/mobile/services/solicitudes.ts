@@ -7,6 +7,7 @@
  * `pethood-backend/docs/specs/003-adopcion-favoritos.md`.
  */
 import { get, patch, post } from './api';
+import type { AmbitoMascotas } from './mascotas';
 import { aFechaISO } from '../shared/validation/dates';
 
 /** Nombres reales del catálogo EstadoSolicitud (prisma/seed.ts del backend). */
@@ -116,10 +117,20 @@ export interface NuevaSolicitud {
   fechaInicioTransito?: string;
   fechaFinTransito?: string;
   hogar: HogarSolicitud;
+  /**
+   * Con qué cuenta solicita: la personal o la del refugio. El switch "vista refugio" hace
+   * de cuenta que son dos cuentas distintas — en PERSONAL sí se puede solicitar una mascota
+   * del propio refugio, en REFUGIO no.
+   */
+  ambito?: AmbitoMascotas;
 }
 
 /** Por qué el sistema frena la solicitud antes de abrir el formulario. */
-export type MotivoBloqueo = 'NO_VERIFICADO' | 'LIMITE_ALCANZADO' | 'YA_SOLICITADA';
+export type MotivoBloqueo =
+  | 'PUBLICACION_PROPIA'
+  | 'NO_VERIFICADO'
+  | 'LIMITE_ALCANZADO'
+  | 'YA_SOLICITADA';
 
 /**
  * Chequeo previo de las precondiciones de HU-7.1. Se consulta al tocar "Solicitar
@@ -199,11 +210,16 @@ export function listarMias(filtros: FiltrosSolicitudes = {}): Promise<ListaSolic
 
 /**
  * Precondiciones de HU-7.1. `publicacionId` es opcional: sin él solo se evalúa al usuario
- * (verificación y tope de pendientes); con él se agrega "ya solicitaste esta mascota".
+ * (verificación y tope de pendientes); con él se agrega "ya solicitaste esta mascota" y,
+ * según `ambito`, "es tu propia mascota".
  */
-export function obtenerElegibilidad(publicacionId?: number): Promise<Elegibilidad> {
-  const query = publicacionId === undefined ? '' : `?publicacionId=${publicacionId}`;
-  return get(`/solicitudes/elegibilidad${query}`);
+export function obtenerElegibilidad(
+  publicacionId?: number,
+  ambito: AmbitoMascotas = 'PERSONAL',
+): Promise<Elegibilidad> {
+  const params = new URLSearchParams({ ambito });
+  if (publicacionId !== undefined) params.set('publicacionId', String(publicacionId));
+  return get(`/solicitudes/elegibilidad?${params.toString()}`);
 }
 
 /** HU-7.1. Devuelve la solicitud ya creada, en estado "Pendiente". */

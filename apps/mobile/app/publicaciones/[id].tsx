@@ -21,8 +21,9 @@ import { BotonSolicitar, solicitudEnviadaDe } from '@/components/solicitudes/Bot
 import { Chip } from '@/components/ui/Chip';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { SeccionTitulada } from '@/components/ui/SeccionTitulada';
-import { resumenMascota } from '@/constants/Mascotas';
+import { ESTADO_SOLICITABLE, resumenMascota } from '@/constants/Mascotas';
 import { PALETA } from '@/constants/theme';
+import { useSesion } from '@/hooks/useSesion';
 import { agregarFavorito, quitarFavorito } from '@/services/favoritos';
 import { obtenerPublicacion, type PublicacionFeed } from '@/services/publicaciones';
 import { obtenerElegibilidad } from '@/services/solicitudes';
@@ -58,8 +59,12 @@ export default function FichaPublicacionScreen() {
   const navigation = useNavigation();
   const toast = useToast();
   const insets = useSafeAreaInsets();
+  const { vistaRefugio } = useSesion();
 
   const publicacionId = Number(Array.isArray(id) ? id[0] : id);
+  // El switch "vista refugio" hace de cuenta que son dos cuentas: con qué mascotas cuenta
+  // "propias" (y por lo tanto no solicitables ni guardables) depende de cuál está activa.
+  const ambito = vistaRefugio ? 'REFUGIO' : 'PERSONAL';
 
   const [publicacion, setPublicacion] = useState<PublicacionFeed | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -79,7 +84,7 @@ export default function FichaPublicacionScreen() {
 
     try {
       setError(null);
-      setPublicacion(await obtenerPublicacion(publicacionId));
+      setPublicacion(await obtenerPublicacion(publicacionId, ambito));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No pudimos cargar la publicación.');
     } finally {
@@ -90,7 +95,7 @@ export default function FichaPublicacionScreen() {
     // simplemente arranca en "Solicitar" y resuelve la precondición al tocarlo, como
     // siempre. Es la única pantalla que lo consulta al montar: acá hay una sola ficha, no
     // una grilla con una tarjeta por publicación.
-    obtenerElegibilidad(publicacionId)
+    obtenerElegibilidad(publicacionId, ambito)
       .then((elegibilidad) => {
         // El id manda, no el motivo: si la cuenta no está verificada el backend puede
         // devolver otro código y aún así traer la solicitud ya mandada.
@@ -99,7 +104,7 @@ export default function FichaPublicacionScreen() {
         }
       })
       .catch(() => undefined);
-  }, [publicacionId]);
+  }, [publicacionId, ambito]);
 
   useEffect(() => {
     void cargar();
@@ -121,7 +126,7 @@ export default function FichaPublicacionScreen() {
 
     const operacion = guardada
       ? quitarFavorito(publicacion.mascota.id)
-      : agregarFavorito(publicacion.mascota.id);
+      : agregarFavorito(publicacion.mascota.id, ambito);
 
     void operacion
       .then(() => {
@@ -136,7 +141,7 @@ export default function FichaPublicacionScreen() {
         );
       })
       .finally(() => setGuardando(false));
-  }, [guardando, publicacion, toast]);
+  }, [guardando, publicacion, toast, ambito]);
 
   const volver = useCallback((): void => {
     // `dismiss` saca esta ficha del stack. `canGoBack` del history se ensucia con el
@@ -277,26 +282,35 @@ export default function FichaPublicacionScreen() {
       </ScrollView>
       </View>
 
-      {/* Pie fijo: el CTA no se scrollea, así está siempre a un toque. */}
-      <View
-        className="border-t border-organic-neutral-200 bg-organic-bg px-4 pt-3"
-        style={{ paddingBottom: 12 + insets.bottom }}
-      >
-        {/* El hogar precargado del paso 2 no sale de acá: lo trae `/elegibilidad`, que
-            `BotonSolicitar` consulta al tocar. Es el hogar del USUARIO, no la ubicación de
-            esta mascota — antes se pasaba por error `publicacion.ubicacion`. */}
-        <BotonSolicitar
-          mascota={{
-            publicacionId: publicacion.id,
-            nombre: mascota.nombre,
-            imagenUrl: mascota.imagenUrl,
-            subtitulo: procedencia,
-            destinatario: publicacion.refugio?.nombre ?? null,
-          }}
-          solicitudAbiertaId={solicitudAbiertaId}
-          onCreada={(solicitud) => setSolicitudAbiertaId(solicitud.id)}
-        />
-      </View>
+      {/* Pie fijo: el CTA no se scrollea, así está siempre a un toque. Sobre la propia
+          mascota no hay nada que solicitar, así que el pie directamente no se muestra —
+          el backend también lo rechaza (PUBLICACION_PROPIA) si de algún modo se llegara a
+          tocar. Tampoco se muestra si el estado no es solicitable (En_Tratamiento,
+          En_Transito, Adoptado…), salvo que ya haya una solicitud en curso — ese caso lo
+          resuelve `BotonSolicitar` por dentro. */}
+      {!publicacion.esPropia &&
+      (mascota.estado.nombre === ESTADO_SOLICITABLE || solicitudAbiertaId !== null) ? (
+        <View
+          className="border-t border-organic-neutral-200 bg-organic-bg px-4 pt-3"
+          style={{ paddingBottom: 12 + insets.bottom }}
+        >
+          {/* El hogar precargado del paso 2 no sale de acá: lo trae `/elegibilidad`, que
+              `BotonSolicitar` consulta al tocar. Es el hogar del USUARIO, no la ubicación de
+              esta mascota — antes se pasaba por error `publicacion.ubicacion`. */}
+          <BotonSolicitar
+            mascota={{
+              publicacionId: publicacion.id,
+              nombre: mascota.nombre,
+              imagenUrl: mascota.imagenUrl,
+              estado: mascota.estado.nombre,
+              subtitulo: procedencia,
+              destinatario: publicacion.refugio?.nombre ?? null,
+            }}
+            solicitudAbiertaId={solicitudAbiertaId}
+            onCreada={(solicitud) => setSolicitudAbiertaId(solicitud.id)}
+          />
+        </View>
+      ) : null}
 
       {/* Últimos hijos del root y zIndex alto: en web la galería (transform) pintaba
           encima de un overlay hermano del ScrollView y se comía la flecha. */}
@@ -317,26 +331,32 @@ export default function FichaPublicacionScreen() {
         <Ionicons name="arrow-back" size={20} color={PALETA.grisCalido[900]} />
       </Pressable>
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={publicacion.enFavoritos ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-        onPress={alternarFavorito}
-        hitSlop={12}
-        className="h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
-        style={{
-          position: 'absolute',
-          top: insets.top + 8,
-          right: 12,
-          zIndex: 9999,
-          elevation: 9999,
-        }}
-      >
-        <Ionicons
-          name={publicacion.enFavoritos ? 'heart' : 'heart-outline'}
-          size={20}
-          color={PALETA.pethood.naranja}
-        />
-      </Pressable>
+      {/* Sobre la propia mascota (personal o del propio refugio) no hay nada que guardar:
+          sería guardarse a uno mismo un aviso que uno mismo publicó. */}
+      {!publicacion.esPropia ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={
+            publicacion.enFavoritos ? 'Quitar de favoritos' : 'Guardar en favoritos'
+          }
+          onPress={alternarFavorito}
+          hitSlop={12}
+          className="h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
+          style={{
+            position: 'absolute',
+            top: insets.top + 8,
+            right: 12,
+            zIndex: 9999,
+            elevation: 9999,
+          }}
+        >
+          <Ionicons
+            name={publicacion.enFavoritos ? 'heart' : 'heart-outline'}
+            size={20}
+            color={PALETA.pethood.naranja}
+          />
+        </Pressable>
+      ) : null}
     </View>
   );
 }

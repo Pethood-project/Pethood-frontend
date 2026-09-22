@@ -19,7 +19,9 @@ import { CustomButton } from '@/components/CustomButton';
 import { useToast } from '@/components/feedback/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { FLAGS } from '@/constants/flags';
+import { ESTADO_SOLICITABLE } from '@/constants/Mascotas';
 import { PALETA } from '@/constants/theme';
+import { useSesion } from '@/hooks/useSesion';
 import {
   obtenerElegibilidad,
   type Elegibilidad,
@@ -83,6 +85,15 @@ const CARTELES: Record<
   MotivoBloqueo,
   { titulo: string; icono: keyof typeof Ionicons.glyphMap; accion: string; descartar: string }
 > = {
+  // No debería llegar a mostrarse: la ficha y la tarjeta ocultan el botón sobre la propia
+  // mascota. Queda como red de contención si igual se llega a tocar (p. ej. quedó montado
+  // de antes de cambiar el switch de vista).
+  PUBLICACION_PROPIA: {
+    titulo: 'Es tu propia mascota',
+    icono: 'information-circle-outline',
+    accion: 'Entendido',
+    descartar: 'Cerrar',
+  },
   NO_VERIFICADO: {
     titulo: 'Tenés que verificarte para solicitar',
     icono: 'shield-checkmark-outline',
@@ -129,6 +140,11 @@ export function BotonSolicitar({
 }: BotonSolicitarProps) {
   const router = useRouter();
   const toast = useToast();
+  const { vistaRefugio } = useSesion();
+  // El switch "vista refugio" hace de cuenta que son dos cuentas: con qué mascotas cuenta
+  // "propias" (no solicitables) depende de cuál está activa — ver `shared/ambito.ts` del
+  // backend.
+  const ambito = vistaRefugio ? 'REFUGIO' : 'PERSONAL';
 
   const [verificando, setVerificando] = useState(false);
   const [bloqueo, setBloqueo] = useState<Elegibilidad | null>(null);
@@ -185,7 +201,7 @@ export function BotonSolicitar({
     setVerificando(true);
 
     try {
-      const elegibilidad = await obtenerElegibilidad(mascota.publicacionId);
+      const elegibilidad = await obtenerElegibilidad(mascota.publicacionId, ambito);
 
       // Primero la solicitud ya mandada: si no está verificada, el backend puede devolver
       // otro motivo y aún así traer el id. Sin este orden se reabre el formulario.
@@ -212,7 +228,7 @@ export function BotonSolicitar({
     } finally {
       setVerificando(false);
     }
-  }, [marcarEnviada, mascota.publicacionId, toast]);
+  }, [marcarEnviada, mascota.publicacionId, toast, ambito]);
 
   const resolverBloqueo = useCallback((): void => {
     const motivo = bloqueo?.motivo;
@@ -227,15 +243,26 @@ export function BotonSolicitar({
       return;
     }
 
+    // Es tu propia mascota: no hay a dónde navegar, el cartel solo se cierra.
+    if (motivo === 'PUBLICACION_PROPIA') return;
+
     irASolicitud(motivo === 'YA_SOLICITADA' ? idAbierta : null);
   }, [bloqueo, irASolicitud, router]);
 
   const cartel = bloqueo?.motivo ? CARTELES[bloqueo.motivo] : null;
 
+  // En_Tratamiento, En_Transito, Adoptado, etc.: el backend igual la rechaza
+  // (`ESTADO_SOLICITABLE`), así que ofrecer el botón solo termina en un error al final del
+  // formulario. Una solicitud ya enviada se sigue mostrando igual: puede haber quedado en
+  // ese estado justo por la adopción que esta misma solicitud generó.
+  const solicitable = mascota.estado === ESTADO_SOLICITABLE;
+
   return (
     <>
       {enviadaId == null ? (
-        <BotonAbrir variante={variante} cargando={verificando} onPress={() => void intentar()} />
+        solicitable ? (
+          <BotonAbrir variante={variante} cargando={verificando} onPress={() => void intentar()} />
+        ) : null
       ) : (
         <EstadoEnviada variante={variante} onVer={() => irASolicitud(enviadaId)} />
       )}
@@ -260,6 +287,7 @@ export function BotonSolicitar({
         <SolicitudModal
           visible={abierto}
           mascota={mascota}
+          ambito={ambito}
           hogarPrecargado={hogarPrecargado}
           onCerrar={(solicitudCreada) => {
             if (solicitudCreada) marcarEnviada(solicitudCreada);
@@ -316,11 +344,11 @@ function BotonAbrir({ variante, cargando, onPress }: BotonAbrirProps) {
       accessibilityState={{ busy: cargando }}
       disabled={cargando}
       onPress={onPress}
-      className={`items-center justify-center rounded-xl bg-organic-accent-600 py-2 active:opacity-90 ${
+      className={`items-center justify-center rounded-xl bg-organic-accent-600 py-2.5 active:opacity-90 ${
         cargando ? 'opacity-60' : ''
       }`}
     >
-      <Text className="font-cuerpo-semi text-[12.5px] text-white">
+      <Text className="font-cuerpo-semi text-[15px] text-white">
         {cargando ? 'Abriendo…' : 'Solicitar'}
       </Text>
     </Pressable>
@@ -355,10 +383,10 @@ function EstadoEnviada({
       accessibilityRole="button"
       accessibilityLabel="Ver mi solicitud"
       onPress={onVer}
-      className="flex-row items-center justify-center gap-1.5 rounded-xl border border-organic-accent-300 bg-organic-accent-100 py-2 active:opacity-80"
+      className="flex-row items-center justify-center gap-1.5 rounded-xl border border-organic-accent-300 bg-organic-accent-100 py-2.5 active:opacity-80"
     >
-      <Ionicons name="checkmark" size={13} color={PALETA.accent[600]} />
-      <Text className="font-cuerpo-semi text-[12.5px] text-organic-accent-600">Enviada</Text>
+      <Ionicons name="checkmark" size={16} color={PALETA.accent[600]} />
+      <Text className="font-cuerpo-semi text-[15px] text-organic-accent-600">Enviada</Text>
     </Pressable>
   );
 }

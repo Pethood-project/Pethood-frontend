@@ -26,15 +26,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BarraEscritura } from '@/components/chat/BarraEscritura';
 import { BurbujaMensaje } from '@/components/chat/BurbujaMensaje';
 import { CabeceraConversacion } from '@/components/chat/CabeceraConversacion';
-import { HojaAdjuntos, type OrigenFoto } from '@/components/chat/HojaAdjuntos';
-import { VisorImagen } from '@/components/chat/VisorImagen';
+import { HojaAdjuntos, type OrigenAdjunto } from '@/components/chat/HojaAdjuntos';
+import { VisorAdjuntos } from '@/components/chat/VisorAdjuntos';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EditorFotoModal } from '@/components/ui/EditorFotoModal';
 import { SeparadorFecha } from '@/components/ui/SeparadorFecha';
 import { PALETA } from '@/constants/theme';
 import { useSalaChat } from '@/hooks/useSalaChat';
 import { useSesion } from '@/hooks/useSesion';
-import { elegirFotosDeGaleria, sacarFotoConCamara, validarAssetImagen } from '@/lib/elegirImagen';
+import {
+  elegirAdjuntosDeGaleria,
+  grabarVideoConCamara,
+  sacarFotoConCamara,
+  validarAssetAdjunto,
+} from '@/lib/elegirImagen';
+import { esMimeDeVideo, tipoDeMime, type Adjunto } from '@/lib/adjuntos';
 import { intercalarSeparadores, type FilaSala } from '@/lib/mensajesChat';
 import type { ArchivoAdjunto } from '@/services/api';
 import { LIMITES } from '@/shared/validation/limits';
@@ -57,7 +64,10 @@ export default function ConversacionScreen() {
   const { chatId: parametro } = useLocalSearchParams<{ chatId: string }>();
   const chatId = Number(parametro);
 
-  /** Fotos elegidas y todavía sin enviar. Hasta `LIMITES.mensaje.fotos.maximo`. */
+  /**
+   * Adjuntos elegidos y todavía sin enviar: hasta `LIMITES.mensaje.fotos.maximo` fotos, o
+   * un único video.
+   */
   const [fotos, setFotos] = useState<ArchivoAdjunto[]>([]);
   /**
    * Fotos recién elegidas que todavía no pasaron por el editor de recorte/rotación. Se
@@ -68,11 +78,18 @@ export default function ConversacionScreen() {
   /** Hoja "Enviar en el chat" del botón `+`. */
   const [hojaAbierta, setHojaAbierta] = useState(false);
   /**
-   * Lo que se está viendo a pantalla completa: las fotos del mensaje tocado y cuál de
-   * ellas, o `null`. Un solo visor para toda la lista; recibe el mensaje entero para poder
-   * deslizar entre sus fotos sin volver a la conversación.
+   * Cartel informativo de las reglas de adjuntos (qué entra, cuánto pesa, qué convive con
+   * qué). Va por `ConfirmDialog` y no por `Alert.alert` porque el nativo no admite la
+   * paleta ni la tipografía de PetHood. Los pedidos de PERMISO sí siguen siendo nativos:
+   * son del sistema operativo, no de la app.
    */
-  const [ampliado, setAmpliado] = useState<{ imagenes: string[]; indice: number } | null>(null);
+  const [aviso, setAviso] = useState<{ titulo: string; mensaje: string } | null>(null);
+  /**
+   * Lo que se está viendo a pantalla completa: los adjuntos del mensaje tocado y cuál de
+   * ellos, o `null`. Un solo visor para toda la lista; recibe el mensaje entero para poder
+   * deslizar entre sus adjuntos sin volver a la conversación.
+   */
+  const [ampliado, setAmpliado] = useState<{ adjuntos: Adjunto[]; indice: number } | null>(null);
 
   const sala = useSalaChat(chatId, usuario?.id ?? 0, token);
 
@@ -141,68 +158,127 @@ export default function ConversacionScreen() {
 
   /**
    * Criterio 6: adjuntar abre el explorador nativo. De dónde sacar la foto ya lo eligió el
-   * usuario en la hoja; acá sólo se abre el selector que corresponde y se validan las que
-   * vuelven.
+   * usuario en la hoja; acá sólo se abre el selector que corresponde y se valida lo que
+   * vuelve.
    *
    * El tope se calcula contra lo que ya hay elegido, así dos pasadas seguidas no se pasan
    * del máximo que el backend acepta.
    */
-  const elegirFotos = useCallback(
-    (origen: OrigenFoto): void => {
+  const elegirAdjuntos = useCallback(
+    (origen: OrigenAdjunto): void => {
       setHojaAbierta(false);
+
+      // Un video viaja solo: ni acompañado de fotos ni con otro video. El backend lo rechaza
+      // con `ADJUNTOS_MEZCLADOS`/`DEMASIADOS_ARCHIVOS`, pero avisar acá evita hacerle subir
+      // un archivo que va a volver rebotado.
+      if (fotos.some((adjunto) => esMimeDeVideo(adjunto.tipo))) {
+        setAviso({
+          titulo: 'El video va solo',
+          mensaje:
+            'Un mensaje puede llevar un video o varias fotos, no las dos cosas. Mandá el video y después seguí con las fotos.',
+        });
+        return;
+      }
 
       const lugar = LIMITES.mensaje.fotos.maximo - fotos.length;
 
       if (lugar <= 0) {
-        Alert.alert(
-          'Llegaste al máximo',
-          `Podés mandar hasta ${LIMITES.mensaje.fotos.maximo} fotos por mensaje.`,
-        );
+        setAviso({
+          titulo: 'Llegaste al máximo',
+          mensaje: `Podés mandar hasta ${LIMITES.mensaje.fotos.maximo} archivos por mensaje.`,
+        });
         return;
       }
 
-      void (origen === 'camara' ? sacarFotoConCamara() : elegirFotosDeGaleria(lugar)).then(
-        (resultado) => {
-          if ('permisoDenegado' in resultado) {
-            // Los permisos son del sistema: acá sí va el diálogo del sistema, como en el
-            // resto de la app.
-            if (resultado.permisoDenegado === 'camara') {
-              Alert.alert(
-                'Necesitamos la cámara',
-                'Dale permiso a PetHood para usar la cámara, o elegí una foto de la galería.',
-              );
-            } else {
-              Alert.alert('Necesitamos tus fotos', 'Necesitamos permiso para acceder a tus fotos.');
-            }
+      if (origen === 'camara-video' && fotos.length > 0) {
+        setAviso({
+          titulo: 'El video va solo',
+          mensaje: 'Sacá las fotos de este mensaje o mandalas primero, y después grabá el video.',
+        });
+        return;
+      }
+
+      const seleccion =
+        origen === 'camara-foto'
+          ? sacarFotoConCamara()
+          : origen === 'camara-video'
+            ? grabarVideoConCamara()
+            : elegirAdjuntosDeGaleria(lugar);
+
+      void seleccion.then((resultado) => {
+        if ('permisoDenegado' in resultado) {
+          // Los permisos son del sistema: acá sí va el diálogo del sistema, como en el
+          // resto de la app.
+          if (resultado.permisoDenegado === 'camara') {
+            Alert.alert(
+              'Necesitamos la cámara',
+              'Dale permiso a PetHood para usar la cámara, o elegí algo de la galería.',
+            );
+          } else {
+            Alert.alert('Necesitamos tus fotos', 'Necesitamos permiso para acceder a tus fotos.');
+          }
+          return;
+        }
+
+        const imagenes: ArchivoAdjunto[] = [];
+        const videos: ArchivoAdjunto[] = [];
+
+        for (const asset of resultado.assets) {
+          // Validación de UX, salvo la duración del video: esa es la única barrera que
+          // existe, porque el backend no puede medirla sin `ffmpeg`.
+          const problema = validarAssetAdjunto(asset);
+          if (problema) {
+            setAviso({ titulo: 'No pudimos adjuntarlo', mensaje: problema });
+            continue;
+          }
+
+          const tipo = normalizarTipo(asset.mimeType);
+          const destino = tipoDeMime(tipo) === 'VIDEO' ? videos : imagenes;
+
+          destino.push({
+            uri: asset.uri,
+            nombre:
+              asset.fileName ??
+              `mensaje-${imagenes.length + videos.length}.${EXTENSION_POR_TIPO[tipo] ?? 'jpg'}`,
+            tipo,
+          });
+        }
+
+        // De la galería se pueden elegir fotos y videos a la vez, pero el mensaje no los
+        // mezcla: gana el video y se avisa que las fotos quedaron afuera.
+        if (videos.length > 0) {
+          const primero = videos[0]!;
+
+          // Ya había fotos elegidas en este mensaje: el video no puede convivir con ellas, y
+          // descartarlas en silencio sería peor que no adjuntar el video.
+          if (fotos.length > 0) {
+            setAviso({
+              titulo: 'El video va solo',
+              mensaje: 'Este mensaje ya tiene fotos. Mandalas primero y después adjuntá el video.',
+            });
             return;
           }
 
-          const validas: ArchivoAdjunto[] = [];
-
-          for (const asset of resultado.assets) {
-            // Validación de UX nada más: el backend valida igual formato y peso.
-            const problema = validarAssetImagen(asset);
-            if (problema) {
-              Alert.alert('No pudimos adjuntarla', problema);
-              continue;
-            }
-
-            const tipo = normalizarTipo(asset.mimeType);
-            validas.push({
-              uri: asset.uri,
-              nombre:
-                asset.fileName ?? `mensaje-${validas.length}.${EXTENSION_POR_TIPO[tipo] ?? 'jpg'}`,
-              tipo,
+          if (videos.length > 1 || imagenes.length > 0) {
+            setAviso({
+              titulo: 'Va sólo el video',
+              mensaje:
+                'Un mensaje lleva un video o varias fotos, no las dos cosas. Adjuntamos el primer video; el resto lo podés mandar aparte.',
             });
           }
 
-          // No se confirman todavía: primero pasan por el editor, donde se pueden recortar
-          // y girar.
-          if (validas.length > 0) setEnRevision((actuales) => [...actuales, ...validas]);
-        },
-      );
+          // El video no pasa por el editor: recortar y girar no aplican, y el backend
+          // tampoco los aplicaría sobre un archivo que no es una imagen.
+          setFotos([primero]);
+          return;
+        }
+
+        // Las fotos no se confirman todavía: primero pasan por el editor, donde se pueden
+        // recortar y girar.
+        if (imagenes.length > 0) setEnRevision((actuales) => [...actuales, ...imagenes]);
+      });
     },
-    [fotos.length],
+    [fotos],
   );
 
   const enviar = useCallback(
@@ -236,7 +312,7 @@ export default function ConversacionScreen() {
             item={fila.item}
             onReintentar={() => sala.reintentar(fila.item.clave)}
             onDescartar={() => sala.descartar(fila.item.clave)}
-            onAbrirImagen={(indice) => setAmpliado({ imagenes: fila.item.imagenes, indice })}
+            onAbrirImagen={(indice) => setAmpliado({ adjuntos: fila.item.adjuntos, indice })}
             onVerSolicitud={
               fila.item.solicitud
                 ? () => router.push(`/solicitudes/${fila.item.solicitud!.id}`)
@@ -337,8 +413,8 @@ export default function ConversacionScreen() {
 
       {/* Un solo visor para toda la conversación: montar un Modal por burbuja sería un
           componente por mensaje para algo que sólo se ve de a uno. */}
-      <VisorImagen
-        imagenes={ampliado?.imagenes ?? []}
+      <VisorAdjuntos
+        adjuntos={ampliado?.adjuntos ?? []}
         indiceInicial={ampliado?.indice ?? null}
         onCerrar={() => setAmpliado(null)}
       />
@@ -346,7 +422,17 @@ export default function ConversacionScreen() {
       <HojaAdjuntos
         visible={hojaAbierta}
         onCerrar={() => setHojaAbierta(false)}
-        onElegirFoto={elegirFotos}
+        onElegirAdjunto={elegirAdjuntos}
+      />
+
+      {/* Reglas de adjuntos: informativo, un solo botón. `tono="advertencia"` porque no
+          falla nada — se avisa que algo no entra y qué hacer en cambio. */}
+      <ConfirmDialog
+        visible={aviso !== null}
+        tono="advertencia"
+        titulo={aviso?.titulo ?? ''}
+        mensaje={aviso?.mensaje ?? ''}
+        onCerrar={() => setAviso(null)}
       />
 
       {/* Una foto por vez: la primera de la cola. El editor devuelve un archivo nuevo sólo

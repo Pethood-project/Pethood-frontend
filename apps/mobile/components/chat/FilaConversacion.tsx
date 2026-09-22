@@ -45,16 +45,23 @@ export function FilaConversacion({ conversacion, ahora, onPress }: FilaConversac
 
   const sinLeer = noLeidos > 0;
   const esSolicitud = ultimoMensaje?.tipo === 'SOLICITUD';
-  const soloFoto =
+  const soloAdjunto =
     !esSolicitud && ultimoMensaje?.tieneImagen && ultimoMensaje.contenido.trim() === '';
 
-  // Lo que va en la línea de abajo. La tarjeta de una solicitud y la foto suelta no tienen
-  // texto propio: se nombra el hecho, con un ícono adelante para que se lea de un vistazo.
+  // `tieneVideo` viaja aparte de `tieneImagen`, que sigue en `true` con un video: así un
+  // cliente que no conociera el campo nuevo mostraría "Foto" y no una línea vacía.
+  const soloVideo = soloAdjunto && ultimoMensaje.tieneVideo;
+
+  // Lo que va en la línea de abajo. La tarjeta de una solicitud y el adjunto suelto no
+  // tienen texto propio: se nombra el hecho, con un ícono adelante para que se lea de un
+  // vistazo.
   const preview = esSolicitud
     ? 'Solicitud'
-    : soloFoto
-      ? 'Foto'
-      : (ultimoMensaje?.contenido ?? 'Todavía no hay mensajes');
+    : soloVideo
+      ? 'Video'
+      : soloAdjunto
+        ? 'Foto'
+        : (ultimoMensaje?.contenido ?? 'Todavía no hay mensajes');
 
   return (
     <Pressable
@@ -114,8 +121,12 @@ export function FilaConversacion({ conversacion, ahora, onPress }: FilaConversac
             </Text>
           ) : null}
 
-          {soloFoto ? (
-            <Ionicons name="image-outline" size={14} color={PALETA.neutral[500]} />
+          {soloAdjunto ? (
+            <Ionicons
+              name={soloVideo ? 'videocam-outline' : 'image-outline'}
+              size={14}
+              color={PALETA.neutral[500]}
+            />
           ) : null}
 
           {esSolicitud ? (

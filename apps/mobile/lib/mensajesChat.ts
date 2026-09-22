@@ -18,6 +18,7 @@
 import type { ArchivoAdjunto } from '@/services/api';
 import { urlAbsoluta } from '@/services/api';
 import type { Mensaje, SolicitudEnChat } from '@/services/chats';
+import { tipoDeMime, type Adjunto } from '@/lib/adjuntos';
 import { etiquetaDia, inicioDelDia } from '@/shared/validation/dates';
 
 /** Un mensaje que el usuario mandó y todavía no confirmó el servidor. */
@@ -25,7 +26,7 @@ export interface MensajePendiente {
   /** Identidad local: es la clave de la lista y con la que se lo reemplaza al confirmar. */
   claveLocal: string;
   contenido: string;
-  /** Se conservan para poder reintentar sin que el usuario vuelva a elegir las fotos. */
+  /** Se conservan para poder reintentar sin que el usuario vuelva a elegirlos. */
   fotos: ArchivoAdjunto[];
   /** `true` si el envío falló y la burbuja ofrece reintentar. */
   fallo: boolean;
@@ -39,10 +40,14 @@ export interface ItemChat {
   clave: string;
   contenido: string;
   /**
-   * URLs absolutas del servidor, o uris locales mientras las fotos suben. Vacío si el
-   * mensaje es sólo texto.
+   * Los adjuntos con su tipo ya resuelto: uri absoluta del servidor, o local mientras sube.
+   * Vacío si el mensaje es sólo texto.
+   *
+   * El tipo **nunca** se deduce de la uri: en los confirmados viene del backend y en los
+   * pendientes del mimetype que devolvió el selector. En web una uri local es un `blob:` sin
+   * extensión, así que adivinar no era una opción.
    */
-  imagenes: string[];
+  adjuntos: Adjunto[];
   esMio: boolean;
   /** ISO del servidor. `null` en un pendiente: todavía no hay hora oficial. */
   fecha: string | null;
@@ -166,8 +171,12 @@ export function aItems(
     .map((pendiente) => ({
       clave: pendiente.claveLocal,
       contenido: pendiente.contenido,
-      // Las miniaturas salen de las uris locales: las del servidor todavía no existen.
-      imagenes: pendiente.fotos.map((foto) => foto.uri),
+      // Las miniaturas salen de las uris locales: las del servidor todavía no existen. El
+      // `tipo` de `ArchivoAdjunto` es el mimetype, que es de donde sale si es foto o video.
+      adjuntos: pendiente.fotos.map((foto) => ({
+        uri: foto.uri,
+        tipo: tipoDeMime(foto.tipo),
+      })),
       esMio: true,
       fecha: null,
       entregado: false,
@@ -182,8 +191,12 @@ export function aItems(
   const enviados: ItemChat[] = confirmados.map((mensaje) => ({
     clave: String(mensaje.id),
     contenido: mensaje.contenido,
-    // `urlAbsoluta` devuelve null sólo con entrada vacía; acá nunca lo es.
-    imagenes: mensaje.imagenes.map((ruta) => urlAbsoluta(ruta) ?? ruta),
+    // `urlAbsoluta` devuelve null sólo con entrada vacía; acá nunca lo es. El tipo lo
+    // manda el backend en `adjuntos`, el cliente no lo deduce.
+    adjuntos: mensaje.adjuntos.map((adjunto) => ({
+      uri: urlAbsoluta(adjunto.url) ?? adjunto.url,
+      tipo: adjunto.tipo,
+    })),
     // Un mensaje de sistema lo emite SISTEMA, que no participa de la sala: nunca es propio.
     esMio: mensaje.tipo === 'TEXTO' && mensaje.usuarioId === miUsuarioId,
     fecha: mensaje.fechaAlta,

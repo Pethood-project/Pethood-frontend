@@ -9,7 +9,7 @@
  * sube como un archivo normal, sin mandar coordenadas al backend.
  *
  * El recuadro de recorte se arrastra con `react-native-gesture-handler` +
- * `react-native-reanimated`, igual mecanismo que `VisorImagen` (zoom de las fotos del
+ * `react-native-reanimated`, igual mecanismo que `VisorAdjuntos` (zoom de las fotos del
  * chat): son dependencias que ya están instaladas y el equipo prueba con Expo Go, así
  * que no hace falta una librería de recorte con módulo nativo propio.
  */
@@ -309,7 +309,7 @@ export function EditorFotoModal({ visible, uri, onCancelar, onConfirmar }: Edito
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={cancelar}>
-      {/* Gesture handler necesita su propia raíz DENTRO del Modal, igual que en VisorImagen. */}
+      {/* Gesture handler necesita su propia raíz DENTRO del Modal, igual que en VisorAdjuntos. */}
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 items-center justify-center bg-black/85 px-6">
           <View className="w-full items-center">

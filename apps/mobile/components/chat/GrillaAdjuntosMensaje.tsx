@@ -1,7 +1,7 @@
 /**
- * Las fotos de un mensaje (GUI-14, artboard 37).
+ * Los adjuntos de un mensaje (GUI-14, artboard 37): sus fotos, o su video.
  *
- * La disposición depende de cuántas son, como en las apps de mensajería, para que nunca
+ * La disposición depende de cuántos son, como en las apps de mensajería, para que nunca
  * quede un hueco:
  *
  * - 1: ocupa el ancho que le deja la burbuja.
@@ -16,17 +16,19 @@
 import { Text, View } from 'react-native';
 
 import { FotoMensaje } from '@/components/chat/FotoMensaje';
+import { VideoMensaje } from '@/components/chat/VideoMensaje';
+import type { Adjunto } from '@/lib/adjuntos';
 
 /** Cuántas miniaturas se ven antes de agrupar el resto detrás del "+N". */
 const VISIBLES = 4;
 const SEPARACION = 7;
 
-interface GrillaFotosMensajeProps {
-  /** URLs absolutas, o uris locales mientras suben. */
-  imagenes: string[];
+interface GrillaAdjuntosMensajeProps {
+  /** Cada uno con su uri — absoluta del servidor, o local mientras sube — y su tipo. */
+  adjuntos: Adjunto[];
   /** Lado de cada miniatura cuando hay más de una. */
   lado: number;
-  /** Medidas de la foto única. */
+  /** Medidas del adjunto único. */
   anchoUnica: number;
   altoUnica: number;
   subiendo: boolean;
@@ -34,25 +36,28 @@ interface GrillaFotosMensajeProps {
   onAbrir?: (indice: number) => void;
 }
 
-export function GrillaFotosMensaje({
-  imagenes,
+export function GrillaAdjuntosMensaje({
+  adjuntos,
   lado,
   anchoUnica,
   altoUnica,
   subiendo,
   onAbrir,
-}: GrillaFotosMensajeProps) {
-  if (imagenes.length === 0) return null;
+}: GrillaAdjuntosMensajeProps) {
+  if (adjuntos.length === 0) return null;
 
   const miniatura = (indice: number, ancho: number, alto: number) => {
-    const uri = imagenes[indice]!;
-    const ocultas = imagenes.length - VISIBLES;
+    const adjunto = adjuntos[indice]!;
+    const ocultas = adjuntos.length - VISIBLES;
     const conVelo = indice === VISIBLES - 1 && ocultas > 0;
 
+    // Misma caja y mismo toque para los dos; lo único que cambia es qué se dibuja adentro.
+    const Miniatura = adjunto.tipo === 'VIDEO' ? VideoMensaje : FotoMensaje;
+
     return (
-      <View key={`${uri}-${indice}`}>
-        <FotoMensaje
-          uri={uri}
+      <View key={`${adjunto.uri}-${indice}`}>
+        <Miniatura
+          uri={adjunto.uri}
           ancho={ancho}
           alto={alto}
           subiendo={subiendo}
@@ -74,11 +79,11 @@ export function GrillaFotosMensaje({
     );
   };
 
-  if (imagenes.length === 1) {
+  if (adjuntos.length === 1) {
     return miniatura(0, anchoUnica, altoUnica);
   }
 
-  if (imagenes.length === 2) {
+  if (adjuntos.length === 2) {
     return (
       <View style={{ gap: SEPARACION }} className="flex-row">
         {miniatura(0, lado, lado)}
@@ -91,7 +96,7 @@ export function GrillaFotosMensaje({
   // quedan alineados y no hay hueco.
   const altoColumna = lado * 2 + SEPARACION;
 
-  if (imagenes.length === 3) {
+  if (adjuntos.length === 3) {
     return (
       <View style={{ gap: SEPARACION }} className="flex-row">
         {miniatura(0, lado, altoColumna)}

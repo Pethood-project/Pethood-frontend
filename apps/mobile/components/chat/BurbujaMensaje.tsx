@@ -22,7 +22,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
-import { GrillaFotosMensaje } from '@/components/chat/GrillaFotosMensaje';
+import { GrillaAdjuntosMensaje } from '@/components/chat/GrillaAdjuntosMensaje';
 import { TarjetaSolicitudChat } from '@/components/chat/TarjetaSolicitudChat';
 import { entregaDe, TicksMensaje } from '@/components/chat/TicksMensaje';
 import { PALETA } from '@/constants/theme';
@@ -117,7 +117,7 @@ function PieBurbuja({ item }: { item: ItemChat }) {
   );
 }
 
-/** Pie de las fotos propias sin texto: reemplaza a la burbuja que ese mensaje no tiene. */
+/** Pie de los adjuntos propios sin texto: reemplaza a la burbuja que ese mensaje no tiene. */
 function PieFotoPropia({ item }: { item: ItemChat }) {
   if (item.estado === 'enviando') {
     return (
@@ -137,14 +137,17 @@ function PieFotoPropia({ item }: { item: ItemChat }) {
     );
   }
 
-  const cuantas = item.imagenes.length;
+  const cuantas = item.adjuntos.length;
+
+  // Un mensaje no mezcla fotos con video, así que alcanza con mirar el primero. Un video va
+  // siempre solo: nunca hay que decir "2 videos".
+  const esVideo = item.adjuntos[0]?.tipo === 'VIDEO';
+  const que = esVideo ? 'un video' : cuantas === 1 ? 'una foto' : `${cuantas} fotos`;
 
   return (
     <View className="mt-1 flex-row items-center justify-end gap-[5px]">
       <Text className="font-cuerpo text-[11px] text-organic-neutral-600">
-        {`Enviaste ${cuantas === 1 ? 'una foto' : `${cuantas} fotos`}${
-          item.fecha ? ` · ${horaVisible(new Date(item.fecha))}` : ''
-        }`}
+        {`Enviaste ${que}${item.fecha ? ` · ${horaVisible(new Date(item.fecha))}` : ''}`}
       </Text>
 
       <TicksMensaje entrega={entregaDe(item)} fondo="pantalla" />
@@ -173,15 +176,15 @@ export function BurbujaMensaje({
   }
 
   const propia = item.esMio;
-  const hayFotos = item.imagenes.length > 0;
-  const soloFotos = hayFotos && !item.contenido;
+  const hayAdjuntos = item.adjuntos.length > 0;
+  const soloFotos = hayAdjuntos && !item.contenido;
   const anchoFotoPropia = Math.floor((anchoPantalla - MARGEN_LISTA) * FRACCION_FOTO_PROPIA);
 
   return (
     <View className={`w-full ${propia ? 'items-end' : 'items-start'}`}>
-      {hayFotos ? (
-        <GrillaFotosMensaje
-          imagenes={item.imagenes}
+      {hayAdjuntos ? (
+        <GrillaAdjuntosMensaje
+          adjuntos={item.adjuntos}
           lado={LADO_MINIATURA}
           anchoUnica={propia ? anchoFotoPropia : LADO_MINIATURA}
           altoUnica={propia ? ALTO_FOTO_PROPIA : LADO_MINIATURA}
@@ -205,7 +208,7 @@ export function BurbujaMensaje({
             ...RELLENO,
             ...(propia ? null : SOMBRA),
           }}
-          className={`max-w-[80%] ${hayFotos ? 'mt-[5px]' : ''} ${
+          className={`max-w-[80%] ${hayAdjuntos ? 'mt-[5px]' : ''} ${
             propia ? 'bg-organic-accent-600' : 'bg-organic-neutral-100'
           }`}
         >

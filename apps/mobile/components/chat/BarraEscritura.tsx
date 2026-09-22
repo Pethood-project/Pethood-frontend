@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { Image, Pressable, TextInput, View } from 'react-native';
 
 import { PALETA } from '@/constants/theme';
+import { esMimeDeVideo } from '@/lib/adjuntos';
 import type { ArchivoAdjunto } from '@/services/api';
 import { LIMITES } from '@/shared/validation/limits';
 
@@ -30,7 +31,10 @@ const ALTO_MINIMO = 22;
 const ALTO_MAXIMO = ALTO_LINEA * 5;
 
 interface BarraEscrituraProps {
-  /** Fotos adjuntas a la espera de enviarse. Vacío si el mensaje va sin ninguna. */
+  /**
+   * Adjuntos a la espera de enviarse: hasta cinco fotos, o un único video. Vacío si el
+   * mensaje va sin ninguno.
+   */
   fotos: ArchivoAdjunto[];
   /** Abre la hoja de adjuntos (el botón `+`). */
   onAdjuntar: () => void;
@@ -50,8 +54,8 @@ export function BarraEscritura({
   const [texto, setTexto] = useState('');
   const [alto, setAlto] = useState(ALTO_MINIMO);
 
-  // Un mensaje puede ser sólo fotos, pero no puede estar vacío: con el campo en blanco (o
-  // sólo espacios) y sin adjuntos, el botón no hace nada.
+  // Un mensaje puede ser sólo adjuntos, pero no puede estar vacío: con el campo en blanco
+  // (o sólo espacios) y sin adjuntos, el botón no hace nada.
   const hayAlgoQueEnviar = texto.trim().length > 0 || fotos.length > 0;
   const puedeEnviar = habilitada && hayAlgoQueEnviar;
 
@@ -70,28 +74,43 @@ export function BarraEscritura({
   return (
     <View className="border-t border-organic-neutral-300 bg-organic-neutral-100 px-[15px] py-3">
       {/* Vista previa de lo adjuntado: sin esto no habría forma de saber qué se eligió ni
-          de arrepentirse antes de mandarlo. Cada una se quita por separado. */}
+          de arrepentirse antes de mandarlo. Cada uno se quita por separado. */}
       {fotos.length > 0 ? (
         <View className="mb-2.5 flex-row flex-wrap gap-2.5">
-          {fotos.map((foto, indice) => (
-            <View key={`${foto.uri}-${indice}`}>
-              <Image
-                source={{ uri: foto.uri }}
-                className="h-14 w-14 rounded-[14px]"
-                accessibilityLabel={`Foto ${indice + 1} que vas a enviar`}
-              />
+          {fotos.map((foto, indice) => {
+            const esVideo = esMimeDeVideo(foto.tipo);
+            const nombre = esVideo ? 'video' : `foto ${indice + 1}`;
 
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Quitar la foto ${indice + 1}`}
-                onPress={() => onQuitarFoto(indice)}
-                hitSlop={8}
-                className="absolute -right-2 -top-2 h-6 w-6 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100 active:opacity-70"
-              >
-                <Ionicons name="close" size={13} color={PALETA.neutral[700]} />
-              </Pressable>
-            </View>
-          ))}
+            return (
+              <View key={`${foto.uri}-${indice}`}>
+                {/* Un `<Image>` con la uri de un video no dibuja nada en Android, así que el
+                    video va como recuadro con su ícono. Acá no se usa `VideoMensaje`: montar
+                    un reproductor para una miniatura de 56px, que además se descarta al
+                    enviar, no se justifica. */}
+                {esVideo ? (
+                  <View className="h-14 w-14 items-center justify-center rounded-[14px] bg-organic-neutral-300">
+                    <Ionicons name="videocam" size={22} color={PALETA.neutral[700]} />
+                  </View>
+                ) : (
+                  <Image
+                    source={{ uri: foto.uri }}
+                    className="h-14 w-14 rounded-[14px]"
+                    accessibilityLabel={`Foto ${indice + 1} que vas a enviar`}
+                  />
+                )}
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Quitar el ${nombre}`}
+                  onPress={() => onQuitarFoto(indice)}
+                  hitSlop={8}
+                  className="absolute -right-2 -top-2 h-6 w-6 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100 active:opacity-70"
+                >
+                  <Ionicons name="close" size={13} color={PALETA.neutral[700]} />
+                </Pressable>
+              </View>
+            );
+          })}
         </View>
       ) : null}
 

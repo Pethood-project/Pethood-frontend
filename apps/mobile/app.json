@@ -44,7 +44,8 @@
           "cameraPermission": "PetHood usa la cámara para la foto de perfil y para las fotos de prueba del seguimiento post-adopción, que tienen que sacarse en el momento."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-video"
     ],
     "experiments": {
       "typedRoutes": true

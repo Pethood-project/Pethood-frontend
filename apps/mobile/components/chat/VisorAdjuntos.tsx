@@ -1,6 +1,7 @@
 /**
- * Visor de las fotos de un mensaje a pantalla completa, con paginación horizontal entre
- * ellas y zoom de pellizco en cada una (HU-5.2).
+ * Visor de los adjuntos de un mensaje a pantalla completa, con paginación horizontal entre
+ * ellos (HU-5.2). Una foto se amplía con pellizco; un video se reproduce con los controles
+ * nativos.
  *
  * Se arma con `react-native-gesture-handler` y `react-native-reanimated`, que ya son
  * dependencias del proyecto: una librería de galería traería un módulo nativo y el equipo
@@ -15,6 +16,7 @@
  * página la foto que se deja vuelve a su tamaño, para no volver a ella y encontrarla ampliada.
  */
 import { Ionicons } from '@expo/vector-icons';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useCallback, useEffect, useState } from 'react';
 import { Modal, Pressable, Text, useWindowDimensions, View } from 'react-native';
 import {
@@ -34,15 +36,16 @@ import Animated, {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PALETA } from '@/constants/theme';
+import type { Adjunto } from '@/lib/adjuntos';
 
 /** Hasta dónde se puede agrandar. Más allá de 5× una foto de celular ya es un mosaico. */
 const ESCALA_MAXIMA = 5;
 /** A cuánto lleva el doble toque. */
 const ESCALA_DOBLE_TOQUE = 2.5;
 
-interface VisorImagenProps {
-  /** Todas las fotos del mensaje, en orden. */
-  imagenes: string[];
+interface VisorAdjuntosProps {
+  /** Todos los adjuntos del mensaje, en orden. */
+  adjuntos: Adjunto[];
   /** Cuál se abre primero, o `null` para mantener el visor cerrado. */
   indiceInicial: number | null;
   onCerrar: () => void;
@@ -197,15 +200,59 @@ function PaginaVisor({ uri, ancho, alto, activa, onZoom }: PaginaVisorProps) {
   );
 }
 
-export function VisorImagen({ imagenes, indiceInicial, onCerrar }: VisorImagenProps) {
+interface PaginaVideoProps {
+  uri: string;
+  ancho: number;
+  alto: number;
+  /** `false` cuando el usuario se fue a otro adjunto: el video se pausa. */
+  activa: boolean;
+}
+
+/**
+ * Un video a pantalla completa, con los controles nativos de la plataforma.
+ *
+ * Sin gestos propios: reproducir, pausar y buscar ya los resuelve el reproductor, y sumarle
+ * pellizco y arrastre encima le robaría los toques a su barra de progreso. Por eso tampoco
+ * avisa de zoom: en una página de video el paginador queda siempre habilitado.
+ *
+ * Al salir de la página se pausa. Sin esto, deslizar al siguiente adjunto dejaría el audio
+ * sonando desde una página que ya no se ve.
+ */
+function PaginaVideo({ uri, ancho, alto, activa }: PaginaVideoProps) {
+  const player = useVideoPlayer(uri);
+
+  useEffect(() => {
+    if (activa) {
+      player.play();
+    } else {
+      player.pause();
+    }
+  }, [activa, player]);
+
+  return (
+    <View style={{ width: ancho, height: alto }} className="items-center justify-center">
+      <VideoView
+        player={player}
+        style={{ width: ancho, height: alto }}
+        contentFit="contain"
+        nativeControls
+        // El visor YA es pantalla completa: el botón del reproductor abriría un fullscreen
+        // nativo por encima de este Modal, que es el mismo tamaño con otra forma de salir.
+        fullscreenOptions={{ enable: false }}
+      />
+    </View>
+  );
+}
+
+export function VisorAdjuntos({ adjuntos, indiceInicial, onCerrar }: VisorAdjuntosProps) {
   const { width: anchoPantalla, height: altoPantalla } = useWindowDimensions();
 
-  const abierto = indiceInicial !== null && imagenes.length > 0;
+  const abierto = indiceInicial !== null && adjuntos.length > 0;
 
   const [indice, setIndice] = useState(0);
   const [conZoom, setConZoom] = useState(false);
 
-  // Cada apertura arranca en la foto que se tocó, con el scroll habilitado.
+  // Cada apertura arranca en el adjunto que se tocó, con el scroll habilitado.
   useEffect(() => {
     if (abierto) {
       setIndice(indiceInicial);
@@ -215,7 +262,7 @@ export function VisorImagen({ imagenes, indiceInicial, onCerrar }: VisorImagenPr
 
   const alTerminarDeDeslizar = (evento: NativeSyntheticEvent<NativeScrollEvent>): void => {
     const pagina = Math.round(evento.nativeEvent.contentOffset.x / anchoPantalla);
-    setIndice(Math.min(Math.max(pagina, 0), imagenes.length - 1));
+    setIndice(Math.min(Math.max(pagina, 0), adjuntos.length - 1));
   };
 
   return (
@@ -231,8 +278,8 @@ export function VisorImagen({ imagenes, indiceInicial, onCerrar }: VisorImagenPr
           del layout no alcanza porque el Modal se monta en otra jerarquía nativa. */}
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View className="flex-1 bg-black">
-          {/* Se monta sólo abierto: así `contentOffset` posiciona en la foto tocada en CADA
-              apertura y no sólo en la primera. */}
+          {/* Se monta sólo abierto: así `contentOffset` posiciona en el adjunto tocado en
+              CADA apertura y no sólo en la primera. */}
           {abierto ? (
             <ScrollView
               horizontal
@@ -244,28 +291,38 @@ export function VisorImagen({ imagenes, indiceInicial, onCerrar }: VisorImagenPr
               contentOffset={{ x: indiceInicial * anchoPantalla, y: 0 }}
               onMomentumScrollEnd={alTerminarDeDeslizar}
             >
-              {imagenes.map((uri, posicion) => (
-                <PaginaVisor
-                  key={`${uri}-${posicion}`}
-                  uri={uri}
-                  ancho={anchoPantalla}
-                  alto={altoPantalla}
-                  activa={posicion === indice}
-                  onZoom={setConZoom}
-                />
-              ))}
+              {adjuntos.map((adjunto, posicion) =>
+                adjunto.tipo === 'VIDEO' ? (
+                  <PaginaVideo
+                    key={`${adjunto.uri}-${posicion}`}
+                    uri={adjunto.uri}
+                    ancho={anchoPantalla}
+                    alto={altoPantalla}
+                    activa={posicion === indice}
+                  />
+                ) : (
+                  <PaginaVisor
+                    key={`${adjunto.uri}-${posicion}`}
+                    uri={adjunto.uri}
+                    ancho={anchoPantalla}
+                    alto={altoPantalla}
+                    activa={posicion === indice}
+                    onZoom={setConZoom}
+                  />
+                ),
+              )}
             </ScrollView>
           ) : null}
 
           {/* Fuera del paginador para que el gesto de zoom no se coma el toque. */}
           <SafeAreaView className="absolute left-0 right-0 top-0" edges={['top']}>
             <View className="flex-row items-center justify-between p-3">
-              {/* "2 de 5", como en la galería de la publicación. Con una sola foto no
+              {/* "2 de 5", como en la galería de la publicación. Con un solo adjunto no
                   aporta nada y se omite. */}
-              {imagenes.length > 1 ? (
+              {adjuntos.length > 1 ? (
                 <View className="rounded-full bg-black/50 px-3 py-1.5">
                   <Text className="font-cuerpo-semi text-[13px] text-white">
-                    {`${indice + 1} de ${imagenes.length}`}
+                    {`${indice + 1} de ${adjuntos.length}`}
                   </Text>
                 </View>
               ) : (
@@ -274,7 +331,7 @@ export function VisorImagen({ imagenes, indiceInicial, onCerrar }: VisorImagenPr
 
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Cerrar la foto"
+                accessibilityLabel="Cerrar"
                 onPress={onCerrar}
                 hitSlop={12}
                 className="h-10 w-10 items-center justify-center rounded-full bg-black/50 active:opacity-70"

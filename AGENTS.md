@@ -18,11 +18,13 @@ Cada app es un proyecto npm independiente (propio `package.json`/lockfile) — n
 - `ROADMAP.md` — plan de desarrollo por fases.
 - `ARQUITECTURA.md` — árbol de directorios de ambos repos y convención de branches.
 - `specs/` — spec aprobada del módulo, a leer antes de implementar cualquier pantalla.
+- `DEUDA_TECNICA.md` — lo que sabemos que está a medias o postergado, **incluida la de este repo** (falta de linter, tests que el CI no corre, límites espejados a mano). Consultarlo antes de "arreglar" algo que parece roto, y anotar ahí la deuda nueva.
 
 No se leen completas en cada cambio: consultá solo lo que la tarea toque.
 
 - Implementás o modificás una pantalla → su spec aprobada en `specs/` y los textos/reglas exactas de `REQUISITOS.md` (§5 feedback voseo, §7 habilitación de botones).
 - Dudás sobre nombres de campo, tipos o cardinalidades → `MODELO_DATOS.md`.
+- Algo parece un bug o una decisión rara → `DEUDA_TECNICA.md` antes de tocarlo.
 - Creás estructura nueva (app, directorios de primer nivel) → árbol de directorios en `ARQUITECTURA.md`.
 - Duda sobre un principio no negociable → `CONSTITUTION.md` (las reglas transversales ya están resumidas más abajo, en Convenciones).
 

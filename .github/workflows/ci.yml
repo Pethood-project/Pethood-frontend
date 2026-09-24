@@ -48,6 +48,10 @@ jobs:
         working-directory: apps/mobile
         run: npx tsc --noEmit
 
+      - name: Tests unitarios
+        working-directory: apps/mobile
+        run: node --test lib/*.test.ts
+
       - name: Expo Doctor
         working-directory: apps/mobile
         run: npx expo-doctor

@@ -15,7 +15,12 @@ import type { Usuario } from '@/types/auth';
 
 const CLAVE_TOKEN = 'phd_token';
 const CLAVE_USUARIO = 'phd_usuario';
-const CLAVE_VISTA_REFUGIO = 'phd_vista_refugio';
+/**
+ * Clave donde versiones anteriores guardaban la vista elegida. Ya no se escribe (la app
+ * siempre arranca en la vista de refugio), pero se borra al cerrar sesión para no dejar
+ * el dato viejo en el dispositivo.
+ */
+const CLAVE_VISTA_REFUGIO_LEGADA = 'phd_vista_refugio';
 const ES_WEB = Platform.OS === 'web';
 
 async function leer(clave: string): Promise<string | null> {
@@ -45,17 +50,27 @@ export function esMiembroDeRefugio(usuario: Usuario | null): boolean {
 }
 
 /**
- * Si quien pertenece a un refugio está viendo la app como refugio o como adoptante.
- *
- * Se guarda para que la elección sobreviva a cerrar la app: es un modo de trabajo, no algo
- * que haya que volver a elegir en cada arranque.
+ * Con qué perfil se usa la app: el personal (adoptante) o el del refugio. Mismo concepto
+ * que `shared/ambito.ts` del backend: la cuenta es una sola, pero quien pertenece a un
+ * refugio la usa como dos perfiles estrictamente separados.
  */
-export async function obtenerVistaRefugio(): Promise<boolean> {
-  return (await leer(CLAVE_VISTA_REFUGIO)) === 'true';
+export type Ambito = 'PERSONAL' | 'REFUGIO';
+
+let ambitoActual: Ambito = 'PERSONAL';
+
+/**
+ * El perfil activo vive acá, fuera de React, porque lo lee el cliente HTTP en cada pedido
+ * (cabecera `X-Ambito`) y el cliente no es un componente. Lo escribe solo `SesionProvider`.
+ *
+ * No se persiste: el switch es un estado de la sesión en curso, y un miembro de refugio
+ * siempre arranca en la vista de refugio.
+ */
+export function establecerAmbito(ambito: Ambito): void {
+  ambitoActual = ambito;
 }
 
-export async function guardarVistaRefugio(activa: boolean): Promise<void> {
-  await escribir(CLAVE_VISTA_REFUGIO, String(activa));
+export function obtenerAmbito(): Ambito {
+  return ambitoActual;
 }
 
 export async function obtenerToken(): Promise<string | null> {
@@ -90,8 +105,8 @@ export async function guardarSesion(token: string, usuario: Usuario): Promise<vo
 export async function borrarSesion(): Promise<void> {
   await borrar(CLAVE_TOKEN);
   await borrar(CLAVE_USUARIO);
-  // Si no, quien entra después en el mismo dispositivo arranca en la vista del anterior.
-  await borrar(CLAVE_VISTA_REFUGIO);
+  await borrar(CLAVE_VISTA_REFUGIO_LEGADA);
+  ambitoActual = 'PERSONAL';
 }
 
 type ListenerSesionInvalida = () => void;

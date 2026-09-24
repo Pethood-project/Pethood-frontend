@@ -7,7 +7,6 @@
  *
  * La validación de acá es solo de UX — la fuente de verdad es el backend (HU-7.1).
  */
-import type { AmbitoMascotas } from '@/services/mascotas';
 import type {
   EspacioExterior,
   HogarSolicitante,
@@ -203,7 +202,6 @@ export const VALIDADORES = [validarTipo, validarHogar, validarMotivo, validarCon
 export function aNuevaSolicitud(
   borrador: Borrador,
   publicacionId: number,
-  ambito: AmbitoMascotas,
 ): NuevaSolicitud {
   const esTransito = borrador.tipoSolicitud === 'Transito';
 
@@ -211,7 +209,6 @@ export function aNuevaSolicitud(
     publicacionId,
     tipoSolicitud: borrador.tipoSolicitud!,
     motivacion: borrador.motivacion.trim(),
-    ambito,
     ...(esTransito
       ? {
           fechaInicioTransito: aFechaISO(borrador.fechaInicioTransito!),

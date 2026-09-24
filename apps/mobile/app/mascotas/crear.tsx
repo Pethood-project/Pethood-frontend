@@ -97,7 +97,7 @@ const ETIQUETAS: Record<keyof ErroresFormulario, string> = {
 export default function CrearMascotaScreen() {
   const router = useRouter();
   const toast = useToast();
-  const { esRefugio } = useSesion();
+  const { vistaRefugio } = useSesion();
 
   const [foto, setFoto] = useState<FotoElegida | null>(null);
   const [nombre, setNombre] = useState('');
@@ -136,7 +136,7 @@ export default function CrearMascotaScreen() {
       try {
         const [especiesCargadas, estadosCargados] = await Promise.all([
           listarEspecies(),
-          esRefugio ? listarEstadosMascota() : Promise.resolve([]),
+          vistaRefugio ? listarEstadosMascota() : Promise.resolve([]),
         ]);
 
         setEspecies(especiesCargadas);
@@ -149,7 +149,7 @@ export default function CrearMascotaScreen() {
     };
 
     void cargar();
-  }, [esRefugio, toast]);
+  }, [vistaRefugio, toast]);
 
   // La raza depende de la especie: al cambiarla se recarga el listado.
   useEffect(() => {
@@ -202,7 +202,7 @@ export default function CrearMascotaScreen() {
     });
     if (errorDescripcion) resultado.descripcion = errorDescripcion;
 
-    if (esRefugio) {
+    if (vistaRefugio) {
       if (estadoMascotaId === null) resultado.estadoMascotaId = 'El estado es obligatorio';
     } else if (!destino) {
       resultado.destino = 'Indicá si es tu mascota o si es para adopción';
@@ -219,7 +219,7 @@ export default function CrearMascotaScreen() {
     especieId,
     razaId,
     descripcion,
-    esRefugio,
+    vistaRefugio,
     estadoMascotaId,
     destino,
   ]);
@@ -237,7 +237,7 @@ export default function CrearMascotaScreen() {
     setTocados((previos) => ({ ...previos, [campo]: true }));
 
   /** El refugio lo decide por el estado; el adoptante, por el destino elegido. */
-  const permitePublicar = esRefugio
+  const permitePublicar = vistaRefugio
     ? (estados.find((estado) => estado.id === estadoMascotaId)?.habilitaPublicacion ?? false)
     : destino === 'ADOPCION';
 
@@ -246,8 +246,8 @@ export default function CrearMascotaScreen() {
    * El adoptante ve una sola, la que corresponde a lo que eligió, para no mostrar "Crear
    * publicación" bloqueado cuando ya dijo que la mascota es suya (y viceversa).
    */
-  const mostrarCrearMascota = esRefugio || destino !== 'ADOPCION';
-  const mostrarCrearPublicacion = esRefugio || destino === 'ADOPCION';
+  const mostrarCrearMascota = vistaRefugio || destino !== 'ADOPCION';
+  const mostrarCrearPublicacion = vistaRefugio || destino === 'ADOPCION';
 
   /** Al tocar un botón deshabilitado: revelar todos los errores y nombrar qué falta. */
   const explicarQueFalta = (): void => {
@@ -260,7 +260,7 @@ export default function CrearMascotaScreen() {
     if (faltantes.length === 0) {
       // Solo puede pasar en el refugio: el adoptante ahora ve un único botón, el que
       // corresponde al destino que ya eligió, así que nunca lo encuentra bloqueado por eso.
-      if (esRefugio) {
+      if (vistaRefugio) {
         toast.mostrarAdvertencia(
           'Con el estado "En tratamiento" todavía no se puede publicar en adopción.',
         );
@@ -309,8 +309,8 @@ export default function CrearMascotaScreen() {
         razaId: razaId!,
         castrado,
         descripcion: descripcion.trim(),
-        destino: esRefugio ? undefined : destino!,
-        estadoMascotaId: esRefugio ? estadoMascotaId! : undefined,
+        destino: vistaRefugio ? undefined : destino!,
+        estadoMascotaId: vistaRefugio ? estadoMascotaId! : undefined,
         foto,
       });
 
@@ -478,7 +478,7 @@ export default function CrearMascotaScreen() {
                   />
                 </FormCardRow>
 
-                {esRefugio ? (
+                {vistaRefugio ? (
                   <FormCardRow>
                     <ChipGroupField
                       label="Estado"

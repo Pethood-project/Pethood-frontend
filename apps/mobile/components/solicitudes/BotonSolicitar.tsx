@@ -140,11 +140,9 @@ export function BotonSolicitar({
 }: BotonSolicitarProps) {
   const router = useRouter();
   const toast = useToast();
+  // Desde la vista de refugio no se adopta: el botón no se ofrece (y el backend igual
+  // rechaza la solicitud). Ver `services/sesion.ts`.
   const { vistaRefugio } = useSesion();
-  // El switch "vista refugio" hace de cuenta que son dos cuentas: con qué mascotas cuenta
-  // "propias" (no solicitables) depende de cuál está activa — ver `shared/ambito.ts` del
-  // backend.
-  const ambito = vistaRefugio ? 'REFUGIO' : 'PERSONAL';
 
   const [verificando, setVerificando] = useState(false);
   const [bloqueo, setBloqueo] = useState<Elegibilidad | null>(null);
@@ -201,7 +199,7 @@ export function BotonSolicitar({
     setVerificando(true);
 
     try {
-      const elegibilidad = await obtenerElegibilidad(mascota.publicacionId, ambito);
+      const elegibilidad = await obtenerElegibilidad(mascota.publicacionId);
 
       // Primero la solicitud ya mandada: si no está verificada, el backend puede devolver
       // otro motivo y aún así traer el id. Sin este orden se reabre el formulario.
@@ -228,7 +226,7 @@ export function BotonSolicitar({
     } finally {
       setVerificando(false);
     }
-  }, [marcarEnviada, mascota.publicacionId, toast, ambito]);
+  }, [marcarEnviada, mascota.publicacionId, toast]);
 
   const resolverBloqueo = useCallback((): void => {
     const motivo = bloqueo?.motivo;
@@ -256,6 +254,8 @@ export function BotonSolicitar({
   // formulario. Una solicitud ya enviada se sigue mostrando igual: puede haber quedado en
   // ese estado justo por la adopción que esta misma solicitud generó.
   const solicitable = mascota.estado === ESTADO_SOLICITABLE;
+
+  if (vistaRefugio) return null;
 
   return (
     <>
@@ -287,7 +287,6 @@ export function BotonSolicitar({
         <SolicitudModal
           visible={abierto}
           mascota={mascota}
-          ambito={ambito}
           hogarPrecargado={hogarPrecargado}
           onCerrar={(solicitudCreada) => {
             if (solicitudCreada) marcarEnviada(solicitudCreada);

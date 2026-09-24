@@ -15,7 +15,7 @@ import { Platform } from 'react-native';
 
 import type { ApiErrorBody } from '@/types/api';
 
-import { invalidarSesionPorToken, obtenerToken } from './sesion';
+import { invalidarSesionPorToken, obtenerAmbito, obtenerToken } from './sesion';
 
 /** Error de la API ya traducido a algo mostrable al usuario. */
 export class ApiError extends Error {
@@ -143,9 +143,17 @@ async function procesarRespuesta<T>(respuesta: Response): Promise<T> {
   return rechazarRespuesta(respuesta.status, cuerpo);
 }
 
+/**
+ * Perfil con el que se hace el pedido (switch refugio/adoptante, ver `obtenerAmbito`). Viaja
+ * en TODOS los pedidos: el backend decide con esto qué mascotas, solicitudes, chats, etc. le
+ * corresponden a cada perfil, así ninguna pantalla lo tiene que pasar a mano.
+ */
+const CABECERA_AMBITO = 'X-Ambito';
+
 async function cabeceras(extra: Record<string, string> = {}): Promise<Record<string, string>> {
   const token = await obtenerToken();
-  return token ? { ...extra, Authorization: `Bearer ${token}` } : extra;
+  const conAmbito = { ...extra, [CABECERA_AMBITO]: obtenerAmbito() };
+  return token ? { ...conAmbito, Authorization: `Bearer ${token}` } : conAmbito;
 }
 
 export async function get<T>(ruta: string): Promise<T> {
@@ -205,6 +213,7 @@ async function enviarFormData<T>(
 
     // El Content-Type con su boundary lo arma el XHR: no setearlo a mano.
     if (token) peticion.setRequestHeader('Authorization', `Bearer ${token}`);
+    peticion.setRequestHeader(CABECERA_AMBITO, obtenerAmbito());
 
     peticion.onload = () => {
       const cuerpo = interpretarCuerpo(peticion.responseText);
@@ -259,6 +268,7 @@ export async function apiFetch<T>(ruta: string, options: ApiFetchOptions = {}): 
     headers: {
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      [CABECERA_AMBITO]: obtenerAmbito(),
       ...headers,
     },
     body: body === undefined ? undefined : JSON.stringify(body),

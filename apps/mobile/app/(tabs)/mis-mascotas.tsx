@@ -1,5 +1,6 @@
 /**
- * GUI-04 Mascotas Adoptante — listado de las mascotas propias, acceso a la creación y
+ * GUI-04 Mascotas Adoptante — listado de las mascotas del perfil activo (las personales, o
+ * las del refugio desde la vista de refugio; ver `services/sesion.ts`), acceso a la creación y
  * punto de entrada a editar (HU-6.2). Eliminar (HU-6.3) no vive acá: se hace desde adentro
  * de la ficha de cada mascota (`mascotas/[id]/index.tsx`) para que la baja no quede a un
  * toque de distancia mientras se navega la lista.
@@ -152,7 +153,7 @@ function ListaVacia() {
 }
 
 export default function MisMascotasScreen() {
-  const { esRefugio, usuario } = useSesion();
+  const { vistaRefugio, usuario } = useSesion();
   const router = useRouter();
 
   const [mascotas, setMascotas] = useState<Mascota[]>([]);
@@ -163,7 +164,7 @@ export default function MisMascotasScreen() {
   const cargar = useCallback(async (): Promise<void> => {
     try {
       setError(null);
-      setMascotas(await listarMisMascotas(esRefugio ? 'REFUGIO' : 'PERSONAL'));
+      setMascotas(await listarMisMascotas());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No pudimos cargar tus mascotas.');
     } finally {
@@ -184,7 +185,7 @@ export default function MisMascotasScreen() {
       <SafeAreaView className="flex-1" edges={['top']}>
         <View className="border-b border-organic-neutral-300 bg-organic-neutral-100 px-[21px] py-[13px]">
           <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
-            Mis mascotas
+            {vistaRefugio ? 'Mascotas del refugio' : 'Mis mascotas'}
           </Text>
           <Text className="mt-[4px] font-cuerpo text-[13px] text-organic-neutral-600">
             {cargando ? 'Cargando…' : `${mascotas.length} ${mascotas.length === 1 ? 'mascota' : 'mascotas'}`}
@@ -240,7 +241,7 @@ export default function MisMascotasScreen() {
         <Link href="/mascotas/crear" asChild>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={esRefugio ? 'Crear mascota del refugio' : 'Crear mascota'}
+            accessibilityLabel={vistaRefugio ? 'Crear mascota del refugio' : 'Crear mascota'}
             className="absolute bottom-6 right-6 h-[68px] w-[68px] items-center justify-center rounded-full bg-organic-accent-600 shadow-lg active:opacity-90"
           >
             <Ionicons name="add" size={34} color={PALETA.blanco} />

@@ -111,7 +111,7 @@ function SinResultados() {
 }
 
 export default function ChatScreen() {
-  const { esRefugio, usuario } = useSesion();
+  const { vistaRefugio, usuario } = useSesion();
   const router = useRouter();
 
   const { chats, cargando, refrescando, error, recargar, refrescar } = useListaChats();
@@ -185,7 +185,7 @@ export default function ChatScreen() {
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
         <View className="border-b border-organic-neutral-300 bg-organic-neutral-100 px-[21px] py-[13px]">
-          {esRefugio ? (
+          {vistaRefugio ? (
             <>
               <Text className="font-titulo text-[23px] leading-[28px] text-organic-accent-600">
                 Mensajes del Refugio
@@ -208,7 +208,7 @@ export default function ChatScreen() {
               conversaciones..." para las dos pantallas, pero GUI-31 dice "Buscar...". */}
           <View className="mt-[12px]">
             <BarraBusqueda
-              placeholder={esRefugio ? 'Buscar...' : 'Buscar conversaciones...'}
+              placeholder={vistaRefugio ? 'Buscar...' : 'Buscar conversaciones...'}
               deshabilitada={bandejaVacia}
               accessibilityLabel="Buscar conversaciones"
               valor={busqueda}

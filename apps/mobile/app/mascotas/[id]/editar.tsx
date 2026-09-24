@@ -27,7 +27,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomButton } from '@/components/CustomButton';
 import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
-import { useSesion } from '@/hooks/useSesion';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DateField } from '@/components/ui/DateField';
 import { FormCard, FormCardColumns, FormCardRow } from '@/components/ui/FormCard';
@@ -85,7 +84,6 @@ function textoAPeso(texto: string): number | null {
 export default function EditarMascotaScreen() {
   const router = useRouter();
   const toast = useToast();
-  const { esRefugio } = useSesion();
   const { id } = useLocalSearchParams<{ id: string }>();
   const mascotaId = Number(id);
 
@@ -125,7 +123,7 @@ export default function EditarMascotaScreen() {
 
       try {
         const [mascota, especiesCargadas] = await Promise.all([
-          obtenerMiMascota(mascotaId, esRefugio ? 'REFUGIO' : 'PERSONAL'),
+          obtenerMiMascota(mascotaId),
           listarEspecies(),
         ]);
 
@@ -154,7 +152,7 @@ export default function EditarMascotaScreen() {
     };
 
     void cargar();
-  }, [mascotaId, esRefugio]);
+  }, [mascotaId]);
 
   // La raza depende de la especie, igual que en el alta.
   useEffect(() => {

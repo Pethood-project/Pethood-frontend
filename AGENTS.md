@@ -112,6 +112,7 @@ packages/shared/          # placeholder, sin código todavía
 - Toda pantalla nueva corresponde a una spec aprobada; los contratos de API salen de la spec, no se inventan.
 - Componentes en PascalCase, hooks con prefijo `use`, textos de UI en español correcto (con tildes), voseo rioplatense.
 - **Validar en el cliente es solo para UX** — la validación real vive en el backend, nunca asumir que el formulario reemplaza el chequeo del servidor.
+- **Switch refugio/adoptante (spec 016 del backend):** quien pertenece a un refugio usa su única cuenta con dos perfiles separados; siempre arranca en el de refugio. Para decidir qué mostrar usá `useSesion().vistaRefugio` (el perfil activo), **nunca `esRefugio`** (el rol): `esRefugio` solo sirve para saber si mostrar el switch. El perfil viaja solo en la cabecera `X-Ambito` (`services/api.ts`): no lo pases por parámetro a los servicios.
 - Nunca hardcodear textos de error genéricos — usar los textos y tono de `../Pethood-backend/docs/REQUISITOS.md` sección 5.
 - Nombrar componentes de pantalla con su GUI-XX cuando exista, para trazabilidad académica.
 - Antes de crear un formulario, revisar `../Pethood-backend/docs/REQUISITOS.md` sección 7 (reglas de habilitación de botones muy específicas en "Crear mascota", "Crear campaña", etc.).

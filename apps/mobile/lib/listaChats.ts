@@ -1,7 +1,7 @@
 /**
- * Lógica del listado de conversaciones (HU-5.1) cuando llegan eventos de tiempo real.
- * Funciones puras: el hook `useListaChats` se ocupa de los efectos, acá sólo se transforman
- * datos.
+ * Lógica del listado de conversaciones: los eventos de tiempo real (HU-5.1) y el filtro por
+ * nombre de contacto (HU-5.3). Funciones puras: el hook `useListaChats` se ocupa de los
+ * efectos y la pantalla de pintar, acá sólo se transforman datos.
  *
  * El backend manda `chat:mensaje-nuevo` a la sala PERSONAL del usuario justamente para que
  * lo reciba quien está mirando el listado sin la conversación abierta (ver
@@ -11,6 +11,9 @@
  */
 import type { Conversacion, Mensaje } from '@/services/chats';
 import type { EventoNoLeidos } from '@/lib/socketChat';
+// Con extensión y ruta relativa a propósito: es la única forma de que `node --test` pueda
+// cargar este módulo para testear `filtrarPorContacto` sin pasar por Metro.
+import { normalizarParaBusqueda } from './texto.ts';
 
 /** Mismo orden que devuelve el servidor: más reciente primero. */
 function porActividad(a: Conversacion, b: Conversacion): number {
@@ -60,6 +63,9 @@ export function aplicarMensajeNuevo(
       fecha: mensaje.fechaAlta,
       esMio,
       tieneImagen: mensaje.imagenUrl !== null,
+      // Un mensaje no mezcla fotos con video, así que el tipo del primer adjunto es el del
+      // mensaje entero — el mismo criterio con el que el backend arma este preview.
+      tieneVideo: mensaje.adjuntos[0]?.tipo === 'VIDEO',
       tipo: mensaje.tipo,
     },
     noLeidos: esMio ? actual.noLeidos : actual.noLeidos + 1,
@@ -82,4 +88,36 @@ export function aplicarNoLeidos(chats: Conversacion[], evento: EventoNoLeidos): 
   return chats.map((chat) =>
     chat.chatId === evento.chatId ? { ...chat, noLeidos: evento.noLeidos } : chat,
   );
+}
+
+/**
+ * Filtra el listado por el nombre del contacto (HU-5.3).
+ *
+ * Es una **vista** sobre la lista, no una modificación: devuelve un array nuevo con un
+ * subconjunto de las mismas referencias, y quien la llama conserva la lista completa. Al
+ * vaciar el término vuelven todas las conversaciones, en su orden original, porque nunca se
+ * fueron de ninguna parte.
+ *
+ * - **Coincidencia parcial**, en cualquier posición del nombre: `"pat"` encuentra
+ *   `"Refugio Patitas"`.
+ * - **Insensible a mayúsculas y a tildes**: las dos puntas pasan por
+ *   `normalizarParaBusqueda`.
+ * - **Espacios de los extremos ignorados.** Un término vacío, o de puros espacios, devuelve
+ *   la lista entera: "no filtrar" y "buscar nada" son lo mismo.
+ *
+ * El **orden se mantiene solo**: `filter` respeta el de entrada, y la entrada ya viene
+ * ordenada por `fechaUltimaActividad` descendente. Por eso el filtro se aplica siempre sobre
+ * la lista completa recién ordenada y nunca sobre un resultado anterior: un mensaje que
+ * llega por socket reordena la lista de abajo y esta función vuelve a recortarla, así que
+ * dentro de los resultados el orden por último mensaje sigue valiendo y una conversación que
+ * no coincide no se cuela aunque acabe de recibir un mensaje.
+ *
+ * Se compara contra `contacto.nombre`, que es exactamente el texto que muestra cada fila:
+ * el usuario busca lo que ve.
+ */
+export function filtrarPorContacto(chats: Conversacion[], termino: string): Conversacion[] {
+  const buscado = normalizarParaBusqueda(termino);
+  if (!buscado) return chats;
+
+  return chats.filter((chat) => normalizarParaBusqueda(chat.contacto.nombre).includes(buscado));
 }

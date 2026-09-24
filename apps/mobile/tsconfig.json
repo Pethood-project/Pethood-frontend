@@ -2,6 +2,13 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    // Habilita escribir la extensión `.ts` en un import. No cambia nada de lo que ya está
+    // (es permisivo, no obligatorio: los imports sin extensión y los del alias `@/` siguen
+    // igual), y es lo que permite que los tests de funciones puras corran con
+    // `node --test` sin sumar Jest ni un bundler: Node en modo ESM exige la extensión, y
+    // sólo la llevan los pocos archivos que tienen que poder cargarse fuera de Metro.
+    // Requiere `noEmit`, que ya viene puesto en `expo/tsconfig.base`.
+    "allowImportingTsExtensions": true,
     "paths": {
       "@/*": [
         "./*"

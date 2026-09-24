@@ -62,9 +62,10 @@ export default function FichaPublicacionScreen() {
   const { vistaRefugio } = useSesion();
 
   const publicacionId = Number(Array.isArray(id) ? id[0] : id);
-  // El switch "vista refugio" hace de cuenta que son dos cuentas: con qué mascotas cuenta
-  // "propias" (y por lo tanto no solicitables ni guardables) depende de cuál está activa.
-  const ambito = vistaRefugio ? 'REFUGIO' : 'PERSONAL';
+  // Desde la vista de refugio la ficha se puede ver (por ejemplo, "Ver publicación
+  // asociada" de una mascota del refugio), pero no se adopta ni se guarda: el refugio no
+  // tiene favoritos ni solicitudes propias.
+  const puedeAdoptar = !vistaRefugio;
 
   const [publicacion, setPublicacion] = useState<PublicacionFeed | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -84,7 +85,7 @@ export default function FichaPublicacionScreen() {
 
     try {
       setError(null);
-      setPublicacion(await obtenerPublicacion(publicacionId, ambito));
+      setPublicacion(await obtenerPublicacion(publicacionId));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No pudimos cargar la publicación.');
     } finally {
@@ -94,8 +95,11 @@ export default function FichaPublicacionScreen() {
     // Aparte y sin bloquear la ficha: si falla (por ejemplo, sin verificar) el botón
     // simplemente arranca en "Solicitar" y resuelve la precondición al tocarlo, como
     // siempre. Es la única pantalla que lo consulta al montar: acá hay una sola ficha, no
-    // una grilla con una tarjeta por publicación.
-    obtenerElegibilidad(publicacionId, ambito)
+    // una grilla con una tarjeta por publicación. Solo en el perfil personal: es el único
+    // que solicita, y el backend rechaza la consulta desde el de refugio.
+    if (!puedeAdoptar) return;
+
+    obtenerElegibilidad(publicacionId)
       .then((elegibilidad) => {
         // El id manda, no el motivo: si la cuenta no está verificada el backend puede
         // devolver otro código y aún así traer la solicitud ya mandada.
@@ -104,7 +108,7 @@ export default function FichaPublicacionScreen() {
         }
       })
       .catch(() => undefined);
-  }, [publicacionId, ambito]);
+  }, [publicacionId, puedeAdoptar]);
 
   useEffect(() => {
     void cargar();
@@ -126,7 +130,7 @@ export default function FichaPublicacionScreen() {
 
     const operacion = guardada
       ? quitarFavorito(publicacion.mascota.id)
-      : agregarFavorito(publicacion.mascota.id, ambito);
+      : agregarFavorito(publicacion.mascota.id);
 
     void operacion
       .then(() => {
@@ -141,7 +145,7 @@ export default function FichaPublicacionScreen() {
         );
       })
       .finally(() => setGuardando(false));
-  }, [guardando, publicacion, toast, ambito]);
+  }, [guardando, publicacion, toast]);
 
   const volver = useCallback((): void => {
     // `dismiss` saca esta ficha del stack. `canGoBack` del history se ensucia con el
@@ -288,7 +292,8 @@ export default function FichaPublicacionScreen() {
           tocar. Tampoco se muestra si el estado no es solicitable (En_Tratamiento,
           En_Transito, Adoptado…), salvo que ya haya una solicitud en curso — ese caso lo
           resuelve `BotonSolicitar` por dentro. */}
-      {!publicacion.esPropia &&
+      {puedeAdoptar &&
+      !publicacion.esPropia &&
       (mascota.estado.nombre === ESTADO_SOLICITABLE || solicitudAbiertaId !== null) ? (
         <View
           className="border-t border-organic-neutral-200 bg-organic-bg px-4 pt-3"
@@ -332,8 +337,9 @@ export default function FichaPublicacionScreen() {
       </Pressable>
 
       {/* Sobre la propia mascota (personal o del propio refugio) no hay nada que guardar:
-          sería guardarse a uno mismo un aviso que uno mismo publicó. */}
-      {!publicacion.esPropia ? (
+          sería guardarse a uno mismo un aviso que uno mismo publicó. Tampoco desde la vista
+          de refugio, que no tiene favoritos. */}
+      {puedeAdoptar && !publicacion.esPropia ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={

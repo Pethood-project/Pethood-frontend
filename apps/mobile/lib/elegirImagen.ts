@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Alert, Platform } from 'react-native';
 
 import { LIMITES } from '@/shared/validation/limits';
+import { esMimeDeVideo } from './adjuntos';
 
 import type { ArchivoImagenLocal } from './formDataImagen';
 
@@ -32,6 +33,45 @@ export function assetAArchivoLocal(asset: ImagePicker.ImagePickerAsset): Archivo
     fileName: asset.fileName,
     file: asset.file,
   };
+}
+
+/**
+ * Mensaje de GUI-0.1.6 para un video, o `null` si sirve.
+ *
+ * **La duración se chequea SOLO acá.** El backend no puede medirla sin `ffmpeg`, así que
+ * esta no es una validación "de UX" como las demás: es la única que existe. El peso sí lo
+ * revalida el servidor.
+ *
+ * `duration` viene en milisegundos y puede ser `null` (la galería no siempre lo informa):
+ * en ese caso no se bloquea, porque el tope de 5 MB ya acota indirectamente cuánto video
+ * entra.
+ */
+export function validarAssetVideo(asset: ImagePicker.ImagePickerAsset): string | null {
+  const tipo = normalizarMime(asset.mimeType);
+
+  if (tipo && !(LIMITES.video.formatos as readonly string[]).includes(tipo)) {
+    return 'Mandá un video en MP4, MOV o WEBM.';
+  }
+
+  if (asset.fileSize && asset.fileSize > LIMITES.video.tamanioMaximoBytes) {
+    const megas = Math.round(LIMITES.video.tamanioMaximoBytes / (1024 * 1024));
+    return `El video es muy pesado. Mandá uno que pese menos de ${megas} MB.`;
+  }
+
+  const segundos = asset.duration === null ? null : (asset.duration ?? 0) / 1000;
+
+  if (segundos !== null && segundos > LIMITES.video.duracionMaximaSegundos) {
+    return `El video es muy largo. Mandá uno de hasta ${LIMITES.video.duracionMaximaSegundos} segundos.`;
+  }
+
+  return null;
+}
+
+/** Valida el asset con la regla que corresponda según sea foto o video. */
+export function validarAssetAdjunto(asset: ImagePicker.ImagePickerAsset): string | null {
+  return esMimeDeVideo(asset.mimeType)
+    ? validarAssetVideo(asset)
+    : validarAssetImagen(asset);
 }
 
 /** Mensaje de GUI-0.1.6 o formato inválido; `null` si el archivo sirve. */
@@ -64,11 +104,14 @@ interface AbrirSelectorImagenParams {
  * cuenta como gesto del usuario. `dispatchEvent(new MouseEvent('click'))` (lo que hace
  * Expo) en Chrome no abre el selector.
  */
-export function elegirArchivosWeb(multiple = false): Promise<ImagePicker.ImagePickerAsset[]> {
+export function elegirArchivosWeb(
+  multiple = false,
+  accept = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp',
+): Promise<ImagePicker.ImagePickerAsset[]> {
   return new Promise((resolve) => {
     const input = document.createElement('input');
     input.type = 'file';
-    input.accept = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp';
+    input.accept = accept;
     input.multiple = multiple;
     input.style.display = 'none';
 
@@ -87,6 +130,9 @@ export function elegirArchivosWeb(multiple = false): Promise<ImagePicker.ImagePi
           mimeType: file.type,
           fileName: file.name,
           fileSize: file.size,
+          // El `<input type="file">` no informa la duración de un video. `null` significa
+          // "no se sabe" y `validarAssetVideo` no bloquea por eso: el tope de 5 MB alcanza.
+          duration: null,
           file,
         })),
       );
@@ -127,6 +173,57 @@ export async function elegirFotosDeGaleria(maximo: number): Promise<ResultadoSel
   });
 
   return { assets: resultado.canceled ? [] : resultado.assets.slice(0, maximo) };
+}
+
+/** Lo que el `<input>` de web acepta para un adjunto de chat: imagen o video. */
+const ACCEPT_ADJUNTO_WEB = [
+  'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp',
+  'video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm',
+].join(',');
+
+/**
+ * Adjuntos de la galería para un mensaje de chat: fotos **o** un video.
+ *
+ * El selector ofrece las dos cosas porque el artboard 38 dice "Foto o video". Que el mensaje
+ * no pueda mezclarlas, ni llevar más de un video, lo decide quien llama: acá sólo se elige.
+ */
+export async function elegirAdjuntosDeGaleria(maximo: number): Promise<ResultadoSeleccion> {
+  if (Platform.OS === 'web') {
+    const assets = await elegirArchivosWeb(true, ACCEPT_ADJUNTO_WEB);
+    return { assets: assets.slice(0, maximo) };
+  }
+
+  const permiso = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permiso.granted) return { permisoDenegado: 'galeria' };
+
+  const resultado = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images', 'videos'],
+    quality: 0.8,
+    allowsMultipleSelection: true,
+    selectionLimit: maximo,
+  });
+
+  return { assets: resultado.canceled ? [] : resultado.assets.slice(0, maximo) };
+}
+
+/**
+ * Grabar un video con la cámara. Se graba de a uno.
+ *
+ * `videoMaxDuration` corta la grabación en el tope: es la única forma de impedir el video
+ * largo **antes** de que exista, en vez de rechazarlo después. Al elegir de la galería no hay
+ * equivalente y hay que validar después, con `validarAssetVideo`.
+ */
+export async function grabarVideoConCamara(): Promise<ResultadoSeleccion> {
+  const permiso = await ImagePicker.requestCameraPermissionsAsync();
+  if (!permiso.granted) return { permisoDenegado: 'camara' };
+
+  const resultado = await ImagePicker.launchCameraAsync({
+    mediaTypes: ['videos'],
+    videoMaxDuration: LIMITES.video.duracionMaximaSegundos,
+    quality: 0.8,
+  });
+
+  return { assets: resultado.canceled ? [] : resultado.assets };
 }
 
 /** Una foto con la cámara. Se saca de a una, así que el máximo no aplica. */

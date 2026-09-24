@@ -12,7 +12,7 @@
  * y no a una ruta fija.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect, useRouter } from 'expo-router';
+import { Redirect, useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { FlatList, Image, Pressable, RefreshControl, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
@@ -183,11 +183,21 @@ function ListaVacia() {
   );
 }
 
+/**
+ * Los favoritos son del perfil personal: desde la vista de refugio no se adopta, así que no
+ * hay nada que mostrar y el backend los rechaza. Si se llega por un link, vuelve a Inicio.
+ */
 export default function FavoritosScreen() {
+  const { vistaRefugio } = useSesion();
+
+  if (vistaRefugio) return <Redirect href="/(tabs)" />;
+
+  return <GrillaFavoritos />;
+}
+
+function GrillaFavoritos() {
   const router = useRouter();
   const toast = useToast();
-  const { vistaRefugio } = useSesion();
-  const ambito = vistaRefugio ? 'REFUGIO' : 'PERSONAL';
 
   const [favoritos, setFavoritos] = useState<MascotaFavorita[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -245,7 +255,7 @@ export default function FavoritosScreen() {
       setFavoritos((actuales) => reponerOrdenado(actuales, mascota));
       pendientes.current += 1;
 
-      void encolar(mascota.id, () => agregarFavorito(mascota.id, ambito))
+      void encolar(mascota.id, () => agregarFavorito(mascota.id))
         .catch((err: unknown) => {
           // No se pudo reponer: se vuelve a sacar para no mentirle al usuario.
           setFavoritos((actuales) => actuales.filter((item) => item.id !== mascota.id));
@@ -257,7 +267,7 @@ export default function FavoritosScreen() {
           pendientes.current -= 1;
         });
     },
-    [encolar, toast, ambito],
+    [encolar, toast],
   );
 
   /**

@@ -17,7 +17,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomButton } from '@/components/CustomButton';
 import { BarraPasos } from '@/components/ui/BarraPasos';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import type { AmbitoMascotas } from '@/services/mascotas';
 import {
   crearSolicitud,
   type HogarSolicitante,
@@ -56,11 +55,6 @@ const PASO_HOGAR = 2;
 interface SolicitudModalProps {
   visible: boolean;
   mascota: MascotaDeSolicitud;
-  /**
-   * Con qué cuenta solicita, según el switch "vista refugio" de `BotonSolicitar`. Viaja
-   * hasta acá porque es este componente el que arma el `POST` (`aNuevaSolicitud`).
-   */
-  ambito: AmbitoMascotas;
   /** Lo que el usuario ya declaró antes, si tiene. Viene de `/elegibilidad`. */
   hogarPrecargado: HogarSolicitante | null;
   /**
@@ -77,7 +71,6 @@ interface SolicitudModalProps {
 export function SolicitudModal({
   visible,
   mascota,
-  ambito,
   hogarPrecargado,
   onCerrar,
   onCreada,
@@ -122,7 +115,7 @@ export function SolicitudModal({
 
     try {
       const solicitud = await crearSolicitud(
-        aNuevaSolicitud(borrador, mascota.publicacionId, ambito),
+        aNuevaSolicitud(borrador, mascota.publicacionId),
       );
       setCreada(solicitud);
       onCreada(solicitud);
@@ -135,7 +128,7 @@ export function SolicitudModal({
     } finally {
       setEnviando(false);
     }
-  }, [borrador, mascota.publicacionId, ambito, onCreada]);
+  }, [borrador, mascota.publicacionId, onCreada]);
 
   /**
    * Valida solo el paso actual: así el usuario no llega al final para enterarse de que le

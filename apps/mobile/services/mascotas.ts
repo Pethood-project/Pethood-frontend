@@ -4,9 +4,6 @@ export type Tamanio = 'PEQUENO' | 'MEDIANO' | 'GRANDE';
 export type Genero = 'MACHO' | 'HEMBRA';
 export type Destino = 'PROPIA' | 'ADOPCION';
 
-/** Qué conjunto de mascotas se pide: las propias del usuario o las del refugio. */
-export type AmbitoMascotas = 'PERSONAL' | 'REFUGIO';
-
 export interface Mascota {
   id: number;
   nombre: string | null;
@@ -65,11 +62,11 @@ export async function crearMascota(datos: DatosNuevaMascota): Promise<Mascota> {
 
 /**
  * Quien pertenece a un refugio tiene dos conjuntos separados: las mascotas que cargó como
- * persona y las del refugio, que son de todos sus miembros. El alta hecha desde el refugio
- * queda en el segundo, así que pedir el ámbito equivocado devuelve una lista sin ellas.
+ * persona y las del refugio, que son de todos sus miembros. El backend devuelve el del
+ * perfil activo (cabecera `X-Ambito`, ver `services/sesion.ts`).
  */
-export function listarMisMascotas(ambito: AmbitoMascotas = 'PERSONAL'): Promise<Mascota[]> {
-  return get(`/mascotas/mias?ambito=${ambito}`);
+export function listarMisMascotas(): Promise<Mascota[]> {
+  return get('/mascotas/mias');
 }
 
 export interface FichaMascota extends Mascota {
@@ -78,22 +75,20 @@ export interface FichaMascota extends Mascota {
 }
 
 /**
- * Ficha individual (HU-6.4). El backend autoriza a quien la creó o a un compañero del mismo
- * refugio; a cualquier otro usuario le devuelve 403/404, que la pantalla traduce a su mensaje.
+ * Ficha individual (HU-6.4). El backend la muestra solo si es del perfil activo: una
+ * personal propia desde la vista personal, cualquiera del refugio desde la de refugio; si
+ * no, devuelve 404, que la pantalla traduce a su mensaje.
  */
 export function obtenerMascota(id: number): Promise<FichaMascota> {
   return get(`/mascotas/${id}`);
 }
 
 /**
- * El formulario de edición precarga por acá en vez de `obtenerMascota`: ya trae el ámbito
- * (personal vs. refugio) resuelto, que la ficha de detalle no necesita.
+ * El formulario de edición precarga por acá en vez de `obtenerMascota`: sale del mismo
+ * listado del perfil activo, así que una mascota del otro perfil da `null`.
  */
-export async function obtenerMiMascota(
-  id: number,
-  ambito: AmbitoMascotas = 'PERSONAL',
-): Promise<Mascota | null> {
-  const mascotas = await listarMisMascotas(ambito);
+export async function obtenerMiMascota(id: number): Promise<Mascota | null> {
+  const mascotas = await listarMisMascotas();
   return mascotas.find((mascota) => mascota.id === id) ?? null;
 }
 

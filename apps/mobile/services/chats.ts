@@ -3,6 +3,7 @@
  * `pethood-backend/docs/api-chats.md` y `api-chat-sala.md`.
  */
 import { adjuntarArchivo, get, post, postFormData, type ArchivoAdjunto } from './api';
+import type { TipoAdjunto } from '@/lib/adjuntos';
 
 /**
  * El otro lado de la conversación, ya resuelto por el backend: el cliente no tiene que
@@ -20,14 +21,23 @@ export interface ContactoChat {
   activo: boolean;
 }
 
+/** Un adjunto de un mensaje, tal como lo devuelve el backend. */
+export interface AdjuntoMensaje {
+  /** Ruta relativa: pasarla por `urlAbsoluta` antes de renderizarla. */
+  url: string;
+  tipo: TipoAdjunto;
+}
+
 export interface UltimoMensaje {
   /** Sin truncar: el recorte es visual, con `numberOfLines`. */
   contenido: string;
   /** ISO 8601 crudo. El texto relativo lo arma `tiempoRelativo`. */
   fecha: string;
   esMio: boolean;
-  /** Con `contenido` vacío significa mensaje de sólo foto. */
+  /** Con `contenido` vacío significa mensaje de sólo foto o sólo video. */
   tieneImagen: boolean;
+  /** Ese adjunto es un video: el preview dice "Video" en vez de "Foto". */
+  tieneVideo: boolean;
   /** `SOLICITUD` es la tarjeta de un pedido: `contenido` vacío, el texto lo pone la fila. */
   tipo: 'TEXTO' | 'SOLICITUD';
 }
@@ -98,6 +108,14 @@ export interface Mensaje {
   imagenUrl: string | null;
   /** Todas las fotos, en orden. Rutas relativas: pasarlas por `urlAbsoluta`. */
   imagenes: string[];
+  /**
+   * Las MISMAS rutas de `imagenes`, cada una con su tipo ya resuelto por el backend.
+   *
+   * Es el campo a usar: desde que un mensaje puede llevar video, `imagenes` dejó de describir
+   * lo que trae. El cliente **no** deduce el tipo de la extensión — lo recibe, igual que
+   * recibe el contacto del listado ya resuelto.
+   */
+  adjuntos: AdjuntoMensaje[];
   /** Id del emisor. El backend NO manda `esMio`: se compara con la sesión. */
   usuarioId: number;
   /**
@@ -184,23 +202,25 @@ export function listarMensajes(chatId: number, antesDe?: number): Promise<Histor
  * sin fotos, JSON — mandar multipart para un texto suelto sería armar un formulario al
  * pedo.
  *
- * Las fotos viajan **repitiendo el campo `foto`**, que es como multipart expresa una lista
- * y lo que el backend espera. El orden en que se agregan es el que se ve en la grilla.
+ * Los adjuntos viajan **repitiendo el campo `foto`**, que es como multipart expresa una
+ * lista y lo que el backend espera. El campo se sigue llamando `foto` aunque también acepte
+ * un video: es el nombre del contrato, y renombrarlo obligaría a versionar el endpoint. El
+ * orden en que se agregan es el que se ve en la grilla.
  */
 export async function enviarMensaje(
   chatId: number,
   contenido: string,
-  fotos: ArchivoAdjunto[] = [],
+  adjuntos: ArchivoAdjunto[] = [],
 ): Promise<Mensaje> {
-  if (fotos.length === 0) {
+  if (adjuntos.length === 0) {
     return post(`/chats/${chatId}/mensajes`, { contenido });
   }
 
   const formData = new FormData();
   formData.append('contenido', contenido);
 
-  for (const foto of fotos) {
-    await adjuntarArchivo(formData, 'foto', foto);
+  for (const adjunto of adjuntos) {
+    await adjuntarArchivo(formData, 'foto', adjunto);
   }
 
   return postFormData(`/chats/${chatId}/mensajes`, formData);

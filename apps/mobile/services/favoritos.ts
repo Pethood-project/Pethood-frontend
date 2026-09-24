@@ -3,7 +3,6 @@
  * `pethood-backend/docs/api-favoritos.md`.
  */
 import { del, get, post } from './api';
-import type { AmbitoMascotas } from './mascotas';
 
 /**
  * Una tarjeta del listado. Ojo con `id`: es el id de la **mascota**, no el del favorito
@@ -55,14 +54,9 @@ export function quitarFavorito(mascotaId: number): Promise<void> {
  * Alta. En GUI-12 se usa **solo para el "Deshacer"** del toast; el alta normal la hace el
  * swipe de HU-6.5. También es idempotente.
  *
- * `ambito` viaja porque el switch "vista refugio" hace de cuenta que son dos cuentas
- * distintas: en PERSONAL el usuario puede guardar hasta una mascota de su propio refugio
- * (la trata como cualquier otro adoptante); en REFUGIO, no — ver `shared/ambito.ts` del
- * backend.
+ * Los favoritos son del perfil personal: desde la vista de refugio el backend los rechaza
+ * (el refugio no adopta).
  */
-export function agregarFavorito(
-  mascotaId: number,
-  ambito: AmbitoMascotas = 'PERSONAL',
-): Promise<unknown> {
-  return post('/favoritos', { mascotaId, ambito });
+export function agregarFavorito(mascotaId: number): Promise<unknown> {
+  return post('/favoritos', { mascotaId });
 }

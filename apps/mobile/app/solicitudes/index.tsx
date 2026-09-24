@@ -9,6 +9,9 @@
  *
  * Cuál se abre primero sale del parámetro `vista`, o sea de por dónde entró el usuario. Las
  * dos comparten tarjeta y filtro por estado: es la misma entidad mirada desde los dos lados.
+ *
+ * Desde la vista de refugio solo existe "Recibidas" (las de las mascotas del refugio): el
+ * refugio no solicita nada, así que no hay "Enviadas" ni selector.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -27,6 +30,7 @@ import { Nota } from '@/components/ui/Nota';
 import { Segmentado } from '@/components/ui/Segmentado';
 import { etiquetaTipoSolicitud } from '@/constants/Solicitudes';
 import { PALETA } from '@/constants/theme';
+import { useSesion } from '@/hooks/useSesion';
 import { ApiError, urlAbsoluta } from '@/services/api';
 import {
   contarFiltrosActivosSolicitudes,
@@ -162,8 +166,12 @@ export default function SolicitudesScreen() {
   const router = useRouter();
   const toast = useToast();
   const { vista: vistaInicial } = useLocalSearchParams<{ vista?: string }>();
+  const { vistaRefugio } = useSesion();
 
-  const [vista, setVista] = useState<Vista>(vistaInicial === 'enviadas' ? 'enviadas' : 'recibidas');
+  const [vistaElegida, setVista] = useState<Vista>(
+    vistaInicial === 'enviadas' ? 'enviadas' : 'recibidas',
+  );
+  const vista: Vista = vistaRefugio ? 'recibidas' : vistaElegida;
   const [filtros, setFiltros] = useState<FiltrosSolicitudes>({ estado: 'Pendiente' });
   const [modalFiltros, setModalFiltros] = useState(false);
   const [solicitudes, setSolicitudes] = useState<SolicitudResumen[]>([]);
@@ -278,9 +286,11 @@ export default function SolicitudesScreen() {
             />
           </View>
 
-          <View className="mt-3.5">
-            <Segmentado opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
-          </View>
+          {vistaRefugio ? null : (
+            <View className="mt-3.5">
+              <Segmentado opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
+            </View>
+          )}
         </View>
 
         {cargando ? (

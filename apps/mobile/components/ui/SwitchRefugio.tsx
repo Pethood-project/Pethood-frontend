@@ -2,10 +2,13 @@
  * Cambio entre la vista de adoptante y la de refugio.
  *
  * Vive en Perfil y no en Inicio: es un ajuste de la cuenta, no una acción de la pantalla.
- * Solo lo ve quien pertenece a un refugio.
+ * Solo lo ve quien pertenece a un refugio, y arranca siempre encendido: cada ingreso
+ * empieza en la vista de refugio (ver `hooks/useSesion.tsx`).
  *
- * Sin `onCambiar` se muestra atenuado y no responde, que es el estado de hoy: la vista de
- * refugio todavía no existe.
+ * Los dos perfiles están separados: en la vista de refugio se ve solo lo del refugio, y en
+ * la de adoptante solo lo personal (ver `services/sesion.ts`).
+ *
+ * Sin `onCambiar` se muestra atenuado y no responde.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';

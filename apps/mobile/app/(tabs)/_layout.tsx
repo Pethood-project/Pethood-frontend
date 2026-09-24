@@ -9,15 +9,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BotonTabCentral } from '@/components/ui/BotonTabCentral';
 import { IndicadorTabs } from '@/components/ui/IndicadorTabs';
 import { PALETA } from '@/constants/theme';
+import { useSesion } from '@/hooks/useSesion';
 
 /**
  * Navegación inferior del área autenticada.
  *
  * El diseño de referencia: Inicio, Mascotas, Adoptar, Chat, Perfil.
  * La pestaña Mapa del prototipo queda fuera porque el proyecto excluye el mapa interactivo.
+ *
+ * En la vista de refugio no hay botón Adoptar: el refugio no adopta (ver `services/sesion.ts`).
  */
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const { vistaRefugio } = useSesion();
   const paddingBottom = Math.max(insets.bottom, 12);
 
   return (
@@ -67,14 +71,19 @@ export default function TabsLayout() {
         options={{
           title: '',
           tabBarLabel: () => null,
-          tabBarButton: ({ onPress, accessibilityState }) => (
-            <BotonTabCentral
-              icono="paw"
-              etiqueta="Adoptar"
-              activo={Boolean(accessibilityState?.selected)}
-              onPress={onPress}
-            />
-          ),
+          // No se usa `href: null` para ocultarla: expo-router no lo admite junto con un
+          // `tabBarButton` propio. Sin botón y sin lugar en la barra es lo mismo.
+          tabBarItemStyle: vistaRefugio ? { display: 'none' } : undefined,
+          tabBarButton: vistaRefugio
+            ? () => null
+            : ({ onPress, accessibilityState }) => (
+                <BotonTabCentral
+                  icono="paw"
+                  etiqueta="Adoptar"
+                  activo={Boolean(accessibilityState?.selected)}
+                  onPress={onPress}
+                />
+              ),
         }}
       />
       <Tabs.Screen

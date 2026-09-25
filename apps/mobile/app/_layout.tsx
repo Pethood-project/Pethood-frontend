@@ -79,6 +79,9 @@ function RootNavigator() {
         {/* HU-6.4. Se abre tocando una tarjeta de "Mis mascotas". */}
         <Stack.Screen name="mascotas/[id]/index" options={{ presentation: 'card' }} />
         <Stack.Screen name="mascotas/[id]/editar" options={{ presentation: 'card' }} />
+        {/* "Mis publicaciones". Fuera de las tabs, como Favoritos: se entra desde el Perfil y
+            el back vuelve al origen real. */}
+        <Stack.Screen name="publicaciones/index" />
         <Stack.Screen name="publicaciones/crear" options={{ presentation: 'card' }} />
         {/* Se abre tocando una tarjeta del mazo de Adoptar, sin descartarla. */}
         <Stack.Screen name="publicaciones/[id]" options={{ presentation: 'card' }} />

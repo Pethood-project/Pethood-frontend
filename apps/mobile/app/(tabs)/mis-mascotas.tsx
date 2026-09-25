@@ -4,20 +4,30 @@
  * punto de entrada a editar (HU-6.2). Eliminar (HU-6.3) no vive acá: se hace desde adentro
  * de la ficha de cada mascota (`mascotas/[id]/index.tsx`) para que la baja no quede a un
  * toque de distancia mientras se navega la lista.
+ *
+ * Solo en la vista de refugio, que suele tener muchas, hay un filtro por estado de la
+ * mascota con selección múltiple ("Todos", o uno o varios estados). Filtra el backend
+ * (`?estados=`).
  */
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlatList, Image, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantalla';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
+import { FiltroEstados, type OpcionEstado } from '@/components/ui/FiltroEstados';
+import { estiloDeEstado } from '@/constants/EstadosMascota';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
 import { urlAbsoluta } from '@/services/api';
+import { listarEstadosMascota } from '@/services/catalogos';
 import { listarMisMascotas, type Mascota } from '@/services/mascotas';
 import { edadEnTexto, parsearFecha } from '@/shared/validation/dates';
+
+/** Referencia estable para "sin filtro": un `[]` nuevo en cada render recrearía `cargar`. */
+const SIN_FILTRO: number[] = [];
 
 const ETIQUETA_TAMANIO = {
   PEQUENO: 'Pequeño',
@@ -152,6 +162,23 @@ function ListaVacia() {
   );
 }
 
+function ListaVaciaFiltrada() {
+  return (
+    <View className="items-center px-8 py-16">
+      <View className="mb-6 h-28 w-28 items-center justify-center rounded-full bg-organic-surface">
+        <Ionicons name="filter-outline" size={48} color={PALETA.accent[600]} />
+      </View>
+
+      <Text className="text-center font-titulo text-[20px] leading-[24px] text-organic-neutral-900">
+        No hay mascotas con esos estados
+      </Text>
+      <Text className="mt-2 text-center font-cuerpo text-[15px] leading-6 text-organic-neutral-600">
+        Probá con otros estados o tocá «Todos» para ver todas.
+      </Text>
+    </View>
+  );
+}
+
 export default function MisMascotasScreen() {
   const { vistaRefugio, usuario } = useSesion();
   const router = useRouter();
@@ -161,19 +188,56 @@ export default function MisMascotasScreen() {
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [opcionesEstado, setOpcionesEstado] = useState<OpcionEstado[]>([]);
+  const [estadosElegidos, setEstadosElegidos] = useState<number[]>([]);
+  /** El filtro es solo del refugio: desde el perfil personal siempre se ve todo. */
+  const filtro = vistaRefugio ? estadosElegidos : SIN_FILTRO;
+
+  /**
+   * Número del último pedido. Tocar chips seguido dispara varios GET, y uno viejo que
+   * responda tarde pisaría la lista con un filtro que ya no está elegido.
+   */
+  const ultimoPedido = useRef(0);
+
   const cargar = useCallback(async (): Promise<void> => {
+    const pedido = ++ultimoPedido.current;
+
     try {
       setError(null);
-      setMascotas(await listarMisMascotas());
+      const lista = await listarMisMascotas(filtro);
+      if (pedido === ultimoPedido.current) setMascotas(lista);
     } catch (err) {
+      if (pedido !== ultimoPedido.current) return;
       setError(err instanceof Error ? err.message : 'No pudimos cargar tus mascotas.');
     } finally {
-      setCargando(false);
-      setRefrescando(false);
+      if (pedido === ultimoPedido.current) {
+        setCargando(false);
+        setRefrescando(false);
+      }
     }
-  }, []);
+  }, [filtro]);
 
-  // Se recarga al volver de crear, editar o eliminar una mascota, para reflejar los cambios.
+  // Esta tab sigue montada al cambiar de vista: al volver al refugio arranca sin filtro, y el
+  // catálogo se pide recién la primera vez que hace falta. Si falla, el filtro no se muestra
+  // y la lista sigue funcionando con todas.
+  useEffect(() => {
+    setEstadosElegidos([]);
+    if (!vistaRefugio) return;
+
+    listarEstadosMascota()
+      .then((estados) =>
+        setOpcionesEstado(
+          estados.map((estado) => ({
+            id: estado.id,
+            etiqueta: estiloDeEstado(estado.nombre).etiqueta,
+          })),
+        ),
+      )
+      .catch(() => undefined);
+  }, [vistaRefugio]);
+
+  // Se recarga al volver de crear, editar o eliminar una mascota, para reflejar los cambios, y
+  // al cambiar el filtro (`cargar` cambia con él).
   useFocusEffect(
     useCallback(() => {
       void cargar();
@@ -191,6 +255,16 @@ export default function MisMascotasScreen() {
             {cargando ? 'Cargando…' : `${mascotas.length} ${mascotas.length === 1 ? 'mascota' : 'mascotas'}`}
           </Text>
         </View>
+
+        {vistaRefugio && opcionesEstado.length > 0 ? (
+          <View className="bg-organic-bg pt-3">
+            <FiltroEstados
+              opciones={opcionesEstado}
+              seleccionados={estadosElegidos}
+              onChange={setEstadosElegidos}
+            />
+          </View>
+        ) : null}
 
         {cargando ? (
           <EstadoCargando />
@@ -222,7 +296,7 @@ export default function MisMascotasScreen() {
                 }
               />
             )}
-            ListEmptyComponent={ListaVacia}
+            ListEmptyComponent={filtro.length > 0 ? ListaVaciaFiltrada : ListaVacia}
             contentContainerClassName="px-5 py-4 pb-28"
             refreshControl={
               <RefreshControl

@@ -18,7 +18,12 @@ export type VarianteChip =
   /** Opción de selección única: se rellena de naranja cuando está activa. */
   | 'seleccion'
   /** Opción de selección múltiple: al activarse muestra un tilde. */
-  | 'multiple';
+  | 'multiple'
+  /**
+   * Opción de selección única con la paleta Organic de la pantalla 33 (Filtros avanzados):
+   * activa, rellena en acento con texto blanco; inactiva, crema con borde.
+   */
+  | 'filtro';
 
 interface EstiloChip {
   contenedor: string;
@@ -55,6 +60,16 @@ const ESTILOS: Record<VarianteChip, { activa: EstiloChip; inactiva: EstiloChip }
     },
     inactiva: { contenedor: 'border border-gray-200 bg-white', texto: 'text-gray-600' },
   },
+  filtro: {
+    activa: {
+      contenedor: 'border border-organic-accent-600 bg-organic-accent-600',
+      texto: 'text-white font-cuerpo-bold',
+    },
+    inactiva: {
+      contenedor: 'border border-organic-neutral-300 bg-organic-neutral-100',
+      texto: 'text-organic-neutral-700 font-cuerpo',
+    },
+  },
 };
 
 /** Las etiquetas sobre foto son más chicas para no tapar la imagen. */
@@ -63,6 +78,7 @@ const TAMANIOS: Record<VarianteChip, string> = {
   'sobre-imagen': 'px-3 py-1',
   seleccion: 'px-4 py-2',
   multiple: 'px-3 py-1.5',
+  filtro: 'px-4 py-2',
 };
 
 const TAMANIOS_TEXTO: Record<VarianteChip, string> = {
@@ -70,6 +86,7 @@ const TAMANIOS_TEXTO: Record<VarianteChip, string> = {
   'sobre-imagen': 'text-[11.5px]',
   seleccion: 'text-sm',
   multiple: 'text-sm',
+  filtro: 'text-sm',
 };
 
 /** Un escalón más grande, para el alta y la publicación de mascota. */
@@ -78,6 +95,7 @@ const TAMANIOS_TEXTO_GRANDE: Record<VarianteChip, string> = {
   'sobre-imagen': 'text-[13.5px]',
   seleccion: 'text-base',
   multiple: 'text-base',
+  filtro: 'text-base',
 };
 
 export interface ChipProps {
@@ -91,6 +109,11 @@ export interface ChipProps {
   rol?: 'radio' | 'checkbox';
   /** Letra más grande, para el alta y la publicación de mascota. */
   grande?: boolean;
+  /**
+   * Chip de filtro: más relleno y letra más grande que `grande`, con un alto mínimo de 44 px
+   * para que se toque sin errarle. Lo usan los filtros por estado del refugio.
+   */
+  amplio?: boolean;
 }
 
 export function Chip({
@@ -101,20 +124,24 @@ export function Chip({
   onPress,
   rol = 'radio',
   grande = false,
+  amplio = false,
 }: ChipProps) {
   const estilo = activa ? ESTILOS[variante].activa : ESTILOS[variante].inactiva;
-  const clases = `flex-row items-center gap-1 self-start rounded-full ${TAMANIOS[variante]} ${estilo.contenedor}`;
-  const texto = (
-    <Text className={`${grande ? TAMANIOS_TEXTO_GRANDE[variante] : TAMANIOS_TEXTO[variante]} ${estilo.texto}`}>
-      {etiqueta}
-    </Text>
-  );
+  const relleno = amplio ? 'min-h-[44px] gap-1.5 px-5 py-2.5' : `gap-1 ${TAMANIOS[variante]}`;
+  const clases = `flex-row items-center self-start rounded-full ${relleno} ${estilo.contenedor}`;
+  const tamanioTexto = amplio
+    ? 'text-[17px]'
+    : grande
+      ? TAMANIOS_TEXTO_GRANDE[variante]
+      : TAMANIOS_TEXTO[variante];
+  const texto = <Text className={`${tamanioTexto} ${estilo.texto}`}>{etiqueta}</Text>;
+  const tamanioTilde = amplio ? 18 : grande ? 15 : 13;
 
   // El tilde solo tiene sentido en la selección múltiple: en la única ya lo dice el relleno.
   const contenido = (
     <>
       {variante === 'multiple' && activa ? (
-        <Ionicons name="checkmark" size={grande ? 15 : 13} color={PALETA.pethood.naranjaIntensa} />
+        <Ionicons name="checkmark" size={tamanioTilde} color={PALETA.pethood.naranjaIntensa} />
       ) : null}
       {texto}
     </>

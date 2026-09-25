@@ -12,7 +12,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { SeccionTitulada } from '@/components/ui/SeccionTitulada';
 import { SelectorChips, type OpcionSelector } from '@/components/ui/SelectorChips';
@@ -88,9 +88,13 @@ export function FiltrosAdopcionModal({
   );
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onCerrar}>
+    <Modal visible={visible} animationType="slide" onRequestClose={onCerrar} statusBarTranslucent>
       <View className="flex-1 bg-pethood-beige">
-        <SafeAreaView className="flex-1" edges={['top']}>
+        {/* Margen superior a mano y no con el `SafeAreaView` nativo: dentro de un `Modal`
+            (otra ventana nativa) este no recibe los insets en iOS y el encabezado quedaba
+            debajo de la hora y la batería. `statusBarTranslucent` hace que Android también
+            dibuje debajo de la barra, así el mismo margen sirve en las dos plataformas. */}
+        <View className="flex-1" style={{ paddingTop: insets.top }}>
           <View className="flex-row items-center justify-between border-b border-gray-200 bg-white/85 px-3.5 py-2.5">
             <View className="flex-row items-center gap-2.5">
               <Pressable
@@ -223,7 +227,7 @@ export function FiltrosAdopcionModal({
               </Text>
             </Pressable>
           </View>
-        </SafeAreaView>
+        </View>
       </View>
     </Modal>
   );

@@ -52,8 +52,8 @@ const OPCIONES_VISTA = [
   { valor: 'recibidas' as const, etiqueta: 'Recibidas' },
 ];
 
-function subtitulo(total: number, filtro: EstadoSolicitudNombre | undefined): string {
-  if (filtro === 'Pendiente') {
+function subtitulo(total: number, estados: EstadoSolicitudNombre[] | undefined): string {
+  if (estados?.length === 1 && estados[0] === 'Pendiente') {
     return total === 0 ? 'Ninguna pendiente' : `${total} pendiente${total === 1 ? '' : 's'}`;
   }
   if (total === 0) return 'Sin resultados';
@@ -140,7 +140,11 @@ function textosVacio(
   vista: Vista,
   filtros: FiltrosSolicitudes,
 ): { titulo: string; descripcion: string } {
-  const soloElDefault = filtros.estado === 'Pendiente' && !filtros.fechaDesde && !filtros.fechaHasta;
+  const soloElDefault =
+    filtros.estados?.length === 1 &&
+    filtros.estados[0] === 'Pendiente' &&
+    !filtros.fechaDesde &&
+    !filtros.fechaHasta;
 
   if (contarFiltrosActivosSolicitudes(filtros) > 0 && !soloElDefault) {
     return {
@@ -172,7 +176,7 @@ export default function SolicitudesScreen() {
     vistaInicial === 'enviadas' ? 'enviadas' : 'recibidas',
   );
   const vista: Vista = vistaRefugio ? 'recibidas' : vistaElegida;
-  const [filtros, setFiltros] = useState<FiltrosSolicitudes>({ estado: 'Pendiente' });
+  const [filtros, setFiltros] = useState<FiltrosSolicitudes>({ estados: ['Pendiente'] });
   const [modalFiltros, setModalFiltros] = useState(false);
   const [solicitudes, setSolicitudes] = useState<SolicitudResumen[]>([]);
   const [total, setTotal] = useState(0);
@@ -273,7 +277,7 @@ export default function SolicitudesScreen() {
                   Solicitudes
                 </Text>
                 <Text className="mt-1 font-cuerpo text-[13px] text-organic-neutral-700">
-                  {cargando ? 'Cargando…' : subtitulo(total, filtros.estado)}
+                  {cargando ? 'Cargando…' : subtitulo(total, filtros.estados)}
                 </Text>
               </View>
             </View>

@@ -5,10 +5,16 @@
  * El adoptante elige si la mascota es propia o para adopción; el refugio elige el estado
  * con el que la mascota entra al sistema.
  *
+ * `paraPublicar=1` indica que se abrió desde "Nueva publicación" ("Crear mascota nueva"): la
+ * mascota se crea obligatoriamente para darla en adopción. El adoptante no elige destino (va
+ * fijo "Para adopción"), el refugio solo ve los estados que permiten publicar, y hay un único
+ * botón que la crea y vuelve al formulario de publicación con ella ya elegida
+ * (`lib/mascotaParaPublicar.ts`).
+ *
  * La validación de acá es solo para UX: la fuente de verdad es el backend.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { type Href, useRouter } from 'expo-router';
+import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -26,6 +32,7 @@ import { useToast } from '@/components/feedback/Toast';
 import { ChipGroupField } from '@/components/ui/ChipGroupField';
 import { DateField } from '@/components/ui/DateField';
 import { FormCard, FormCardColumns, FormCardRow } from '@/components/ui/FormCard';
+import { Nota } from '@/components/ui/Nota';
 import { PhotoPicker, type FotoElegida } from '@/components/ui/PhotoPicker';
 import { SegmentedField } from '@/components/ui/SegmentedField';
 import { SelectField, type OpcionSelect } from '@/components/ui/SelectField';
@@ -43,6 +50,7 @@ import {
   type OpcionCatalogo,
 } from '@/services/catalogos';
 import { crearMascota, type Destino, type Genero, type Mascota, type Tamanio } from '@/services/mascotas';
+import { avisarMascotaParaPublicar } from '@/lib/mascotaParaPublicar';
 import { textoSegunGenero } from '@/shared/genero';
 import { aFechaISO, validarFechaPasada } from '@/shared/validation/dates';
 import { LIMITES } from '@/shared/validation/limits';
@@ -98,6 +106,8 @@ export default function CrearMascotaScreen() {
   const router = useRouter();
   const toast = useToast();
   const { vistaRefugio } = useSesion();
+  const params = useLocalSearchParams<{ paraPublicar?: string }>();
+  const paraPublicar = params.paraPublicar === '1';
 
   const [foto, setFoto] = useState<FotoElegida | null>(null);
   const [nombre, setNombre] = useState('');
@@ -109,7 +119,7 @@ export default function CrearMascotaScreen() {
   const [razaId, setRazaId] = useState<number | null>(null);
   const [castrado, setCastrado] = useState(false);
   const [descripcion, setDescripcion] = useState('');
-  const [destino, setDestino] = useState<Destino | null>(null);
+  const [destino, setDestino] = useState<Destino | null>(paraPublicar ? 'ADOPCION' : null);
   const [estadoMascotaId, setEstadoMascotaId] = useState<number | null>(null);
 
   const [especies, setEspecies] = useState<OpcionCatalogo[]>([]);
@@ -140,7 +150,14 @@ export default function CrearMascotaScreen() {
         ]);
 
         setEspecies(especiesCargadas);
-        setEstados(estadosCargados.filter((estado) => estado.seleccionableEnAlta));
+        // Para publicar solo sirven los estados que lo permiten: "En tratamiento" no se
+        // ofrece, porque con él la publicación se rechazaría.
+        setEstados(
+          estadosCargados.filter(
+            (estado) =>
+              estado.seleccionableEnAlta && (!paraPublicar || estado.habilitaPublicacion),
+          ),
+        );
       } catch {
         toast.mostrarError('No pudimos cargar las especies. Revisá tu conexión.');
       } finally {
@@ -246,8 +263,8 @@ export default function CrearMascotaScreen() {
    * El adoptante ve una sola, la que corresponde a lo que eligió, para no mostrar "Crear
    * publicación" bloqueado cuando ya dijo que la mascota es suya (y viceversa).
    */
-  const mostrarCrearMascota = vistaRefugio || destino !== 'ADOPCION';
-  const mostrarCrearPublicacion = vistaRefugio || destino === 'ADOPCION';
+  const mostrarCrearMascota = !paraPublicar && (vistaRefugio || destino !== 'ADOPCION');
+  const mostrarCrearPublicacion = !paraPublicar && (vistaRefugio || destino === 'ADOPCION');
 
   /** Al tocar un botón deshabilitado: revelar todos los errores y nombrar qué falta. */
   const explicarQueFalta = (): void => {
@@ -277,7 +294,12 @@ export default function CrearMascotaScreen() {
   };
 
   const irDespuesDeCrear = (mascota: Mascota, continuarAPublicacion: boolean): void => {
-    if (continuarAPublicacion && mascota.habilitaPublicacion) {
+    if (paraPublicar) {
+      // Vuelve al formulario de publicación que abrió esta pantalla, que sigue debajo con
+      // lo ya escrito, y le deja la mascota para que quede elegida.
+      avisarMascotaParaPublicar(mascota.id);
+      router.back();
+    } else if (continuarAPublicacion && mascota.habilitaPublicacion) {
       // `push` (no `replace`): esta pantalla se queda en el historial para poder volver
       // acá con la flecha de "Crear publicación" en vez de salir directo a "Mis mascotas".
       router.push({ pathname: '/publicaciones/crear', params: { mascotaId: mascota.id } });
@@ -315,7 +337,11 @@ export default function CrearMascotaScreen() {
       });
 
       setMascotaCreada(mascota);
-      toast.mostrarExito(`¡Listo! ${mascota.nombre} ya está en tus mascotas.`);
+      toast.mostrarExito(
+        paraPublicar
+          ? `¡Listo! ${mascota.nombre} ya está cargada. Seguí con la publicación.`
+          : `¡Listo! ${mascota.nombre} ya está en tus mascotas.`,
+      );
       irDespuesDeCrear(mascota, continuarAPublicacion);
     } catch (err) {
       // Se queda en la pantalla con todo lo cargado, para poder reintentar.
@@ -359,6 +385,12 @@ export default function CrearMascotaScreen() {
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
+              {paraPublicar ? (
+                <View className="mt-4">
+                  <Nota texto="Esta mascota se carga para darla en adopción. Cuando la crees, volvés a la publicación con ella ya elegida." />
+                </View>
+              ) : null}
+
               <PhotoPicker foto={foto} onChange={setFoto} error={errorDe('foto')} grande />
 
               <FormCard>
@@ -496,7 +528,8 @@ export default function CrearMascotaScreen() {
                       grande
                     />
                   </FormCardRow>
-                ) : (
+                ) : paraPublicar ? null : (
+                  // Para publicar, el destino va fijo en "Para adopción": no se pregunta.
                   <FormCardRow>
                     <SegmentedField
                       label="¿Para adopción o es propia?"
@@ -528,6 +561,17 @@ export default function CrearMascotaScreen() {
               </FormCard>
 
               <View className="mt-5 gap-3">
+                {paraPublicar ? (
+                  <CustomButton
+                    title="Crear mascota y volver a la publicación"
+                    variant="acento"
+                    loading={guardando}
+                    disabled={!formularioValido || !permitePublicar}
+                    onPress={() => void guardar(true)}
+                    onPressDeshabilitado={explicarQueFalta}
+                  />
+                ) : null}
+
                 {mostrarCrearMascota ? (
                   <CustomButton
                     title="Crear mascota"

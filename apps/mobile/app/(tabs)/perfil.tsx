@@ -42,6 +42,7 @@ type ItemMenu = { icono: NombreIcono; label: string; ruta?: Href };
 /** Sin `ruta`, la fila queda visible pero desactivada: esa sección todavía no existe. */
 const MENU_ADOPTANTE: ItemMenu[] = [
   { icono: 'paw-outline', label: 'Mis mascotas', ruta: '/(tabs)/mis-mascotas' },
+  { icono: 'megaphone-outline', label: 'Mis publicaciones', ruta: '/publicaciones' as Href },
   // Las dos abren la misma pantalla del otro lado: lo que pedí (HU-7.3) y lo que me llegó
   // sobre mis mascotas publicadas (HU-7.5).
   {
@@ -66,6 +67,12 @@ const MENU_ADOPTANTE: ItemMenu[] = [
  */
 const MENU_REFUGIO: ItemMenu[] = [
   { icono: 'paw-outline', label: 'Mascotas del refugio', ruta: '/(tabs)/mis-mascotas' },
+  // Misma pantalla que "Mis publicaciones": desde esta vista trae todo lo del refugio.
+  {
+    icono: 'megaphone-outline',
+    label: 'Publicaciones del refugio',
+    ruta: '/publicaciones' as Href,
+  },
   {
     icono: 'file-tray-full-outline',
     label: 'Solicitudes recibidas',

@@ -5,7 +5,7 @@
  */
 import { View } from 'react-native';
 
-import { Chip } from './Chip';
+import { Chip, type VarianteChip } from './Chip';
 
 export interface OpcionSelector<T> {
   valor: T;
@@ -20,6 +20,10 @@ interface SelectorChipsProps<T> {
   etiquetaSinFiltro?: string;
   /** Distingue las claves cuando hay varios selectores en la misma pantalla. */
   prefijo: string;
+  /** `filtro` es la paleta Organic de la pantalla 33. Por defecto, la naranja clásica. */
+  variante?: Extract<VarianteChip, 'seleccion' | 'filtro'>;
+  /** Chips más grandes (letra y área de toque). Ver `Chip.amplio`. */
+  amplio?: boolean;
 }
 
 export function SelectorChips<T extends string | number>({
@@ -28,13 +32,16 @@ export function SelectorChips<T extends string | number>({
   onChange,
   etiquetaSinFiltro,
   prefijo,
+  variante = 'seleccion',
+  amplio = false,
 }: SelectorChipsProps<T>) {
   return (
-    <View className="flex-row flex-wrap gap-2">
+    <View className={`flex-row flex-wrap ${amplio ? 'gap-2.5' : 'gap-2'}`}>
       {etiquetaSinFiltro ? (
         <Chip
           etiqueta={etiquetaSinFiltro}
-          variante="seleccion"
+          variante={variante}
+          amplio={amplio}
           activa={valor === undefined}
           onPress={() => onChange(undefined)}
         />
@@ -44,7 +51,8 @@ export function SelectorChips<T extends string | number>({
         <Chip
           key={`${prefijo}-${opcion.valor}`}
           etiqueta={opcion.etiqueta}
-          variante="seleccion"
+          variante={variante}
+          amplio={amplio}
           activa={valor === opcion.valor}
           onPress={() => onChange(opcion.valor)}
         />

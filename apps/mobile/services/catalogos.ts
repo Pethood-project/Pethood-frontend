@@ -24,3 +24,8 @@ export function listarRazas(especieId: number): Promise<OpcionCatalogo[]> {
 export function listarEstadosMascota(): Promise<EstadoMascota[]> {
   return get('/estados-mascota');
 }
+
+/** Estados del aviso (Activa, Pausada, Finalizada), para filtrar "Mis publicaciones". */
+export function listarEstadosPublicacion(): Promise<OpcionCatalogo[]> {
+  return get('/estados-publicacion');
+}

@@ -1,12 +1,22 @@
 /**
  * GUI-24 Nueva publicación de adopción.
  *
- * Se puede llegar con una mascota ya elegida desde el alta, o entrar directo y elegirla
- * acá. La validación es para UX; la fuente de verdad es el backend.
+ * Se puede llegar con una mascota ya elegida desde el alta, o entrar directo (desde "Mis
+ * publicaciones") y elegirla acá. El selector ofrece las mascotas del perfil activo que
+ * todavía no tienen publicación (`GET /mascotas/publicables`) y, primera, la opción "Crear
+ * mascota nueva". Esa opción (y el botón del estado vacío, si no hay ninguna publicable) abre
+ * el alta de mascota ENCIMA de este formulario, así no se pierde lo que ya se escribió; al
+ * crearla vuelve acá con ella ya elegida (ver `lib/mascotaParaPublicar.ts`).
+ *
+ * `origen=publicaciones` indica que el flujo arrancó en "Mis publicaciones": al publicar se
+ * vuelve ahí y no a "Mis mascotas". Pasar por el alta de mascota no lo pierde: esa pantalla
+ * se abre encima y vuelve a esta.
+ *
+ * La validación es para UX; la fuente de verdad es el backend.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { type Href, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -19,7 +29,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
-import { EstadoCargando } from '@/components/feedback/EstadosPantalla';
+import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
 import { ChipMultiField } from '@/components/ui/ChipMultiField';
 import { FormCard, FormCardRow } from '@/components/ui/FormCard';
@@ -30,8 +40,9 @@ import { TextAreaField } from '@/components/ui/TextAreaField';
 import { TextField } from '@/components/ui/TextField';
 import { ToggleField } from '@/components/ui/ToggleField';
 import { estiloDeEstado } from '@/constants/EstadosMascota';
+import { tomarMascotaParaPublicar } from '@/lib/mascotaParaPublicar';
 import { PALETA } from '@/constants/theme';
-import { crearPublicacion, listarMisMascotas, type Mascota } from '@/services/mascotas';
+import { crearPublicacion, listarPublicables, type Mascota } from '@/services/mascotas';
 import { textoSegunGenero } from '@/shared/genero';
 import { LIMITES } from '@/shared/validation/limits';
 import { validarTexto } from '@/shared/validation/text';
@@ -72,6 +83,12 @@ const RASGO_FEMENINO: Partial<Record<string, string>> = {
   'Bueno con otras mascotas': 'Buena con otras mascotas',
 };
 
+/**
+ * Valor de la opción "Crear mascota nueva" del selector. No es un id: los ids son positivos,
+ * así que nunca choca con una mascota real, y nunca queda elegido (abre el alta).
+ */
+const CREAR_MASCOTA = -1;
+
 interface ErroresFormulario {
   mascotaId?: string;
   descripcion?: string;
@@ -87,7 +104,8 @@ const ETIQUETAS: Record<keyof ErroresFormulario, string> = {
 export default function CrearPublicacionScreen() {
   const router = useRouter();
   const toast = useToast();
-  const params = useLocalSearchParams<{ mascotaId?: string }>();
+  const params = useLocalSearchParams<{ mascotaId?: string; origen?: string }>();
+  const desdeMisPublicaciones = params.origen === 'publicaciones';
 
   const [mascotaId, setMascotaId] = useState<number | null>(
     params.mascotaId ? Number(params.mascotaId) : null,
@@ -102,24 +120,66 @@ export default function CrearPublicacionScreen() {
 
   const [publicables, setPublicables] = useState<Mascota[]>([]);
   const [cargandoMascotas, setCargandoMascotas] = useState(true);
+  const [errorMascotas, setErrorMascotas] = useState<string | null>(null);
   const [publicando, setPublicando] = useState(false);
   const [mostrarErrores, setMostrarErrores] = useState(false);
   const [tocados, setTocados] = useState<Partial<Record<keyof ErroresFormulario, boolean>>>({});
 
-  useEffect(() => {
-    const cargar = async (): Promise<void> => {
-      try {
-        const mias = await listarMisMascotas();
-        setPublicables(mias.filter((mascota) => mascota.habilitaPublicacion));
-      } catch {
-        toast.mostrarError('No pudimos cargar tus mascotas. Revisá tu conexión.');
-      } finally {
-        setCargandoMascotas(false);
-      }
-    };
+  /** `elegir`: la mascota que hay que dejar elegida (la que se acaba de crear). */
+  const cargarPublicables = useCallback(async (elegir?: number): Promise<void> => {
+    try {
+      setErrorMascotas(null);
+      const disponibles = await listarPublicables();
+      setPublicables(disponibles);
+      // Si la que había que elegir (o la que ya estaba elegida) no se puede publicar —por
+      // ejemplo, ya tiene publicación—, se suelta: el selector no puede mostrar un valor que
+      // no está entre sus opciones.
+      setMascotaId((elegida) => {
+        const buscada = elegir ?? elegida;
+        return buscada !== null && disponibles.some((mascota) => mascota.id === buscada)
+          ? buscada
+          : null;
+      });
+    } catch (err) {
+      setErrorMascotas(
+        err instanceof Error ? err.message : 'No pudimos cargar tus mascotas. Revisá tu conexión.',
+      );
+    } finally {
+      setCargandoMascotas(false);
+    }
+  }, []);
 
-    void cargar();
-  }, [toast]);
+  useEffect(() => {
+    void cargarPublicables();
+  }, [cargarPublicables]);
+
+  // Al volver del alta de mascota: si se creó una, se recarga la lista y queda elegida. Si
+  // se volvió sin crear nada, no hay aviso y el formulario sigue como estaba.
+  useFocusEffect(
+    useCallback(() => {
+      const nueva = tomarMascotaParaPublicar();
+      if (nueva === null) return;
+
+      setMascotaId(nueva);
+      void cargarPublicables(nueva);
+    }, [cargarPublicables]),
+  );
+
+  /**
+   * Abre el alta de mascota en modo "para publicar". `push` y no `replace`: esta pantalla se
+   * queda debajo con lo ya escrito, y el alta vuelve acá al terminar.
+   */
+  const irACargarMascota = (): void => {
+    router.push({ pathname: '/mascotas/crear', params: { paraPublicar: '1' } });
+  };
+
+  const salir = (): void => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace((desdeMisPublicaciones ? '/publicaciones' : '/(tabs)/mis-mascotas') as Href);
+  };
 
   const errores = useMemo<ErroresFormulario>(() => {
     const resultado: ErroresFormulario = {};
@@ -191,7 +251,13 @@ export default function CrearPublicacionScreen() {
       });
 
       toast.mostrarExito('¡Listo! Tu publicación ya está activa.');
-      router.replace('/(tabs)/mis-mascotas' as Href);
+      if (desdeMisPublicaciones) {
+        // Vuelve a la grilla que abrió el flujo, salteando el alta de mascota si se pasó por
+        // ella. La grilla se recarga al tomar foco y muestra la nueva primera.
+        router.dismissTo('/publicaciones' as Href);
+      } else {
+        router.replace('/(tabs)/mis-mascotas' as Href);
+      }
     } catch (err) {
       // Se queda en la pantalla con todo lo cargado, para poder reintentar.
       toast.mostrarError(
@@ -212,10 +278,8 @@ export default function CrearPublicacionScreen() {
             accessibilityRole="button"
             accessibilityLabel="Volver"
             // Vuelve al alta de la mascota cuando se llegó desde ahí (con la mascota ya
-            // elegida). Si se entra suelto y no hay historial, cae a "Mis mascotas".
-            onPress={() =>
-              router.canGoBack() ? router.back() : router.replace('/(tabs)/mis-mascotas' as Href)
-            }
+            // elegida). Si se entra suelto y no hay historial, cae al listado de origen.
+            onPress={salir}
             hitSlop={8}
             className="h-11 w-11 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100 active:opacity-80"
           >
@@ -229,6 +293,22 @@ export default function CrearPublicacionScreen() {
 
         {cargandoMascotas ? (
           <EstadoCargando />
+        ) : errorMascotas ? (
+          <EstadoError
+            mensaje={errorMascotas}
+            onAccion={() => {
+              setCargandoMascotas(true);
+              void cargarPublicables();
+            }}
+          />
+        ) : publicables.length === 0 ? (
+          <EstadoVacio
+            icono="paw-outline"
+            titulo="Primero cargá la mascota"
+            descripcion="Para publicar necesitás una mascota cargada que todavía no esté publicada y que esté disponible o en tránsito. Cargala y seguimos con la publicación."
+          >
+            <CustomButton title="Cargar mascota" variant="acento" onPress={irACargarMascota} />
+          </EstadoVacio>
         ) : (
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -251,17 +331,24 @@ export default function CrearPublicacionScreen() {
                   <SelectField
                     label="Seleccionar mascota"
                     obligatorio
-                    placeholder={
-                      publicables.length === 0 ? 'No tenés mascotas publicables' : 'Elegí una'
-                    }
-                    opciones={publicables.map((mascota) => ({
-                      valor: mascota.id,
-                      etiqueta: `${mascota.nombre} (${mascota.especie.nombre} · ${estiloDeEstado(mascota.estado.nombre).etiqueta})`,
-                    }))}
+                    placeholder="Elegí una"
+                    opciones={[
+                      // Primera, para quien viene a publicar una que todavía no cargó.
+                      { valor: CREAR_MASCOTA, etiqueta: '＋ Crear mascota nueva' },
+                      ...publicables.map((mascota) => ({
+                        valor: mascota.id,
+                        etiqueta: `${mascota.nombre} (${mascota.especie.nombre} · ${estiloDeEstado(mascota.estado.nombre).etiqueta})`,
+                      })),
+                    ]}
                     valor={mascotaId}
-                    onChange={setMascotaId}
+                    onChange={(valor) => {
+                      if (valor === CREAR_MASCOTA) {
+                        irACargarMascota();
+                        return;
+                      }
+                      setMascotaId(valor);
+                    }}
                     onBlur={() => marcarTocado('mascotaId')}
-                    deshabilitado={publicables.length === 0}
                     error={errorDe('mascotaId')}
                     grande
                   />

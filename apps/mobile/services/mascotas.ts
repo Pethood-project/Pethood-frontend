@@ -65,8 +65,19 @@ export async function crearMascota(datos: DatosNuevaMascota): Promise<Mascota> {
  * persona y las del refugio, que son de todos sus miembros. El backend devuelve el del
  * perfil activo (cabecera `X-Ambito`, ver `services/sesion.ts`).
  */
-export function listarMisMascotas(): Promise<Mascota[]> {
-  return get('/mascotas/mias');
+export function listarMisMascotas(estadoIds: number[] = []): Promise<Mascota[]> {
+  // Con `estadoIds`, solo las que están en alguno de esos estados; vacío es "todas".
+  const filtro = estadoIds.length > 0 ? `?estados=${estadoIds.join(',')}` : '';
+  return get(`/mascotas/mias${filtro}`);
+}
+
+/**
+ * Mascotas del perfil activo que se pueden elegir al crear una publicación: con un estado
+ * que habilita publicar, sin publicación viva y cargadas por el usuario (el alta lo exige).
+ * Vacía significa que primero hay que cargar la mascota.
+ */
+export function listarPublicables(): Promise<Mascota[]> {
+  return get('/mascotas/publicables');
 }
 
 export interface FichaMascota extends Mascota {

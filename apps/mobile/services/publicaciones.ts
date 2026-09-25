@@ -24,6 +24,18 @@ export interface MascotaPublicada {
   estado: { id: number; nombre: string };
 }
 
+/**
+ * Estado del AVISO, no de la mascota (catálogo `Estado_Publicacion`). Hoy cambia solo,
+ * siguiendo a la mascota:
+ * - `Activa`: se ve en el feed (mascota `Disponible`).
+ * - `Pausada`: sigue viva pero no aparece en el feed (en tratamiento o en tránsito).
+ * - `Finalizada`: la mascota ya fue adoptada (o falleció).
+ */
+export interface EstadoPublicacion {
+  id: number;
+  nombre: string;
+}
+
 export interface PublicacionFeed {
   id: number;
   titulo: string;
@@ -36,6 +48,7 @@ export interface PublicacionFeed {
   /** En orden; la primera es la portada. Pasar por `urlAbsoluta` antes de mostrarlas. */
   imagenes: string[];
   fechaPublicacion: string;
+  estado: EstadoPublicacion;
   mascota: MascotaPublicada;
   /** Null cuando publica un adoptante particular. */
   refugio: { id: number; nombre: string; direccion: string } | null;
@@ -131,4 +144,30 @@ export function listarFeed(
 
 export function obtenerPublicacion(id: number): Promise<PublicacionFeed> {
   return get(`/publicaciones/${id}`);
+}
+
+/** Tarjeta de "Mis publicaciones". La ficha completa se pide con `obtenerPublicacion`. */
+export interface PublicacionPropia {
+  id: number;
+  /** Portada. Pasar por `urlAbsoluta` antes de mostrarla. */
+  imagenUrl: string | null;
+  fechaPublicacion: string;
+  estado: EstadoPublicacion;
+  mascota: {
+    id: number;
+    nombre: string | null;
+    /** `AAAA-MM-DD` o null. */
+    fechaNacimiento: string | null;
+    especie: { id: number; nombre: string };
+  };
+}
+
+/**
+ * Publicaciones del perfil activo, la más nueva primero: las de sus mascotas personales, o
+ * todas las del refugio desde la vista de refugio (cabecera `X-Ambito`). Con `estadoIds`
+ * trae solo las que están en alguno de esos estados; vacío es "todas".
+ */
+export function listarMisPublicaciones(estadoIds: number[] = []): Promise<PublicacionPropia[]> {
+  const filtro = estadoIds.length > 0 ? `?estados=${estadoIds.join(',')}` : '';
+  return get(`/publicaciones/mias${filtro}`);
 }

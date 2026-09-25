@@ -7,6 +7,9 @@
  * El corazón guarda y quita de favoritos, y el pie tiene el CTA de solicitar adopción o
  * tránsito (HU-7.1). El botón resuelve solo las precondiciones y el formulario: acá solo se
  * le pasa la mascota y se refresca la ficha cuando la solicitud queda creada.
+ *
+ * También se abre desde "Mis publicaciones". Sobre lo propio (`esPropia`) no hay corazón ni
+ * CTA, y en su lugar se muestra el estado de la publicación.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -20,6 +23,7 @@ import { useToast } from '@/components/feedback/Toast';
 import { BotonSolicitar, solicitudEnviadaDe } from '@/components/solicitudes/BotonSolicitar';
 import { Chip } from '@/components/ui/Chip';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
+import { EstadoPublicacionBadge } from '@/components/ui/EstadoPublicacionBadge';
 import { SeccionTitulada } from '@/components/ui/SeccionTitulada';
 import { ESTADO_SOLICITABLE, resumenMascota } from '@/constants/Mascotas';
 import { PALETA } from '@/constants/theme';
@@ -226,6 +230,15 @@ export default function FichaPublicacionScreen() {
             <View className="mt-3 flex-row items-center gap-1.5">
               <Ionicons name="location-outline" size={14} color={PALETA.grisCalido[500]} />
               <Text className="flex-1 text-[13px] text-gray-500">{publicacion.ubicacion}</Text>
+            </View>
+          ) : null}
+
+          {/* Solo sobre lo propio: a quien adopta le alcanza con el estado de la mascota, y
+              la publicación que ve en el feed siempre está activa. */}
+          {publicacion.esPropia ? (
+            <View className="mt-3 flex-row items-center justify-between rounded-2xl bg-white px-3.5 py-2.5">
+              <Text className="text-[13px] text-gray-500">Estado de la publicación</Text>
+              <EstadoPublicacionBadge estado={publicacion.estado.nombre} />
             </View>
           ) : null}
 

@@ -12,7 +12,7 @@
  */
 import { useCallback, useState, type ReactElement } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
 import { BarraPasos } from '@/components/ui/BarraPasos';
@@ -76,6 +76,7 @@ export function SolicitudModal({
   onCreada,
   onVerSolicitud,
 }: SolicitudModalProps) {
+  const insets = useSafeAreaInsets();
   const [paso, setPaso] = useState(1);
   const [borrador, setBorrador] = useState<Borrador>(() => borradorInicial(hogarPrecargado));
   const [errores, setErrores] = useState<Errores>({});
@@ -167,7 +168,11 @@ export function SolicitudModal({
   const cuerpo = (
     <>
       <View className="flex-1 bg-organic-bg">
-        <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        {/* Margen superior a mano y no con el `SafeAreaView` nativo: dentro de un `Modal`
+            (otra ventana nativa) este no recibe los insets en iOS y el encabezado quedaba
+            debajo de la hora y la batería. `statusBarTranslucent` hace que Android también
+            dibuje debajo de la barra, así el mismo margen sirve en las dos plataformas. */}
+        <View className="flex-1" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
           {creada ? (
             <PasoExito
               solicitud={creada}
@@ -241,7 +246,7 @@ export function SolicitudModal({
               </View>
             </>
           )}
-        </SafeAreaView>
+        </View>
       </View>
 
       <ConfirmDialog
@@ -283,7 +288,7 @@ export function SolicitudModal({
   }
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={cerrar}>
+    <Modal visible={visible} animationType="slide" onRequestClose={cerrar} statusBarTranslucent>
       {cuerpo}
     </Modal>
   );

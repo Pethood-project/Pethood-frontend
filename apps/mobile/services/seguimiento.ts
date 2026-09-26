@@ -10,7 +10,7 @@
  * El `estado` no viaja en base, lo deriva el servidor contra su reloj: no recalcularlo en el
  * cliente, porque el plazo se mide contra la hora del servidor y no contra la del teléfono.
  */
-import { adjuntarArchivo, get, postFormData } from './api';
+import { adjuntarArchivo, del, get, post, postFormData } from './api';
 
 /** Spec 011 §3. `PENDIENTE` es el único que acepta respuesta. */
 export type EstadoSeguimiento = 'PENDIENTE' | 'VENCIDO' | 'COMPLETADO';
@@ -43,6 +43,11 @@ export interface PedidoSeguimiento {
   /** 1-based, la posición dentro de la secuencia de esa solicitud. */
   numero: number;
   pregunta: string;
+  /**
+   * La escribió el refugio y la mandó en el momento, fuera de la secuencia de días (spec 011
+   * §6.11). Los automáticos la tienen en `false`.
+   */
+  esManual: boolean;
   estado: EstadoSeguimiento;
   /** `null` mientras el pedido no fue respondido. */
   descripcion: string | null;
@@ -78,12 +83,38 @@ export interface DetalleSeguimiento {
   rol: RolSeguimiento;
   /** Ya combina rol y estado: `true` sólo si es el adoptante Y hay un pedido esperando. */
   puedeSubirActualizacion: boolean;
+  /**
+   * `true` sólo para el refugio que entregó la mascota, cuando ya llegó el primer pedido y el
+   * seguimiento no terminó. Lo calcula el servidor: no recalcularlo en el cliente.
+   */
+  puedeEnviarPregunta: boolean;
+  /** Pregunta del refugio que reemplaza a la aleatoria del próximo pedido automático. */
+  preguntaProgramada: PreguntaProgramada | null;
   mascota: MascotaSeguimiento;
   adoptante: AdoptanteSeguimiento;
   proximoAviso: string | null;
   finalizado: boolean;
   /** Del más reciente al más viejo — ya viene ordenado, no reordenar en el cliente. */
   seguimientos: PedidoSeguimiento[];
+}
+
+export interface PreguntaProgramada {
+  id: number;
+  texto: string;
+  /** ISO 8601. Cuándo la escribió el refugio. */
+  fechaAlta: string;
+}
+
+export interface PreguntaEnviada {
+  /** Texto para el toast, tal cual lo manda el servidor. */
+  mensaje: string;
+  /**
+   * `false`: se creó un pedido que el adoptante tiene que responder ya.
+   * `true`: había una pregunta activa, así que quedó para el próximo pedido automático.
+   */
+  programada: boolean;
+  /** El expediente ya actualizado, para no tener que volver a pedirlo. */
+  detalle: DetalleSeguimiento;
 }
 
 export interface ActualizacionCargada {
@@ -158,4 +189,18 @@ export async function subirActualizacion(
   await adjuntarArchivo(formData, 'foto', datos.foto);
 
   return postFormData(`/seguimientos/${seguimientoId}/actualizacion`, formData);
+}
+
+/**
+ * Spec 011 §6.11: el refugio le escribe una pregunta propia al adoptante. Si no hay ninguna
+ * esperando respuesta llega ya (con sus 48 h); si hay una activa, queda programada para el
+ * próximo pedido. Cuál de los dos pasó lo dice `programada`: no adivinarlo en el cliente.
+ */
+export function enviarPregunta(solicitudId: number, texto: string): Promise<PreguntaEnviada> {
+  return post(`/solicitudes/${solicitudId}/seguimientos/preguntas`, { texto });
+}
+
+/** Spec 011 §6.11: descarta la pregunta programada. Devuelve el expediente actualizado. */
+export function cancelarPreguntaProgramada(solicitudId: number): Promise<DetalleSeguimiento> {
+  return del(`/solicitudes/${solicitudId}/seguimientos/pregunta-programada`);
 }

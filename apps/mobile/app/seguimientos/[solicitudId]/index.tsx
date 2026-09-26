@@ -9,6 +9,9 @@
  * El botón "Subir actualización" se habilita con `puedeSubirActualizacion`, que el servidor
  * ya calcula combinando rol y estado. No se recalcula en el cliente: el plazo de 48 h se
  * mide contra el reloj del servidor, y el del teléfono puede estar corrido.
+ *
+ * El refugio, en cambio, ve "Enviar pregunta" (spec 011 §6.11) cuando `puedeEnviarPregunta`,
+ * y al final de los hitos la pregunta que dejó programada para el próximo pedido, si la hay.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -21,14 +24,17 @@ import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantal
 import { useToast } from '@/components/feedback/Toast';
 import { NOMBRE_TIPO } from '@/components/seguimiento/etiquetas';
 import { FilaPedidoSeguimiento } from '@/components/seguimiento/FilaPedidoSeguimiento';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { FotoMascota } from '@/components/ui/FotoMascota';
 import { PressableAnimado } from '@/components/ui/PressableAnimado';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
 import {
+  cancelarPreguntaProgramada,
   obtenerSeguimientoDeSolicitud,
   type DetalleSeguimiento,
   type PedidoSeguimiento,
+  type PreguntaProgramada,
 } from '@/services/seguimiento';
 import { parsearFecha, tiempoHasta } from '@/shared/validation/dates';
 
@@ -82,6 +88,53 @@ function PastillaEstado({ pedidos }: { pedidos: PedidoSeguimiento[] }) {
   );
 }
 
+/**
+ * La pregunta que el refugio dejó para el próximo pedido automático. Va al final de los
+ * hitos porque es lo que viene después, con la tarjeta punteada que el diseño usa para
+ * "esto todavía no pasó". Sólo la ve el refugio: el adoptante la recibe con su pedido.
+ */
+function TarjetaPreguntaProgramada({
+  pregunta,
+  proximoAviso,
+  ahora,
+  onDescartar,
+}: {
+  pregunta: PreguntaProgramada;
+  proximoAviso: string | null;
+  ahora: Date;
+  onDescartar: () => void;
+}) {
+  const siguiente = parsearFecha(proximoAviso);
+  const falta = siguiente ? tiempoHasta(siguiente, ahora) : null;
+
+  return (
+    <View className="mt-2 rounded-[20px] border border-dashed border-organic-neutral-400 bg-organic-surface p-4">
+      <View className="flex-row items-center gap-2">
+        <Ionicons name="calendar-outline" size={16} color={PALETA.neutral[600]} />
+        <Text className="flex-1 font-cuerpo-semi text-sm text-organic-neutral-600">
+          {falta ? `Próximo pedido · llega en ${falta}` : 'Próximo pedido'}
+        </Text>
+      </View>
+
+      <Text className="mt-2 font-cuerpo-bold text-lg leading-7 text-organic-neutral-900">
+        {pregunta.texto}
+      </Text>
+      <Text className="mt-1 font-cuerpo text-sm text-organic-neutral-600">
+        La escribiste vos: reemplaza a la pregunta aleatoria de ese pedido.
+      </Text>
+
+      <PressableAnimado
+        accessibilityRole="button"
+        accessibilityLabel="Descartar la pregunta programada"
+        onPress={onDescartar}
+        className="mt-3 self-start"
+      >
+        <Text className="font-cuerpo-semi text-sm text-organic-accent-700">Descartar</Text>
+      </PressableAnimado>
+    </View>
+  );
+}
+
 export default function SeguimientoSolicitudScreen() {
   const { solicitudId } = useLocalSearchParams<{ solicitudId: string }>();
   const router = useRouter();
@@ -93,6 +146,8 @@ export default function SeguimientoSolicitudScreen() {
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ahora, setAhora] = useState(() => new Date());
+  const [confirmarDescarte, setConfirmarDescarte] = useState(false);
+  const [descartando, setDescartando] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -128,6 +183,23 @@ export default function SeguimientoSolicitudScreen() {
 
   const nombreMascota = detalle?.mascota.nombre ?? 'Sin nombre';
   const esAdoptante = detalle?.rol === 'ADOPTANTE';
+
+  const descartarProgramada = async (): Promise<void> => {
+    setDescartando(true);
+    try {
+      setDetalle(await cancelarPreguntaProgramada(id));
+      toast.mostrarExito('Listo, descartaste la pregunta programada.');
+    } catch (err) {
+      toast.mostrarError(
+        err instanceof Error ? err.message : 'No pudimos descartar la pregunta.',
+      );
+      // Si su pedido llegó mientras tanto ya no está programada: se relee para mostrarlo.
+      void cargar();
+    } finally {
+      setDescartando(false);
+      setConfirmarDescarte(false);
+    }
+  };
 
   return (
     <View className="flex-1 bg-organic-bg">
@@ -249,6 +321,15 @@ export default function SeguimientoSolicitudScreen() {
                   ))}
                 </>
               )}
+
+              {detalle.preguntaProgramada ? (
+                <TarjetaPreguntaProgramada
+                  pregunta={detalle.preguntaProgramada}
+                  proximoAviso={detalle.proximoAviso}
+                  ahora={ahora}
+                  onDescartar={() => setConfirmarDescarte(true)}
+                />
+              ) : null}
             </ScrollView>
 
             {/* El publicador nunca responde: mostrarle un botón gris permanente sería ruido.
@@ -272,10 +353,34 @@ export default function SeguimientoSolicitudScreen() {
                   }
                 />
               </View>
+            ) : detalle.puedeEnviarPregunta ? (
+              <View className="border-t border-organic-neutral-200 bg-organic-neutral-100 px-4 pb-5 pt-4">
+                <CustomButton
+                  title="Enviar pregunta"
+                  variant="acento"
+                  onPress={() =>
+                    router.push({
+                      pathname: '/seguimientos/[solicitudId]/pregunta',
+                      params: { solicitudId: id },
+                    })
+                  }
+                />
+              </View>
             ) : null}
           </>
         )}
       </SafeAreaView>
+
+      <ConfirmDialog
+        visible={confirmarDescarte}
+        tono="peligro"
+        titulo="¿Descartar la pregunta?"
+        mensaje="El próximo pedido va a llevar una pregunta aleatoria, como siempre."
+        textoConfirmar="Descartar"
+        onConfirmar={() => void descartarProgramada()}
+        onCerrar={() => setConfirmarDescarte(false)}
+        cargando={descartando}
+      />
     </View>
   );
 }

@@ -97,6 +97,8 @@ export const LIMITES = {
    */
   seguimiento: {
     descripcion: { min: 1, max: 1000 },
+    /** Pregunta que el refugio le escribe a mano al adoptante (spec 011 §6.11). */
+    pregunta: { min: 5, max: 200 },
   },
 
   /**

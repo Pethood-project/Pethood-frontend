@@ -43,6 +43,22 @@ const VARIANTES: Record<VarianteBoton, { contenedor: string; texto: string; spin
   },
 };
 
+/**
+ * Forma del botón del artboard 23 (radio 15 sobre 262px, ×1,33 ≈ 20). Va por `style` y no
+ * por clase: sumar `rounded-[20px]` al `rounded-2xl` de base deja dos radios en conflicto.
+ */
+export const FORMA_BOTON_ORGANIC = { borderRadius: 20 };
+
+/** El principal del artboard 23 además lleva sombra: `0 6px 16px rgba(100,51,18,.26)`. */
+export const FORMA_BOTON_ORGANIC_PRINCIPAL = {
+  ...FORMA_BOTON_ORGANIC,
+  shadowColor: PALETA.accent[800],
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.26,
+  shadowRadius: 16,
+  elevation: 6,
+};
+
 export interface CustomButtonProps extends Omit<PressableProps, 'children'> {
   title: string;
   loading?: boolean;
@@ -52,6 +68,8 @@ export interface CustomButtonProps extends Omit<PressableProps, 'children'> {
    * en vez de no responder. Nunca dispara `onPress`.
    */
   onPressDeshabilitado?: () => void;
+  /** Más alto y con letra más grande: las pantallas de ingreso (artboards 01 y 02). */
+  grande?: boolean;
 }
 
 export function CustomButton({
@@ -61,6 +79,7 @@ export function CustomButton({
   disabled,
   onPress,
   onPressDeshabilitado,
+  grande = false,
   className = '',
   ...pressableProps
 }: CustomButtonProps) {
@@ -75,7 +94,7 @@ export function CustomButton({
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={loading}
       onPress={isDisabled ? onPressDeshabilitado : onPress}
-      className={`w-full items-center justify-center rounded-2xl py-4 ${estilo.contenedor} ${
+      className={`w-full items-center justify-center rounded-2xl ${grande ? 'py-[18px]' : 'py-4'} ${estilo.contenedor} ${
         isDisabled ? 'opacity-60' : ''
       } ${className}`}
       {...pressableProps}
@@ -83,7 +102,9 @@ export function CustomButton({
       {loading ? (
         <ActivityIndicator color={estilo.spinner} />
       ) : (
-        <Text className={`text-base font-semibold ${estilo.texto}`}>{title}</Text>
+        <Text className={`${grande ? 'text-lg' : 'text-base'} font-semibold ${estilo.texto}`}>
+          {title}
+        </Text>
       )}
     </Pressable>
   );

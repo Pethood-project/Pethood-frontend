@@ -13,10 +13,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CustomButton } from '@/components/CustomButton';
+import { CustomButton, FORMA_BOTON_ORGANIC_PRINCIPAL } from '@/components/CustomButton';
 import { CustomInput } from '@/components/CustomInput';
 import { FechaNacimientoPicker } from '@/components/FechaNacimientoPicker';
 import { useToast } from '@/components/feedback/Toast';
+import { BotonCircular } from '@/components/ui/BotonCircular';
 import { PALETA } from '@/constants/theme';
 import {
   enmascararFechaNacimiento,
@@ -65,6 +66,10 @@ interface RegisterErrors {
   foto?: string;
 }
 
+/**
+ * GUI-02 Crear cuenta — HU-1.1 y HU-1.5 (foto opcional). Diseño del artboard 02 (paleta
+ * Organic): encabezado crema fijo con la flecha redonda, campos crema y botones grandes.
+ */
 export default function RegisterScreen() {
   const toast = useToast();
   const [form, setForm] = useState<RegisterForm>({
@@ -249,8 +254,20 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-[19px] py-[13px]">
+          <BotonCircular
+            icono="chevron-back"
+            etiqueta="Volver"
+            variante="neutro"
+            onPress={() => router.back()}
+          />
+          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
+            Crear cuenta
+          </Text>
+        </View>
+
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           className="flex-1"
@@ -258,26 +275,13 @@ export default function RegisterScreen() {
           <ScrollView
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
-            contentContainerClassName="flex-grow px-6 pb-8 pt-4"
+            contentContainerClassName="flex-grow px-6 pb-8 pt-5"
           >
-            <View className="mb-6 flex-row items-center">
-              <Pressable
-                onPress={() => router.back()}
-                className="mr-4 h-10 w-10 items-center justify-center rounded-full bg-white"
-                accessibilityRole="button"
-                accessibilityLabel="Volver"
-              >
-                <Ionicons name="arrow-back" size={22} color={PALETA.gris[700]} />
-              </Pressable>
-              <Text className="text-2xl font-bold text-pethood-orange">Crear cuenta</Text>
-            </View>
-
-            <Text className="mb-2 text-base text-gray-600">
+            <Text className="mb-1.5 font-cuerpo text-[17px] text-organic-neutral-600">
               Completá tus datos para unirte a PetHood
             </Text>
-            <Text className="mb-6 text-sm text-gray-500">
-              Los campos con <Text className="font-semibold text-pethood-orange">*</Text> son
-              obligatorios
+            <Text className="mb-6 font-cuerpo text-[15px] text-organic-neutral-500">
+              Los campos con <Text className="text-organic-accent-600">*</Text> son obligatorios
             </Text>
 
             <View className="mb-6 items-center">
@@ -292,15 +296,17 @@ export default function RegisterScreen() {
                     <Image source={{ uri: foto.uri }} className="h-28 w-28" />
                   </View>
                 ) : (
-                  <View className="h-28 w-28 items-center justify-center rounded-full border border-gray-200 bg-white">
-                    <Ionicons name="camera-outline" size={36} color={PALETA.pethood.naranja} />
+                  <View className="h-28 w-28 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100">
+                    <Ionicons name="camera-outline" size={36} color={PALETA.accent[600]} />
                   </View>
                 )}
-                <View className="absolute bottom-0 right-0 h-8 w-8 items-center justify-center rounded-full bg-pethood-orange">
+                <View className="absolute bottom-0 right-0 h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-organic-accent-600">
                   <Ionicons name={foto ? 'pencil' : 'add'} size={16} color={PALETA.blanco} />
                 </View>
               </Pressable>
-              <Text className="mt-2 text-sm text-gray-500">Foto de perfil (opcional)</Text>
+              <Text className="mt-2 font-cuerpo text-[15px] text-organic-neutral-600">
+                Foto de perfil (opcional)
+              </Text>
               {foto && Platform.OS === 'web' ? (
                 <Pressable
                   onPress={() => setFoto(undefined)}
@@ -308,17 +314,18 @@ export default function RegisterScreen() {
                   accessibilityLabel="Quitar foto de perfil"
                   className="mt-1"
                 >
-                  <Text className="text-sm font-semibold text-red-500">Quitar foto</Text>
+                  <Text className="font-cuerpo-semi text-[15px] text-red-500">Quitar foto</Text>
                 </Pressable>
               ) : null}
               {errors.foto ? (
-                <Text className="mt-1.5 text-sm text-red-500">{errors.foto}</Text>
+                <Text className="mt-1.5 font-cuerpo text-[15px] text-red-500">{errors.foto}</Text>
               ) : null}
             </View>
 
             <View className="flex-row gap-3">
               <View className="flex-1">
                 <CustomInput
+                  organic
                   label="Nombre"
                   placeholder="Tu nombre"
                   value={form.firstName}
@@ -337,6 +344,7 @@ export default function RegisterScreen() {
               </View>
               <View className="flex-1">
                 <CustomInput
+                  organic
                   label="Apellido"
                   placeholder="Tu apellido"
                   value={form.lastName}
@@ -356,6 +364,7 @@ export default function RegisterScreen() {
             </View>
 
             <CustomInput
+              organic
               label="Correo electrónico"
               placeholder="tu@correo.com"
               value={form.email}
@@ -370,6 +379,7 @@ export default function RegisterScreen() {
             />
 
             <CustomInput
+              organic
               label="Teléfono"
               placeholder="Ej. 2615123456"
               value={form.phone}
@@ -384,6 +394,7 @@ export default function RegisterScreen() {
             />
 
             <CustomInput
+              organic
               label="Fecha de nacimiento"
               placeholder="DD/MM/AAAA"
               value={form.birthDate}
@@ -394,12 +405,13 @@ export default function RegisterScreen() {
               inputMode="numeric"
               maxLength={10}
               autoCorrect={false}
-              rightIcon={<Ionicons name="calendar-outline" size={22} color={PALETA.pethood.naranja} />}
+              rightIcon={<Ionicons name="calendar-outline" size={24} color={PALETA.accent[600]} />}
               onRightIconPress={abrirCalendario}
               required
             />
 
             <CustomInput
+              organic
               label="Contraseña"
               placeholder="Mínimo 8 caracteres"
               value={form.password}
@@ -413,8 +425,8 @@ export default function RegisterScreen() {
               rightIcon={
                 <Ionicons
                   name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={22}
-                  color={PALETA.gris[400]}
+                  size={24}
+                  color={PALETA.neutral[500]}
                 />
               }
               onRightIconPress={() => setShowPassword((prev) => !prev)}
@@ -422,6 +434,7 @@ export default function RegisterScreen() {
             />
 
             <CustomInput
+              organic
               label="Repetí tu contraseña"
               placeholder="Volvé a escribirla"
               value={form.confirmPassword}
@@ -440,19 +453,24 @@ export default function RegisterScreen() {
               rightIcon={
                 <Ionicons
                   name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
-                  size={22}
-                  color={PALETA.gris[400]}
+                  size={24}
+                  color={PALETA.neutral[500]}
                 />
               }
               onRightIconPress={() => setShowConfirmPassword((prev) => !prev)}
               required
             />
 
-            {formError ? <Text className="mb-3 text-sm text-red-500">{formError}</Text> : null}
+            {formError ? (
+              <Text className="mb-3 font-cuerpo text-[15px] text-red-500">{formError}</Text>
+            ) : null}
 
             <View className="mt-4">
               <CustomButton
                 title="Registrarme"
+                variant="acento"
+                grande
+                style={FORMA_BOTON_ORGANIC_PRINCIPAL}
                 loading={loading}
                 disabled={!formularioListo}
                 onPress={handleRegister}
@@ -461,11 +479,13 @@ export default function RegisterScreen() {
             </View>
 
             <View className="mt-6 items-center">
-              <Text className="text-base text-gray-600">
+              <Text className="font-cuerpo text-[16px] text-organic-neutral-600">
                 ¿Ya tenés cuenta?{' '}
                 <Link href="/login" asChild>
                   <Pressable>
-                    <Text className="font-semibold text-pethood-orange">Iniciá sesión</Text>
+                    <Text className="font-cuerpo-semi text-[16px] text-organic-accent-700">
+                      Iniciá sesión
+                    </Text>
                   </Pressable>
                 </Link>
               </Text>

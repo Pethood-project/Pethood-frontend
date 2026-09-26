@@ -41,7 +41,7 @@ export default function TabsLayout() {
         tabBarItemStyle: { paddingTop: 2 },
         // Todos los íconos van de contorno, también el de la pestaña abierta: como en el
         // diseño, la activa se distingue por el color y por la barrita de arriba.
-        tabBarBackground: () => <IndicadorTabs />,
+        tabBarBackground: () => <IndicadorTabs ocultarAdoptar={vistaRefugio} />,
         tabBarLabelStyle: { fontSize: 12, fontWeight: '500', paddingTop: 2, paddingBottom: 0 },
         // Sin ripple: el cambio de color de la pestaña activa ya es feedback suficiente, y
         // el de Android es `borderless` y sin radio, así que se derramaba fuera de la barra.

@@ -11,8 +11,11 @@ import { PALETA } from '@/constants/theme';
 
 type NombreIcono = keyof typeof Ionicons.glyphMap;
 
-/** `organic` es el rediseño (Inicio); `clasico`, la paleta naranja del resto de la app. */
-type VarianteBoton = 'organic' | 'clasico';
+/**
+ * `organic` es el rediseño (Inicio); `neutro`, el mismo rediseño en crema con borde neutro
+ * (la flecha de volver del artboard 23); `clasico`, la paleta naranja del resto de la app.
+ */
+type VarianteBoton = 'organic' | 'neutro' | 'clasico';
 
 const VARIANTES: Record<
   VarianteBoton,
@@ -22,6 +25,11 @@ const VARIANTES: Record<
     contenedor: 'h-[42px] w-[42px] border border-organic-accent-300 bg-organic-accent-100',
     color: PALETA.accent[700],
     tamanoIcono: 19,
+  },
+  neutro: {
+    contenedor: 'h-[42px] w-[42px] border border-organic-neutral-300 bg-organic-neutral-100',
+    color: PALETA.neutral[700],
+    tamanoIcono: 20,
   },
   clasico: {
     contenedor: 'h-10 w-10 bg-white',
@@ -39,6 +47,11 @@ const VARIANTES_GRANDE: Record<
     contenedor: 'h-[50px] w-[50px] border border-organic-accent-300 bg-organic-accent-100',
     color: PALETA.accent[700],
     tamanoIcono: 23,
+  },
+  neutro: {
+    contenedor: 'h-[50px] w-[50px] border border-organic-neutral-300 bg-organic-neutral-100',
+    color: PALETA.neutral[700],
+    tamanoIcono: 24,
   },
   clasico: {
     contenedor: 'h-12 w-12 bg-white',

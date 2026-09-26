@@ -10,7 +10,10 @@
  * desactivado hasta que se implemente.
  *
  * Menú, contadores y chip siguen al switch refugio/adoptante (ver `services/sesion.ts`):
- * cada perfil muestra solo lo suyo.
+ * cada perfil muestra solo lo suyo. En la vista de refugio la tarjeta es la del REFUGIO
+ * (spec 017, artboard 19: foto, nombre, dirección, reseñas y sus números), no la de la
+ * persona; y el ícono del encabezado ofrece elegir entre los datos personales y los del
+ * refugio.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter, type Href } from 'expo-router';
@@ -28,12 +31,16 @@ import { useToast } from '@/components/feedback/Toast';
 import { Avatar } from '@/components/ui/Avatar';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { Chip } from '@/components/ui/Chip';
+import { HojaOpciones } from '@/components/ui/HojaOpciones';
+import { LogoRefugio } from '@/components/ui/LogoRefugio';
 import { SwitchRefugio } from '@/components/ui/SwitchRefugio';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
 import { ApiError, urlAbsoluta } from '@/services/api';
+import { obtenerPerfilRefugio } from '@/services/refugio';
 import { obtenerPerfil } from '@/services/usuarios';
 import type { Perfil } from '@/types/auth';
+import type { PerfilRefugio } from '@/types/refugio';
 
 type NombreIcono = keyof typeof Ionicons.glyphMap;
 
@@ -82,15 +89,83 @@ const MENU_REFUGIO: ItemMenu[] = [
   { icono: 'heart-circle-outline', label: 'Campañas del refugio' },
 ];
 
-function etiquetaRol(roles: string[], esRefugio: boolean): string {
-  if (roles.includes('ADMIN')) return 'Admin';
-  if (esRefugio) return 'Refugio';
-  return 'Adoptante';
+/** Solo se muestra en la vista personal: en la de refugio la tarjeta es la del refugio. */
+function etiquetaRol(roles: string[]): string {
+  return roles.includes('ADMIN') ? 'Admin' : 'Adoptante';
 }
 
 function formatearValoracion(valor: number | null | undefined): string {
   if (valor === null || valor === undefined) return '—';
   return valor.toFixed(1);
+}
+
+function Contador({ valor, etiqueta }: { valor: string | number; etiqueta: string }) {
+  return (
+    <View className="flex-1 items-center">
+      <Text className="font-titulo text-[26px] leading-[29px] text-organic-accent-600">
+        {valor}
+      </Text>
+      <Text className="mt-1 text-center font-cuerpo text-[13px] text-organic-neutral-600">
+        {etiqueta}
+      </Text>
+    </View>
+  );
+}
+
+/** Artboard 19: la tarjeta es la del refugio, no la de quien lo está usando. */
+function TarjetaRefugio({ refugio }: { refugio: PerfilRefugio }) {
+  const { promedio, cantidad } = refugio.valoracion;
+
+  return (
+    <View className="rounded-[30px] bg-organic-surface p-6 shadow-sm">
+      <View className="flex-row items-center">
+        <LogoRefugio uri={urlAbsoluta(refugio.imagenUrl)} tamanio={80} />
+
+        <View className="ml-4 flex-1">
+          <Text className="font-titulo text-[22px] leading-[26px] text-organic-neutral-900">
+            {refugio.nombre}
+          </Text>
+          <Text
+            numberOfLines={2}
+            className="mt-1 font-cuerpo text-[13px] text-organic-neutral-600"
+          >
+            {refugio.direccion}
+          </Text>
+          <View className="mt-1.5 flex-row items-center gap-1">
+            <Ionicons name="star" size={14} color={PALETA.calido.amarillo} />
+            {promedio === null ? (
+              <Text className="font-cuerpo text-[13px] text-organic-neutral-500">
+                Sin reseñas todavía
+              </Text>
+            ) : (
+              <>
+                <Text className="font-cuerpo-semi text-[13px] text-organic-accent-700">
+                  {formatearValoracion(promedio)}
+                </Text>
+                <Text className="font-cuerpo text-[12px] text-organic-neutral-500">
+                  ({cantidad} {cantidad === 1 ? 'reseña' : 'reseñas'})
+                </Text>
+              </>
+            )}
+          </View>
+          {refugio.verificado ? null : (
+            <View className="mt-2 flex-row">
+              <Chip etiqueta="Pendiente de verificación" />
+            </View>
+          )}
+        </View>
+      </View>
+
+      <View className="mt-5 flex-row border-t border-organic-neutral-200 pt-5">
+        <Contador valor={refugio.estadisticas.enRefugio} etiqueta="En el refugio" />
+        <Contador valor={refugio.estadisticas.adopciones} etiqueta="Adopciones" />
+        <Contador
+          valor={refugio.estadisticas.solicitudesAbiertas}
+          etiqueta="Solicitudes abiertas"
+        />
+      </View>
+    </View>
+  );
 }
 
 export default function PerfilScreen() {
@@ -100,13 +175,21 @@ export default function PerfilScreen() {
     useSesion();
 
   const [perfil, setPerfil] = useState<Perfil | null>(null);
+  const [perfilRefugio, setPerfilRefugio] = useState<PerfilRefugio | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [eligiendoDatos, setEligiendoDatos] = useState(false);
 
   const cargar = useCallback(async (): Promise<void> => {
     if (!token) return;
     try {
-      const respuesta = await obtenerPerfil(token);
+      // El perfil personal se pide igual en la vista de refugio: es lo que mantiene al día
+      // los roles y el refugio de la sesión.
+      const [respuesta, refugio] = await Promise.all([
+        obtenerPerfil(token),
+        vistaRefugio ? obtenerPerfilRefugio(token) : Promise.resolve(null),
+      ]);
       setPerfil(respuesta.usuario);
+      setPerfilRefugio(refugio?.refugio ?? null);
       await actualizarUsuario(respuesta.usuario);
     } catch (error) {
       const mensaje =
@@ -117,7 +200,7 @@ export default function PerfilScreen() {
     } finally {
       setCargando(false);
     }
-  }, [token, actualizarUsuario]);
+  }, [token, vistaRefugio, actualizarUsuario]);
 
   useFocusEffect(
     useCallback(() => {
@@ -136,26 +219,41 @@ export default function PerfilScreen() {
 
   const visible = perfil ?? usuario;
   const foto = urlAbsoluta(visible?.imagenUrl);
-  const incompleto = !visible?.imagenUrl || !visible?.telefono || !visible?.ubicacion;
+  // Cada vista avisa de lo suyo: la personal, de los datos de la persona; la de refugio,
+  // de los del refugio (que son los que se ven en su tarjeta).
+  const incompleto = vistaRefugio
+    ? Boolean(perfilRefugio) &&
+      (!perfilRefugio?.imagenUrl || !perfilRefugio?.telefono || !perfilRefugio?.descripcion)
+    : !visible?.imagenUrl || !visible?.telefono || !visible?.ubicacion;
+  const rutaCompletar = (vistaRefugio ? '/perfil/refugio' : '/perfil/editar') as Href;
+  const esperandoDatos = vistaRefugio ? !perfilRefugio : !visible;
+
+  const irA = (ruta: string): void => {
+    setEligiendoDatos(false);
+    router.push(ruta as Href);
+  };
 
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
         <View className="flex-row items-center justify-between border-b border-organic-neutral-300 bg-organic-neutral-100 px-[21px] py-[13px]">
           <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
-            Mi Perfil
+            {vistaRefugio ? 'Mi Refugio' : 'Mi Perfil'}
           </Text>
           {/* El ícono sigue siendo el de perfil (no una ruedita de configuración): entra a
-              "Ver y editar mi perfil", donde viven los datos completos y las acciones sensibles. */}
+              "Ver y editar mi perfil", donde viven los datos completos y las acciones sensibles.
+              En la vista de refugio hay dos juegos de datos, así que primero pregunta cuál. */}
           <BotonCircular
             icono="person-circle-outline"
-            etiqueta="Ver y editar mi perfil"
+            etiqueta={vistaRefugio ? 'Ver y editar datos' : 'Ver y editar mi perfil'}
             variante="organic"
-            onPress={() => router.push('/perfil/editar' as Href)}
+            onPress={() =>
+              vistaRefugio ? setEligiendoDatos(true) : router.push('/perfil/editar' as Href)
+            }
           />
         </View>
 
-        {cargando && !visible ? (
+        {cargando && esperandoDatos ? (
           <View className="flex-1 items-center justify-center">
             <ActivityIndicator color={PALETA.accent[600]} />
           </View>
@@ -166,68 +264,54 @@ export default function PerfilScreen() {
           >
             {incompleto ? (
               <Pressable
-                onPress={() => router.push('/perfil/editar' as Href)}
+                onPress={() => router.push(rutaCompletar)}
                 className="mb-4 flex-row items-center gap-3 rounded-[22px] border border-organic-accent-300 bg-organic-accent-100 px-4 py-3.5"
               >
-                <Ionicons name="person-add-outline" size={20} color={PALETA.accent[700]} />
+                <Ionicons
+                  name={vistaRefugio ? 'business-outline' : 'person-add-outline'}
+                  size={20}
+                  color={PALETA.accent[700]}
+                />
                 <Text className="flex-1 font-cuerpo-semi text-[15px] text-organic-accent-700">
-                  Completá tu perfil con foto e información personal
+                  {vistaRefugio
+                    ? 'Completá el perfil del refugio con foto, teléfono y descripción'
+                    : 'Completá tu perfil con foto e información personal'}
                 </Text>
               </Pressable>
             ) : null}
 
-            <View className="rounded-[30px] bg-organic-surface p-6 shadow-sm">
-              <View className="flex-row items-center">
-                <Avatar
-                  uri={foto}
-                  nombre={visible?.nombre}
-                  apellido={visible?.apellido}
-                  tamanio={92}
-                  variante="organic"
-                  tono={vistaRefugio ? 'acento' : 'neutro'}
-                />
+            {vistaRefugio ? (
+              perfilRefugio ? <TarjetaRefugio refugio={perfilRefugio} /> : null
+            ) : (
+              <View className="rounded-[30px] bg-organic-surface p-6 shadow-sm">
+                <View className="flex-row items-center">
+                  <Avatar
+                    uri={foto}
+                    nombre={visible?.nombre}
+                    apellido={visible?.apellido}
+                    tamanio={92}
+                    variante="organic"
+                    tono="neutro"
+                  />
 
-                <View className="ml-4 flex-1">
-                  <Text className="font-titulo text-[24px] leading-[27px] text-organic-neutral-900">
-                    {visible?.nombre} {visible?.apellido}
-                  </Text>
-                  {/* El mail no va acá: se ve recién dentro de "Ver y editar mi perfil". */}
-                  <View className="mt-2">
-                    <Chip etiqueta={etiquetaRol(visible?.roles ?? [], vistaRefugio)} grande />
+                  <View className="ml-4 flex-1">
+                    <Text className="font-titulo text-[24px] leading-[27px] text-organic-neutral-900">
+                      {visible?.nombre} {visible?.apellido}
+                    </Text>
+                    {/* El mail no va acá: se ve recién dentro de "Ver y editar mi perfil". */}
+                    <View className="mt-2">
+                      <Chip etiqueta={etiquetaRol(visible?.roles ?? [])} grande />
+                    </View>
                   </View>
                 </View>
-              </View>
 
-              <View className="mt-5 flex-row border-t border-organic-neutral-200 pt-5">
-                <View className="flex-1 items-center">
-                  <Text className="font-titulo text-[26px] leading-[29px] text-organic-accent-600">
-                    {perfil?.mascotas ?? 0}
-                  </Text>
-                  <Text className="mt-1 font-cuerpo text-[13px] text-organic-neutral-600">
-                    {vistaRefugio ? 'Del refugio' : 'Mascotas'}
-                  </Text>
-                </View>
-                {/* El refugio no tiene favoritos: el contador es del perfil personal. */}
-                {vistaRefugio ? null : (
-                  <View className="flex-1 items-center">
-                    <Text className="font-titulo text-[26px] leading-[29px] text-organic-accent-600">
-                      {perfil?.favoritos ?? 0}
-                    </Text>
-                    <Text className="mt-1 font-cuerpo text-[13px] text-organic-neutral-600">
-                      Favoritos
-                    </Text>
-                  </View>
-                )}
-                <View className="flex-1 items-center">
-                  <Text className="font-titulo text-[26px] leading-[29px] text-organic-accent-600">
-                    {formatearValoracion(perfil?.valoracion)}
-                  </Text>
-                  <Text className="mt-1 font-cuerpo text-[13px] text-organic-neutral-600">
-                    Valoración
-                  </Text>
+                <View className="mt-5 flex-row border-t border-organic-neutral-200 pt-5">
+                  <Contador valor={perfil?.mascotas ?? 0} etiqueta="Mascotas" />
+                  <Contador valor={perfil?.favoritos ?? 0} etiqueta="Favoritos" />
+                  <Contador valor={formatearValoracion(perfil?.valoracion)} etiqueta="Valoración" />
                 </View>
               </View>
-            </View>
+            )}
 
             {/* Solo para quien administra un refugio: el resto no tiene qué alternar. */}
             {esRefugio ? (
@@ -260,6 +344,25 @@ export default function PerfilScreen() {
           </ScrollView>
         )}
       </SafeAreaView>
+
+      <HojaOpciones
+        visible={eligiendoDatos}
+        titulo="Ver y editar datos"
+        subtitulo="¿Cuáles querés ver?"
+        opciones={[
+          {
+            icono: 'person-outline',
+            etiqueta: 'Mis datos personales',
+            onPress: () => irA('/perfil/editar'),
+          },
+          {
+            icono: 'business-outline',
+            etiqueta: 'Datos del refugio',
+            onPress: () => irA('/perfil/refugio'),
+          },
+        ]}
+        onCerrar={() => setEligiendoDatos(false)}
+      />
     </View>
   );
 }

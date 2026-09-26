@@ -12,6 +12,10 @@
  * Al pasar por Adoptar la barrita queda tapada por el botón amarillo, que está por
  * delante. Es a propósito: el movimiento no se corta y ese botón ya tiene su propia señal
  * de activo.
+ *
+ * En la vista de refugio Adoptar no existe (`ocultarAdoptar`): la barra reparte el ancho
+ * entre cuatro pestañas y la barrita tiene que hacer la cuenta con esas cuatro, o queda
+ * corrida hacia donde estaría el botón amarillo.
  */
 import { usePathname } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -26,6 +30,7 @@ import { PALETA } from '@/constants/theme';
 
 /** En el mismo orden en que se declaran las pestañas en `(tabs)/_layout.tsx`. */
 const RUTAS = ['/', '/mis-mascotas', '/adoptar', '/chat', '/perfil'];
+const RUTAS_SIN_ADOPTAR = RUTAS.filter((ruta) => ruta !== '/adoptar');
 
 const ANCHO_BARRITA = 30;
 const ALTO_BARRITA = 3;
@@ -35,20 +40,22 @@ const DESPLAZAMIENTO_VERTICAL = -ALTO_BARRITA / 2;
 
 const RESORTE = { damping: 18, stiffness: 170, mass: 0.6 };
 
-export function IndicadorTabs() {
+export function IndicadorTabs({ ocultarAdoptar = false }: { ocultarAdoptar?: boolean }) {
   const pathname = usePathname();
+  const rutas = ocultarAdoptar ? RUTAS_SIN_ADOPTAR : RUTAS;
   const [ancho, setAncho] = useState(0);
 
   const x = useSharedValue(0);
   const visible = useSharedValue(0);
 
-  const indice = Math.max(0, RUTAS.indexOf(pathname));
+  const indice = Math.max(0, rutas.indexOf(pathname));
+  const cantidad = rutas.length;
 
   useEffect(() => {
     if (ancho === 0) return;
 
     // Centro de la pestaña activa, menos media barrita.
-    const destino = (ancho / RUTAS.length) * (indice + 0.5) - ANCHO_BARRITA / 2;
+    const destino = (ancho / cantidad) * (indice + 0.5) - ANCHO_BARRITA / 2;
 
     if (visible.value === 0) {
       // Primer posicionamiento: aparece donde va. Animarlo la haría entrar deslizándose
@@ -59,7 +66,7 @@ export function IndicadorTabs() {
     }
 
     x.value = withSpring(destino, RESORTE);
-  }, [ancho, indice, x, visible]);
+  }, [ancho, indice, cantidad, x, visible]);
 
   const estilo = useAnimatedStyle(() => ({
     opacity: visible.value,

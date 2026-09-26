@@ -7,6 +7,9 @@
  * cuenta. Mientras no hay cambios sin guardar se ven "Cambiar contraseña", "Cerrar sesión" y
  * "Dar de baja"; apenas se toca un campo, esos tres desaparecen y sólo quedan "Guardar
  * cambios" y "Cancelar" — así nunca conviven un botón de cuenta con uno de guardado.
+ *
+ * Estética del artboard 23 (paleta Organic): encabezado crema con la flecha redonda, tarjeta
+ * `neutral-100` y botones `accent-600`. Es la misma que la de "Datos del refugio".
  */
 import { Ionicons } from '@expo/vector-icons';
 import type { ImagePickerAsset } from 'expo-image-picker';
@@ -24,9 +27,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CustomButton } from '@/components/CustomButton';
+import {
+  CustomButton,
+  FORMA_BOTON_ORGANIC,
+  FORMA_BOTON_ORGANIC_PRINCIPAL,
+} from '@/components/CustomButton';
 import { useToast } from '@/components/feedback/Toast';
 import { Avatar } from '@/components/ui/Avatar';
+import { BotonCircular } from '@/components/ui/BotonCircular';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { TextField } from '@/components/ui/TextField';
@@ -301,23 +309,18 @@ export default function EditarPerfilScreen() {
   const fotoVisible = fotoNueva?.uri ?? fotoUrl;
 
   return (
-    <View className="flex-1 bg-pethood-beige">
+    <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-        <View className="flex-row items-center px-5 pb-2 pt-2">
-          <Pressable
-            onPress={volver}
-            className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-white"
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-          >
-            <Ionicons name="arrow-back" size={22} color={PALETA.gris[700]} />
-          </Pressable>
-          <Text className="text-2xl font-bold text-pethood-orange">Datos personales</Text>
+        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-[19px] py-[13px]">
+          <BotonCircular icono="arrow-back" etiqueta="Volver" variante="neutro" onPress={volver} />
+          <Text className="font-titulo text-[22px] leading-[26px] text-organic-accent-600">
+            Datos personales
+          </Text>
         </View>
 
         {cargando ? (
           <View className="flex-1 items-center justify-center">
-            <ActivityIndicator color={PALETA.pethood.naranja} />
+            <ActivityIndicator color={PALETA.accent[600]} />
           </View>
         ) : (
           <KeyboardAvoidingView
@@ -341,14 +344,16 @@ export default function EditarPerfilScreen() {
                     nombre={form.nombre}
                     apellido={form.apellido}
                     tamanio={112}
+                    variante="organic"
+                    tono="neutro"
                   />
-                  <View className="absolute bottom-0 right-0 h-9 w-9 items-center justify-center rounded-full bg-pethood-orange">
+                  <View className="absolute bottom-0 right-0 h-9 w-9 items-center justify-center rounded-full border-2 border-white bg-organic-accent-600">
                     <Ionicons name="camera" size={16} color={PALETA.blanco} />
                   </View>
                 </Pressable>
               </View>
 
-              <FormCard>
+              <FormCard organic>
                 <FormCardRow>
                   <TextField
                     label="Nombre"
@@ -445,11 +450,18 @@ export default function EditarPerfilScreen() {
               {hayCambios ? (
                 <View className="mt-6 flex-row gap-3">
                   <View className="flex-1">
-                    <CustomButton title="Cancelar" variant="secondary" onPress={cancelarEdicion} />
+                    <CustomButton
+                      title="Cancelar"
+                      variant="acento-borde"
+                      style={FORMA_BOTON_ORGANIC}
+                      onPress={cancelarEdicion}
+                    />
                   </View>
                   <View className="flex-1">
                     <CustomButton
                       title="Guardar cambios"
+                      variant="acento"
+                      style={FORMA_BOTON_ORGANIC_PRINCIPAL}
                       loading={guardando}
                       disabled={!formularioValido}
                       onPress={() => void guardar()}
@@ -462,17 +474,18 @@ export default function EditarPerfilScreen() {
                   <Pressable
                     accessibilityRole="button"
                     onPress={() => void salir()}
-                    className="flex-row items-center justify-center gap-2 rounded-2xl border border-red-200 bg-white py-4 active:opacity-80"
+                    style={FORMA_BOTON_ORGANIC}
+                    className="flex-row items-center justify-center gap-2 border border-organic-neutral-300 bg-organic-neutral-100 py-4 active:opacity-80"
                   >
                     <Ionicons name="log-out-outline" size={20} color={PALETA.estado.error} />
-                    <Text className="text-base font-semibold text-red-600">Cerrar sesión</Text>
+                    <Text className="font-cuerpo-semi text-base text-red-600">Cerrar sesión</Text>
                   </Pressable>
 
                   <Pressable
                     onPress={() => router.push('/perfil/password' as Href)}
                     className="items-center py-2"
                   >
-                    <Text className="text-base font-semibold text-pethood-orange">
+                    <Text className="font-cuerpo-semi text-base text-organic-accent-600">
                       Cambiar contraseña
                     </Text>
                   </Pressable>
@@ -483,7 +496,7 @@ export default function EditarPerfilScreen() {
                       onPress={() => setConfirmarBaja(true)}
                       className="items-center py-3 active:opacity-70"
                     >
-                      <Text className="text-base font-medium text-red-500">
+                      <Text className="font-cuerpo text-base text-red-500">
                         Dar de baja mi cuenta
                       </Text>
                     </Pressable>

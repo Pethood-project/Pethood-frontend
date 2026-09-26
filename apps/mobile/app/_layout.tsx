@@ -100,6 +100,11 @@ function RootNavigator() {
           name="seguimientos/[solicitudId]/actualizacion"
           options={{ presentation: 'card' }}
         />
+        {/* Spec 011 §6.11: el refugio le escribe una pregunta propia al adoptante. */}
+        <Stack.Screen
+          name="seguimientos/[solicitudId]/pregunta"
+          options={{ presentation: 'card' }}
+        />
         {/* HU-9.3. Ruta propia y no hija del expediente: se puede abrir suelta. */}
         <Stack.Screen name="seguimientos/actualizaciones/[seguimientoId]" />
         {/* GUI-14. Fuera de las tabs para que la conversación ocupe la pantalla entera y el

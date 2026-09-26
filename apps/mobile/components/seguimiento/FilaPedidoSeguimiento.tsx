@@ -162,6 +162,16 @@ export function FilaPedidoSeguimiento({
             className={`rounded-[20px] p-4 ${estilo.tarjeta}`}
             style={estilo.sombra ?? undefined}
           >
+            {pedido.esManual ? (
+              // Llegó fuera de la secuencia: se aclara quién la hizo (spec 011 §6.11).
+              <View className="mb-1.5 flex-row items-center gap-1.5">
+                <Ionicons name="chatbubble-ellipses-outline" size={14} color={PALETA.accent[700]} />
+                <Text className="font-cuerpo-semi text-xs text-organic-accent-700">
+                  Pregunta del refugio
+                </Text>
+              </View>
+            ) : null}
+
             <Text className="font-cuerpo-bold text-lg leading-7 text-organic-neutral-900">
               {pedido.pregunta}
             </Text>

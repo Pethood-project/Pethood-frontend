@@ -88,9 +88,13 @@ export default function ActualizacionSeguimientoScreen() {
     void cargar();
   }, [cargar]);
 
-  /** El único pedido que acepta respuesta. El servidor garantiza que hay a lo sumo uno. */
+  /**
+   * El pedido a responder. Puede haber dos a la vez —una pregunta manual del refugio y el
+   * pedido automático que llegó en su fecha (spec 011 §6.11)—: se toma el más viejo, que es
+   * el que vence primero. `seguimientos` viene del más nuevo al más viejo.
+   */
   const pendiente: PedidoSeguimiento | null =
-    detalle?.seguimientos.find((pedido) => pedido.estado === 'PENDIENTE') ?? null;
+    detalle?.seguimientos.findLast((pedido) => pedido.estado === 'PENDIENTE') ?? null;
 
   const errorDescripcion = useMemo(
     () =>

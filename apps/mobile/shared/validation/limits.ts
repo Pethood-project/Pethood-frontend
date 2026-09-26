@@ -28,6 +28,13 @@ export const LIMITES = {
     ubicacion: { max: 80 },
   },
 
+  /** Perfil del refugio (spec 017). */
+  refugio: {
+    nombre: { min: 2, max: 100 },
+    direccion: { min: 2, max: 150 },
+    descripcion: { max: 1000 },
+  },
+
   consultaSoporte: {
     nombreCompleto: { min: 2, max: 100 },
     email: { max: 100 },

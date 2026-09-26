@@ -92,6 +92,8 @@ function RootNavigator() {
         <Stack.Screen name="solicitudes/[id]" options={{ presentation: 'card' }} />
         <Stack.Screen name="perfil/editar" options={{ presentation: 'card' }} />
         <Stack.Screen name="perfil/password" options={{ presentation: 'card' }} />
+        {/* Spec 017. Datos del refugio: se entra desde el ícono de Mi Perfil en la vista de refugio. */}
+        <Stack.Screen name="perfil/refugio" options={{ presentation: 'card' }} />
         {/* HU-9.1/HU-9.2. Fuera de las tabs: se entra desde Perfil y el back vuelve al
             origen real, igual que Favoritos. */}
         <Stack.Screen name="seguimientos/index" />

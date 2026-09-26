@@ -1,7 +1,7 @@
 import { TextInput } from 'react-native';
 import type { TextInputProps } from 'react-native';
-import { claseValor, FormField, type VarianteCampo } from './FormField';
-import { PALETA } from '@/constants/theme';
+import { usePaletaFormulario } from './FormCard';
+import { claseValor, colorPlaceholder, FormField, type VarianteCampo } from './FormField';
 
 interface TextFieldProps extends Omit<TextInputProps, 'className'> {
   label: string;
@@ -26,6 +26,8 @@ export function TextField({
   value,
   ...inputProps
 }: TextFieldProps) {
+  const paleta = usePaletaFormulario();
+
   return (
     <FormField
       label={label}
@@ -37,8 +39,8 @@ export function TextField({
       lapiz={lapiz}
     >
       <TextInput
-        className={`${claseValor(Boolean(error), !value, grande)} p-0`}
-        placeholderTextColor={PALETA.gris[400]}
+        className={`${claseValor(Boolean(error), !value, grande, paleta)} p-0`}
+        placeholderTextColor={colorPlaceholder(paleta)}
         value={value}
         {...inputProps}
       />

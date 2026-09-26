@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-import { CustomButton } from '@/components/CustomButton';
+import { CustomButton, FORMA_BOTON_ORGANIC } from '@/components/CustomButton';
 import { googleHabilitado, useGoogleIdToken } from '@/lib/googleAuth';
 import { ApiError } from '@/services/api';
 import { loginGoogle } from '@/services/auth';
@@ -53,7 +53,9 @@ function GoogleLoginButtonConfigured({ onSuccess, onError }: GoogleLoginButtonPr
   return (
     <CustomButton
       title="Continuar con Google"
-      variant="secondary"
+      variant="acento-borde"
+      grande
+      style={FORMA_BOTON_ORGANIC}
       loading={loading}
       disabled={!request}
       onPress={() => {
@@ -72,7 +74,9 @@ export function GoogleLoginButton(props: GoogleLoginButtonProps) {
     return (
       <CustomButton
         title="Continuar con Google"
-        variant="secondary"
+        variant="acento-borde"
+        grande
+        style={FORMA_BOTON_ORGANIC}
         onPress={() =>
           props.onError(
             'El login con Google todavía no está configurado. Pedile al equipo el EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID.',

@@ -12,7 +12,33 @@ export interface CustomInputProps extends TextInputProps {
   rightIcon?: ReactNode;
   onRightIconPress?: () => void;
   containerClassName?: string;
+  /**
+   * Paleta Organic de los artboards 01 y 02 (ingreso y registro): caja crema `neutral-100`
+   * con borde `neutral-300`, esquinas más redondas y letra más grande. Sin esto se ve como
+   * siempre (caja blanca, grises de Tailwind), que es lo que usan el resto de las pantallas.
+   */
+  organic?: boolean;
 }
+
+/** Clases por paleta. Tenerlas juntas evita mezclar tonos de una y otra en un mismo campo. */
+const ESTILOS = {
+  clasico: {
+    etiqueta: 'mb-2 text-sm font-medium text-gray-700',
+    asterisco: 'font-semibold text-pethood-orange',
+    caja: 'rounded-xl bg-white',
+    borde: 'border-gray-200',
+    texto: 'py-3.5 text-base text-gray-900',
+    placeholder: PALETA.gris[400],
+  },
+  organic: {
+    etiqueta: 'mb-2 font-cuerpo-semi text-[15px] text-organic-neutral-700',
+    asterisco: 'text-organic-accent-600',
+    caja: 'rounded-[20px] bg-organic-neutral-100',
+    borde: 'border-organic-neutral-300',
+    texto: 'py-4 font-cuerpo text-[17px] text-organic-neutral-900',
+    placeholder: PALETA.neutral[500],
+  },
+};
 
 export function CustomInput({
   label,
@@ -22,31 +48,33 @@ export function CustomInput({
   rightIcon,
   onRightIconPress,
   containerClassName = '',
+  organic = false,
   className = '',
   ...textInputProps
 }: CustomInputProps) {
   const hasError = Boolean(error);
+  const estilo = ESTILOS[organic ? 'organic' : 'clasico'];
 
   return (
     <View className={`mb-4 ${containerClassName}`}>
       <Text
-        className="mb-2 text-sm font-medium text-gray-700"
+        className={estilo.etiqueta}
         accessibilityLabel={required ? `${label}, obligatorio` : label}
       >
         {label}
-        {required ? <Text className="font-semibold text-pethood-orange"> *</Text> : null}
+        {required ? <Text className={estilo.asterisco}> *</Text> : null}
       </Text>
 
       <View
-        className={`flex-row items-center rounded-xl border bg-white px-4 ${
-          hasError ? 'border-red-400' : 'border-gray-200'
+        className={`flex-row items-center border px-4 ${estilo.caja} ${
+          hasError ? 'border-red-400' : estilo.borde
         }`}
       >
         {leftIcon ? <View className="mr-3">{leftIcon}</View> : null}
 
         <TextInput
-          className={`flex-1 py-3.5 text-base text-gray-900 ${className}`}
-          placeholderTextColor={PALETA.gris[400]}
+          className={`flex-1 ${estilo.texto} ${className}`}
+          placeholderTextColor={estilo.placeholder}
           accessibilityLabel={required ? `${label}, obligatorio` : label}
           {...textInputProps}
         />

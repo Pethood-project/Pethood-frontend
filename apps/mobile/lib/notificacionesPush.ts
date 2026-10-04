@@ -1,0 +1,57 @@
+/**
+ * Push notifications (spec 004). Pide permiso y genera el token de Expo — nunca corta el
+ * flujo de login si el usuario no lo otorga o si Expo Go no lo soporta (regla 11: la bandeja
+ * sigue funcionando igual).
+ *
+ * OJO: desde el SDK 53 de Expo, Expo Go no entrega push remoto — hace falta una
+ * development build (`eas build --profile development` o `expo run:android`/`run:ios`). En
+ * Expo Go esta función devuelve `null` sin romper nada.
+ */
+import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+export interface DispositivoPush {
+  expoPushToken: string;
+  plataforma: 'ios' | 'android';
+}
+
+/**
+ * Pide permiso (si todavía no se decidió) y arma el token de push. `null` si: no es un
+ * dispositivo físico, no se otorgó permiso, es web, o falta el projectId de EAS (Expo Go sin
+ * development build).
+ */
+export async function pedirPermisoYObtenerDispositivo(): Promise<DispositivoPush | null> {
+  if (Platform.OS === 'web' || !Device.isDevice) return null;
+
+  const actual = await Notifications.getPermissionsAsync();
+  let estado = actual.status;
+
+  if (estado !== 'granted') {
+    const pedido = await Notifications.requestPermissionsAsync();
+    estado = pedido.status;
+  }
+
+  if (estado !== 'granted') return null;
+
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
+  if (!projectId) return null;
+
+  try {
+    const { data: expoPushToken } = await Notifications.getExpoPushTokenAsync({ projectId });
+    return { expoPushToken, plataforma: Platform.OS === 'ios' ? 'ios' : 'android' };
+  } catch (err) {
+    console.warn('No se pudo generar el token de push', err);
+    return null;
+  }
+}

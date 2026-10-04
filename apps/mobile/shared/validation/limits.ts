@@ -160,4 +160,10 @@ export const LIMITES = {
     /** Tamaño de página del portal (paginación por cursor). El backend acepta hasta 50. */
     pagina: { porDefecto: 20, maximo: 50 },
   },
+
+  /** Bandeja de notificaciones (spec 004). */
+  notificacion: {
+    /** Tamaño de página de la bandeja (paginación por cursor). El backend acepta hasta 50. */
+    pagina: { porDefecto: 20, maximo: 50 },
+  },
 } as const;

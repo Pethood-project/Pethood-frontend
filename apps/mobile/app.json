@@ -51,10 +51,22 @@
           "locationWhenInUsePermission": "PetHood usa tu ubicación al publicar un aviso de una mascota perdida o encontrada."
         }
       ],
-      "expo-video"
+      "expo-video",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#FF9D5C"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "COMPLETAR-CON-EAS-INIT"
+      }
     }
   }
 }

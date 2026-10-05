@@ -22,3 +22,21 @@ export function tomarAvisoCreado(): AvisoPerdido | null {
   pendiente = null;
   return aviso;
 }
+
+let editado: AvisoPerdido | null = null;
+
+/**
+ * Lo mismo para la edición (HU-13.3): la pantalla de edición vuelve con `router.back()` y deja
+ * acá el aviso actualizado, para que la que la abrió (el portal o la sala del chat) lo refleje
+ * sin recargar todo. Mis publicaciones no lo necesita: recarga sola al recuperar el foco.
+ */
+export function avisarAvisoEditado(aviso: AvisoPerdido): void {
+  editado = aviso;
+}
+
+/** Devuelve el aviso recién editado, si hay, y lo consume: sirve una sola vez. */
+export function tomarAvisoEditado(): AvisoPerdido | null {
+  const aviso = editado;
+  editado = null;
+  return aviso;
+}

@@ -24,6 +24,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ReporteModal, type ObjetoReportado } from '@/components/reportes/ReporteModal';
 import { FilaConversacion } from '@/components/chat/FilaConversacion';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { BarraBusqueda } from '@/components/ui/BarraBusqueda';
@@ -118,6 +119,8 @@ export default function ChatScreen() {
 
   /** Lo que se ve tipeado en la barra. La lista se filtra con el valor demorado, no con éste. */
   const [busqueda, setBusqueda] = useState('');
+  /** Contacto que se está reportando (deslizando su fila), o `null` con el modal cerrado. */
+  const [reportado, setReportado] = useState<ObjetoReportado | null>(null);
 
   /**
    * El término que efectivamente filtra. Se estabiliza 300 ms después de la última tecla,
@@ -237,6 +240,9 @@ export default function ChatScreen() {
                 // cabecera de la sala, para que abrirla desde una notificación o un deep
                 // link no dependa de haber pasado por acá.
                 onPress={() => router.push(`/chats/${item.chatId}`)}
+                onReportar={() =>
+                  setReportado({ tipo: item.contacto.tipo, objetoId: item.contacto.id })
+                }
               />
             )}
             ItemSeparatorComponent={SeparadorFilas}
@@ -254,6 +260,8 @@ export default function ChatScreen() {
           />
         )}
       </SafeAreaView>
+
+      <ReporteModal objeto={reportado} onCerrar={() => setReportado(null)} />
     </View>
   );
 }

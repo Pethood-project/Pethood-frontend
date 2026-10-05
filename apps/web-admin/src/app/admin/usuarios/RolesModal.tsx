@@ -9,12 +9,14 @@ import type { RolesBody, UsuarioAdmin } from "@/types/admin-usuarios";
 import type { RolUsuario } from "@/types/auth";
 
 const ROLES: { valor: RolUsuario; etiqueta: string; icono: LucideIcon; descripcion: string }[] = [
-  { valor: "ADOPTANTE", etiqueta: "Adoptante", icono: Heart, descripcion: "Puede adoptar y hacer seguimiento" },
+  { valor: "ADOPTANTE", etiqueta: "Adoptante", icono: Heart, descripcion: "Todos los usuarios lo son, no se puede quitar" },
   { valor: "MIEMBRO_REFUGIO", etiqueta: "Refugio", icono: Home, descripcion: "Gestiona mascotas de un refugio" },
 ];
 
 // HU-2.1 — agregar/quitar roles en una sola llamada. ADMIN queda fuera de esta UI:
 // el backend rechaza modificar roles de administradores (NO_SE_PUEDE_EDITAR_ADMIN).
+// ADOPTANTE es fijo: todo usuario lo es y solo cambia su vínculo con un refugio
+// (el backend responde 409 NO_SE_PUEDE_QUITAR_ADOPTANTE).
 export function RolesModal({
   usuario,
   token,
@@ -26,12 +28,13 @@ export function RolesModal({
   onCerrar: () => void;
   onConfirmar: (body: RolesBody) => Promise<void>;
 }) {
-  const [seleccionados, setSeleccionados] = useState<Set<RolUsuario>>(new Set(usuario.roles));
+  const [seleccionados, setSeleccionados] = useState<Set<RolUsuario>>(new Set([...usuario.roles, "ADOPTANTE"]));
   const [refugioId, setRefugioId] = useState<number | null>(usuario.refugioId);
   const [enviando, setEnviando] = useState(false);
   const [errorLocal, setErrorLocal] = useState<string | null>(null);
 
   function alternar(rol: RolUsuario) {
+    if (rol === "ADOPTANTE") return;
     setSeleccionados((prev) => {
       const nuevo = new Set(prev);
       if (nuevo.has(rol)) nuevo.delete(rol);
@@ -41,8 +44,8 @@ export function RolesModal({
   }
 
   async function confirmar() {
-    const agregar = ROLES.map((r) => r.valor).filter((r) => seleccionados.has(r) && !usuario.roles.includes(r));
-    const quitar = usuario.roles.filter((r) => r !== "ADMIN" && !seleccionados.has(r));
+    const agregar = ROLES.map((r) => r.valor).filter((r) => r !== "ADOPTANTE" && seleccionados.has(r) && !usuario.roles.includes(r));
+    const quitar = usuario.roles.filter((r) => r !== "ADMIN" && r !== "ADOPTANTE" && !seleccionados.has(r));
 
     if (seleccionados.has("MIEMBRO_REFUGIO") && !refugioId) {
       setErrorLocal("Indicá el ID del refugio al agregar el rol Refugio.");
@@ -79,11 +82,12 @@ export function RolesModal({
                 type="button"
                 onClick={() => alternar(rol.valor)}
                 aria-pressed={activo}
+                disabled={rol.valor === "ADOPTANTE"}
                 className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors ${
                   activo
                     ? "border-pethood-orange bg-pethood-beige"
                     : "border-neutral-200 bg-white hover:border-neutral-300"
-                }`}
+                } ${rol.valor === "ADOPTANTE" ? "cursor-not-allowed opacity-80" : ""}`}
               >
                 <span className="flex items-center gap-2">
                   <Icono

@@ -23,6 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
 import { GrillaAdjuntosMensaje } from '@/components/chat/GrillaAdjuntosMensaje';
+import { TarjetaAvisoChat } from '@/components/chat/TarjetaAvisoChat';
 import { TarjetaSolicitudChat } from '@/components/chat/TarjetaSolicitudChat';
 import { entregaDe, TicksMensaje } from '@/components/chat/TicksMensaje';
 import { PALETA } from '@/constants/theme';
@@ -77,6 +78,10 @@ interface BurbujaMensajeProps {
   onAbrirImagen?: (indice: number) => void;
   /** Navega al detalle de la solicitud embebida. Sólo en los mensajes de sistema. */
   onVerSolicitud?: () => void;
+  /** Navega al aviso de mascota perdida de la tarjeta (HU-13.2). */
+  onVerAviso?: () => void;
+  /** Mantener apretada una burbuja recibida: abre el reporte del mensaje. */
+  onReportar?: () => void;
 }
 
 /** Hora del mensaje dentro de la burbuja, o el estado mientras no hay fecha del servidor. */
@@ -161,6 +166,8 @@ export function BurbujaMensaje({
   onDescartar,
   onAbrirImagen,
   onVerSolicitud,
+  onVerAviso,
+  onReportar,
 }: BurbujaMensajeProps) {
   const { width: anchoPantalla } = useWindowDimensions();
 
@@ -172,6 +179,14 @@ export function BurbujaMensaje({
         fecha={item.fecha}
         onVerSolicitud={onVerSolicitud}
       />
+    ) : null;
+  }
+
+  // HU-13.2: el aviso reclamado, con el mismo tratamiento que la solicitud. Sin `aviso` no
+  // se pinta nada: es un mensaje de sistema sin su carga, y una burbuja vacía sería peor.
+  if (item.tipo === 'ANIMAL_PERDIDO') {
+    return item.aviso ? (
+      <TarjetaAvisoChat aviso={item.aviso} fecha={item.fecha} onVerAviso={onVerAviso} />
     ) : null;
   }
 
@@ -202,7 +217,11 @@ export function BurbujaMensaje({
           </View>
         ) : null
       ) : (
-        <View
+        <Pressable
+          onLongPress={!propia && item.estado === 'enviado' ? onReportar : undefined}
+          delayLongPress={400}
+          accessibilityActions={onReportar && !propia ? [{ name: 'longpress', label: 'Reportar mensaje' }] : undefined}
+          onAccessibilityAction={onReportar ? () => onReportar() : undefined}
           style={{
             ...(propia ? RADIOS_PROPIA : RADIOS_RECIBIDA),
             ...RELLENO,
@@ -221,7 +240,7 @@ export function BurbujaMensaje({
           </Text>
 
           <PieBurbuja item={item} />
-        </View>
+        </Pressable>
       )}
 
       {/* El error no se traga el mensaje: el texto sigue en la burbuja y se puede reintentar

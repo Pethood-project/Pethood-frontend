@@ -24,14 +24,18 @@ import {
   FORMA_BOTON_ORGANIC_PRINCIPAL,
 } from '@/components/CustomButton';
 import { useToast } from '@/components/feedback/Toast';
+import { AvisoVerificacionUbicacion } from '@/components/perfil/AvisoVerificacionUbicacion';
 import { Avatar } from '@/components/ui/Avatar';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
+import { SelectField } from '@/components/ui/SelectField';
 import { TextField } from '@/components/ui/TextField';
+import { PROVINCIAS, localidadesDe } from '@/constants/Provincias';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
+import { usePreviewUbicacion, type DireccionEstructurada } from '@/hooks/usePreviewUbicacion';
 import {
   abrirSelectorImagen,
   assetAArchivoLocal,
@@ -41,20 +45,29 @@ import type { ArchivoImagenLocal } from '@/lib/formDataImagen';
 import {
   sanitizarNombrePersona,
   sanitizarTelefono,
+  validarCalleAltura,
   validarEmail,
   validarNombrePersona,
   validarTelefono,
-  validarUbicacion,
 } from '@/lib/validacionRegistro';
 import { ApiError, urlAbsoluta } from '@/services/api';
-import { actualizarPerfil, darDeBajaCuenta, obtenerPerfil } from '@/services/usuarios';
+import {
+  actualizarPerfil,
+  actualizarUbicacion,
+  darDeBajaCuenta,
+  obtenerPerfil,
+  previewUbicacion,
+} from '@/services/usuarios';
+import { LIMITES } from '@/shared/validation/limits';
 
 interface Formulario {
   nombre: string;
   apellido: string;
   email: string;
   telefono: string;
-  ubicacion: string;
+  provincia: string;
+  localidad: string;
+  calleAltura: string;
 }
 
 interface Errores {
@@ -62,11 +75,19 @@ interface Errores {
   apellido?: string;
   email?: string;
   telefono?: string;
-  ubicacion?: string;
+  calleAltura?: string;
 }
 
 function vacio(): Formulario {
-  return { nombre: '', apellido: '', email: '', telefono: '', ubicacion: '' };
+  return {
+    nombre: '',
+    apellido: '',
+    email: '',
+    telefono: '',
+    provincia: '',
+    localidad: '',
+    calleAltura: '',
+  };
 }
 
 export default function EditarPerfilScreen() {
@@ -77,6 +98,8 @@ export default function EditarPerfilScreen() {
 
   const [form, setForm] = useState<Formulario>(vacio);
   const [inicial, setInicial] = useState<Formulario>(vacio);
+  const [verificada, setVerificada] = useState(false);
+  const [inicialVerificada, setInicialVerificada] = useState(false);
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
   const [fotoNueva, setFotoNueva] = useState<ArchivoImagenLocal | undefined>();
   const [errors, setErrors] = useState<Errores>({});
@@ -90,7 +113,9 @@ export default function EditarPerfilScreen() {
   const [dandoDeBaja, setDandoDeBaja] = useState(false);
 
   const hayCambios =
-    JSON.stringify(form) !== JSON.stringify(inicial) || Boolean(fotoNueva);
+    JSON.stringify(form) !== JSON.stringify(inicial) ||
+    verificada !== inicialVerificada ||
+    Boolean(fotoNueva);
 
   const formularioValido = useMemo(
     () =>
@@ -98,8 +123,27 @@ export default function EditarPerfilScreen() {
       !validarNombrePersona(form.apellido, 'apellido') &&
       !validarEmail(form.email) &&
       !validarTelefono(form.telefono) &&
-      !validarUbicacion(form.ubicacion),
+      !validarCalleAltura(form.calleAltura),
     [form],
+  );
+
+  const previsualizar = useCallback(
+    (direccion: DireccionEstructurada) => {
+      if (!token) {
+        return Promise.reject(new ApiError('No encontramos tu sesión.', 'NO_AUTENTICADO', 401));
+      }
+      return previewUbicacion(token, direccion).then((r) => r.ubicacion);
+    },
+    [token],
+  );
+
+  const {
+    ubicacion: ubicacionPreview,
+    cargando: cargandoPreview,
+    error: errorPreview,
+  } = usePreviewUbicacion(
+    { provincia: form.provincia, localidad: form.localidad, calleAltura: form.calleAltura },
+    previsualizar,
   );
 
   useEffect(() => {
@@ -111,10 +155,14 @@ export default function EditarPerfilScreen() {
           apellido: respuesta.usuario.apellido,
           email: respuesta.usuario.email,
           telefono: respuesta.usuario.telefono ?? '',
-          ubicacion: respuesta.usuario.ubicacion ?? '',
+          provincia: respuesta.usuario.provincia ?? '',
+          localidad: respuesta.usuario.localidad ?? '',
+          calleAltura: respuesta.usuario.calleAltura ?? '',
         };
         setForm(siguiente);
         setInicial(siguiente);
+        setVerificada(respuesta.usuario.ubicacionVerificada);
+        setInicialVerificada(respuesta.usuario.ubicacionVerificada);
         setFotoUrl(urlAbsoluta(respuesta.usuario.imagenUrl));
       })
       .catch((error) => {
@@ -158,6 +206,7 @@ export default function EditarPerfilScreen() {
 
   const cancelarEdicion = (): void => {
     setForm(inicial);
+    setVerificada(inicialVerificada);
     setFotoNueva(undefined);
     setErrors({});
     setFormError(undefined);
@@ -225,10 +274,41 @@ export default function EditarPerfilScreen() {
     setFieldError('telefono', formateado ? validarTelefono(formateado) : undefined);
   };
 
-  const handleUbicacionChange = (value: string): void => {
-    setCampo('ubicacion', value);
-    setFieldError('ubicacion', value.trim() ? validarUbicacion(value) : undefined);
+  
+
+  
+
+  
+
+  
+
+  // Al cambiar de provincia se limpia la localidad: las del listado anterior ya no aplican.
+  // Cambiar cualquier campo de la dirección invalida la verificación anterior.
+  const handleProvinciaChange = (value: string): void => {
+    setForm((prev) => ({ ...prev, provincia: value, localidad: '' }));
+    setVerificada(false);
   };
+
+  const handleLocalidadChange = (value: string): void => {
+    setCampo('localidad', value);
+    setVerificada(false);
+  };
+
+  const handleCalleAlturaChange = (value: string): void => {
+    setCampo('calleAltura', value);
+    setFieldError('calleAltura', value.trim() ? validarCalleAltura(value) : undefined);
+    setVerificada(false);
+  };
+
+  const guardarUbicacionManual = useCallback(
+    async (mapaUrl: string): Promise<void> => {
+      if (!token) return;
+      const respuesta = await actualizarUbicacion(token, mapaUrl);
+      await actualizarUsuario(respuesta.usuario);
+      setVerificada(true);
+    },
+    [token, actualizarUsuario],
+  );
 
   const aplicarAsset = (asset: ImagePickerAsset): void => {
     const errorArchivo = validarAssetImagen(asset);
@@ -255,7 +335,7 @@ export default function EditarPerfilScreen() {
       apellido: validarNombrePersona(form.apellido, 'apellido'),
       email: validarEmail(form.email),
       telefono: validarTelefono(form.telefono),
-      ubicacion: validarUbicacion(form.ubicacion),
+      calleAltura: validarCalleAltura(form.calleAltura),
     };
     setErrors(next);
     return !Object.values(next).some(Boolean);
@@ -279,7 +359,10 @@ export default function EditarPerfilScreen() {
           apellido: form.apellido.trim(),
           email: form.email.trim(),
           telefono: form.telefono.trim(),
-          ubicacion: form.ubicacion.trim(),
+          provincia: form.provincia.trim(),
+          localidad: form.localidad.trim(),
+          calleAltura: form.calleAltura.trim(),
+          ubicacionVerificada: verificada,
         },
         fotoNueva,
       );
@@ -411,21 +494,63 @@ export default function EditarPerfilScreen() {
                   maxLength={16}
                 />
               </FormCardRow>
-              <FormCardRow ultima>
-                <TextField
-                  label="Barrio / ciudad"
-                  obligatorio
+              <FormCardRow>
+                <SelectField
                   lapiz
                   grande
-                  value={form.ubicacion}
-                  onChangeText={handleUbicacionChange}
-                  onBlur={() => setFieldError('ubicacion', validarUbicacion(form.ubicacion))}
-                  error={errors.ubicacion}
+                  label="Provincia"
+                  placeholder="Elegí tu provincia"
+                  opciones={PROVINCIAS.map((provincia) => ({
+                    valor: provincia.nombre,
+                    etiqueta: provincia.nombre,
+                  }))}
+                  valor={form.provincia || null}
+                  onChange={handleProvinciaChange}
+                  buscable
+                />
+              </FormCardRow>
+              <FormCardRow>
+                <SelectField
+                  lapiz
+                  grande
+                  label="Localidad"
+                  placeholder="Elegí tu localidad"
+                  opciones={localidadesDe(form.provincia).map((localidad) => ({
+                    valor: localidad,
+                    etiqueta: localidad,
+                  }))}
+                  valor={form.localidad || null}
+                  onChange={handleLocalidadChange}
+                  deshabilitado={!form.provincia}
+                  textoDeshabilitado="Elegí primero la provincia"
+                  buscable
+                />
+              </FormCardRow>
+              <FormCardRow ultima>
+                <TextField
+                  label="Calle y altura"
+                  lapiz
+                  grande
+                  value={form.calleAltura}
+                  onChangeText={handleCalleAlturaChange}
+                  onBlur={() => setFieldError('calleAltura', validarCalleAltura(form.calleAltura))}
+                  error={errors.calleAltura}
                   autoCapitalize="words"
-                  maxLength={80}
+                  maxLength={LIMITES.usuario.calleAltura.max}
                 />
               </FormCardRow>
             </FormCard>
+
+            <View className="mt-3">
+              <AvisoVerificacionUbicacion
+                ubicacion={ubicacionPreview}
+                cargando={cargandoPreview}
+                error={errorPreview}
+                verificada={verificada}
+                onVerificar={() => setVerificada(true)}
+                onGuardarManual={guardarUbicacionManual}
+              />
+            </View>
 
             {formError ? (
               <Text className="mt-3 text-center text-sm text-red-500">{formError}</Text>

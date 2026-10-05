@@ -3,6 +3,8 @@ import { Card } from "@/components/ui/Card";
 
 interface DonutChartProps {
   titulo: string;
+  /** Slot opcional a la derecha del título (ej. botón de exportación). */
+  accion?: ReactNode;
   items: { etiqueta: string; valor: number }[];
 }
 
@@ -31,7 +33,7 @@ const CIRCUNFERENCIA = 2 * Math.PI * RADIO;
 // Dona en SVG (arcos vía stroke-dasharray) en vez de conic-gradient: cada segmento es un <circle>
 // propio con su <title>, así el navegador muestra un tooltip nativo con la cantidad al pasar el
 // mouse por ese color — mismo criterio que BarList de no sumar una librería de gráficos para esto.
-export function DonutChart({ titulo, items }: DonutChartProps) {
+export function DonutChart({ titulo, items, accion }: DonutChartProps) {
   const total = items.reduce((acc, item) => acc + item.valor, 0) || 1;
 
   const segmentos = items.reduce<{ acumulado: number; partes: ReactNode[] }>(
@@ -62,7 +64,10 @@ export function DonutChart({ titulo, items }: DonutChartProps) {
 
   return (
     <Card>
-      <h2 className="text-lg font-semibold text-neutral-900">{titulo}</h2>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <h2 className="text-lg font-semibold text-neutral-900">{titulo}</h2>
+        {accion}
+      </div>
       <div className="mt-4 flex items-center gap-6">
         <div className="relative h-28 w-28 shrink-0">
           <svg viewBox="0 0 36 36" className="h-28 w-28 -rotate-90">

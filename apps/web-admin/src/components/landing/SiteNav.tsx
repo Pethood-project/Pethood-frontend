@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Menu, X } from "lucide-react";
 
 // Desktop: links en línea. ≤960px: se ocultan y el botón hamburguesa despliega el panel.
-export function SiteNav() {
+export function SiteNav({ panel }: { panel?: string }) {
   const [abierto, setAbierto] = useState(false);
   const cerrar = () => setAbierto(false);
 
@@ -27,8 +27,9 @@ export function SiteNav() {
         <Link href="/faq">Preguntas frecuentes</Link>
         <Link href="/equipo">Equipo</Link>
         <Link href="/equipo#contacto">Contacto</Link>
-        <Link href="/login" className="btn">
-          Ingresar
+        <Link href="/descargar">Descargá la app</Link>
+        <Link href={panel ?? "/login"} className="btn">
+          {panel ? "Ir al panel" : "Ingresar"}
         </Link>
       </nav>
     </>

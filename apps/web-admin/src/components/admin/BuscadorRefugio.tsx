@@ -59,6 +59,7 @@ export function BuscadorRefugio({
         <Search size={14} className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
         <input
           type="text"
+          maxLength={100}
           value={query}
           onFocus={() => {
             setAbierto(true);

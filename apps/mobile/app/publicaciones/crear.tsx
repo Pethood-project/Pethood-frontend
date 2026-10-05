@@ -36,6 +36,7 @@ import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { SelectField } from '@/components/ui/SelectField';
 import { estiloDeEstado } from '@/constants/EstadosMascota';
 import { tomarMascotaParaPublicar } from '@/lib/mascotaParaPublicar';
+import { pedirUbicacion } from '@/lib/ubicacion';
 import { PALETA } from '@/constants/theme';
 import { crearPublicacion, listarPublicables, type Mascota } from '@/services/mascotas';
 
@@ -169,10 +170,17 @@ export default function CrearPublicacionScreen() {
 
     setPublicando(true);
     try {
+      // Coordenadas best-effort: si el usuario no da permiso, la publicación se crea igual y
+      // se podrá filtrar por localidad. Sirven para el filtro por cercanía (HU-11.3).
+      const ubicacion = await pedirUbicacion();
+
       await crearPublicacion({
         mascotaId,
         descripcion: valores.descripcion.trim(),
         ubicacion: valores.ubicacion.trim(),
+        ...(ubicacion.ok
+          ? { latitud: ubicacion.coordenadas.latitud, longitud: ubicacion.coordenadas.longitud }
+          : {}),
         requisitos: valores.requisitos,
         personalidad: valores.personalidad,
         desparasitado: valores.desparasitado,

@@ -6,19 +6,20 @@ import { KpiCard } from "@/components/dashboard/KpiCard";
 import { BarList } from "@/components/dashboard/BarList";
 import { DonutChart } from "@/components/dashboard/DonutChart";
 import { GraficoPublicacionesPorMes } from "@/components/dashboard/GraficoPublicacionesPorMes";
+import { ExportacionAdmin } from "@/components/dashboard/ExportacionAdmin";
 import { DashboardVacio } from "@/components/dashboard/DashboardVacio";
 
 const CONFIG_KPI: Record<
   string,
   { etiqueta: string; icono: typeof Users; color: "naranja" | "verde" | "celeste" | "rojo"; href?: string }
 > = {
-  usuariosActivos: { etiqueta: "Usuarios activos", icono: Users, color: "celeste" },
-  mascotasRegistradas: { etiqueta: "Mascotas registradas", icono: PawPrint, color: "naranja" },
+  usuariosActivos: { etiqueta: "Usuarios activos", icono: Users, color: "celeste", href: "/admin/usuarios" },
+  mascotasRegistradas: { etiqueta: "Mascotas registradas", icono: PawPrint, color: "naranja", href: "/admin/mascotas" },
   refugiosVerificados: { etiqueta: "Refugios verificados", icono: ShieldCheck, color: "verde", href: "/admin/refugios" },
-  publicacionesActivas: { etiqueta: "Publicaciones activas", icono: Megaphone, color: "celeste" },
-  adopcionesConcretadas: { etiqueta: "Adopciones concretadas", icono: Heart, color: "verde" },
-  campaniasActivas: { etiqueta: "Campañas activas", icono: Flag, color: "naranja" },
-  montoDonadoDeclarado: { etiqueta: "Donado declarado", icono: HandCoins, color: "verde" },
+  publicacionesActivas: { etiqueta: "Publicaciones activas", icono: Megaphone, color: "celeste", href: "/admin/publicaciones" },
+  adopcionesConcretadas: { etiqueta: "Adopciones concretadas", icono: Heart, color: "verde", href: "/admin/solicitudes" },
+  campaniasActivas: { etiqueta: "Campañas activas", icono: Flag, color: "naranja", href: "/admin/campanas" },
+  montoDonadoDeclarado: { etiqueta: "Donado declarado", icono: HandCoins, color: "verde", href: "/admin/campanas" },
   reportesPendientes: { etiqueta: "Reportes pendientes", icono: AlertTriangle, color: "rojo", href: "/admin/moderacion" },
 };
 
@@ -55,10 +56,12 @@ export default async function DashboardAdminPage() {
         <div className="flex flex-col gap-4 md:col-span-1">
           <DonutChart
             titulo="Solicitudes por estado"
+            accion={<ExportacionAdmin entidad="solicitudes" token={token} />}
             items={dashboard.solicitudesPorEstado.map((s) => ({ etiqueta: s.estado, valor: s.cantidad }))}
           />
           <BarList
             titulo="Mascotas por estado"
+            accion={<ExportacionAdmin entidad="mascotas" token={token} />}
             items={Object.entries(dashboard.mascotasPorEstado).map(([etiqueta, valor]) => ({
               etiqueta: etiqueta.replace(/_/g, " "),
               valor,
@@ -66,11 +69,15 @@ export default async function DashboardAdminPage() {
           />
           <BarList
             titulo="Usuarios por rol"
+            accion={<ExportacionAdmin entidad="usuarios" token={token} />}
             items={Object.entries(dashboard.usuariosPorRol).map(([etiqueta, valor]) => ({ etiqueta, valor }))}
           />
         </div>
         <div className="md:col-span-2">
-          <GraficoPublicacionesPorMes items={dashboard.publicacionesPorMes} />
+          <GraficoPublicacionesPorMes
+            items={dashboard.publicacionesPorMes}
+            accion={<ExportacionAdmin entidad="publicaciones" token={token} />}
+          />
         </div>
       </div>
     </div>

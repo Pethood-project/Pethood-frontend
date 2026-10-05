@@ -176,6 +176,9 @@ export interface DatosNuevaPublicacion {
   mascotaId: number;
   descripcion: string;
   ubicacion: string;
+  /** Coordenadas capturadas con el GPS, si las hay (Módulo 11). */
+  latitud?: number;
+  longitud?: number;
   requisitos: string[];
   personalidad: string[];
   desparasitado: boolean;
@@ -203,6 +206,11 @@ export async function crearPublicacion(datos: DatosNuevaPublicacion): Promise<Pu
   formData.append('descripcion', datos.descripcion);
   formData.append('ubicacion', datos.ubicacion);
   formData.append('desparasitado', String(datos.desparasitado));
+  // Las coordenadas habilitan el filtro por cercanía; si no se capturaron, no viajan.
+  if (datos.latitud !== undefined && datos.longitud !== undefined) {
+    formData.append('latitud', String(datos.latitud));
+    formData.append('longitud', String(datos.longitud));
+  }
 
   // Repetir la clave es como viaja una lista en multipart.
   for (const requisito of datos.requisitos) formData.append('requisitos', requisito);

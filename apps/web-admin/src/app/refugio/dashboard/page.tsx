@@ -36,20 +36,17 @@ export default async function DashboardRefugioPage({
           <h1 className="font-heading text-2xl text-neutral-900">{dashboard.refugio.nombre}</h1>
           <p className="text-base text-neutral-700">{dashboard.refugio.localidad}</p>
         </div>
-        <div className="flex flex-wrap items-start gap-3">
-          <PeriodoSelector periodo={periodo} />
-          <ExportacionRefugio periodo={periodo} token={token} />
-        </div>
+        <PeriodoSelector periodo={periodo} />
       </div>
 
       <p className="text-sm font-medium text-neutral-600">Período: {etiquetaPeriodo(periodo.desde, periodo.hasta)}</p>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <KpiCard etiqueta="Animales adoptados" valor={dashboard.kpis.animalesAdoptados} icono={HeartHandshake} color="verde" />
-        <KpiCard etiqueta="Solicitudes" valor={dashboard.kpis.solicitudesCreadas} icono={ClipboardList} color="celeste" />
-        <KpiCard etiqueta="En refugio" valor={dashboard.kpis.animalesEnRefugio} icono={PawPrint} color="naranja" />
+        <KpiCard etiqueta="Animales adoptados" href="/refugio/solicitudes" valor={dashboard.kpis.animalesAdoptados} icono={HeartHandshake} color="verde" />
+        <KpiCard etiqueta="Solicitudes" href="/refugio/solicitudes" valor={dashboard.kpis.solicitudesCreadas} icono={ClipboardList} color="celeste" />
+        <KpiCard etiqueta="En refugio" href="/refugio/mascotas" valor={dashboard.kpis.animalesEnRefugio} icono={PawPrint} color="naranja" />
         <KpiCard
-          etiqueta="Donación del período"
+          etiqueta="Donación del período" href="/refugio/campanas"
           valor={`$${dashboard.kpis.montoDonado.toLocaleString("es-AR")}`}
           icono={HeartHandshake}
           color="verde"
@@ -57,7 +54,7 @@ export default async function DashboardRefugioPage({
           nota={`Objetivo: $${dashboard.kpis.objetivoDonaciones.toLocaleString("es-AR")}`}
         />
         <KpiCard
-          etiqueta="Solicitudes demoradas"
+          etiqueta="Solicitudes demoradas" href="/refugio/solicitudes"
           valor={dashboard.kpis.solicitudesDemoradas}
           icono={AlertTriangle}
           color={dashboard.kpis.solicitudesDemoradas > 0 ? "rojo" : "verde"}
@@ -69,10 +66,12 @@ export default async function DashboardRefugioPage({
         <div className="flex flex-col gap-4 md:col-span-1">
           <DonutChart
             titulo="Solicitudes recibidas"
+            accion={<ExportacionRefugio entidad="solicitudes" periodo={periodo} token={token} />}
             items={dashboard.solicitudesPorEstado.map((s) => ({ etiqueta: s.estado, valor: s.cantidad }))}
           />
           <BarList
             titulo="Mascotas por estado"
+            accion={<ExportacionRefugio entidad="mascotas" periodo={periodo} token={token} />}
             items={Object.entries(dashboard.mascotasPorEstado).map(([etiqueta, valor]) => ({
               etiqueta: etiqueta.replace(/_/g, " "),
               valor,
@@ -87,7 +86,10 @@ export default async function DashboardRefugioPage({
           />
         </div>
         <div className="flex flex-col gap-4 md:col-span-2">
-          <DonacionesChart items={dashboard.donacionesPorMes} />
+          <DonacionesChart
+            items={dashboard.donacionesPorMes}
+            accion={<ExportacionRefugio entidad="donaciones" periodo={periodo} token={token} />}
+          />
           <AlertasSolicitudes items={dashboard.solicitudesDemoradasDetalle} />
           <PublicacionesAntiguas items={dashboard.publicacionesDemasiadoAntiguas} />
         </div>

@@ -21,19 +21,38 @@ export const LIMITES = {
     ubicacion: { max: 50 },
     personalidad: { max: 25 },
     imagenes: { max: 5 },
+    /** Texto libre de la barra de búsqueda de Adoptar (Módulo 11, HU-11.4). */
+    busqueda: { max: 100 },
+    /** Radio del filtro por cercanía, en kilómetros (HU-11.3). */
+    radioKm: { min: 1, max: 500 },
   },
 
   usuario: {
     nombre: { min: 1, max: 50 },
     apellido: { min: 1, max: 50 },
-    ubicacion: { max: 80 },
+    /** Dirección estructurada para geocodificar (node-geocoder). Opcionales. */
+    provincia: { max: 80 },
+    localidad: { max: 80 },
+    calleAltura: { max: 120 },
+    /** Link de Google Maps que el usuario puede pegar/corregir a mano. */
+    mapaUrl: { max: 500 },
   },
 
   /** Perfil del refugio (spec 017). */
   refugio: {
     nombre: { min: 2, max: 100 },
-    direccion: { min: 2, max: 150 },
     descripcion: { max: 1000 },
+    /** Dirección estructurada para geocodificar (node-geocoder). Opcionales. */
+    provincia: { max: 80 },
+    localidad: { max: 80 },
+    calleAltura: { max: 120 },
+    /** Link de Google Maps que el miembro del refugio puede pegar/corregir a mano. */
+    mapaUrl: { max: 500 },
+  },
+
+  /** Reporte de moderación (spec 008, HU-3.1 a HU-3.3). Texto libre. Espejo del backend. */
+  reporte: {
+    motivo: { min: 5, max: 500 },
   },
 
   consultaSoporte: {
@@ -110,6 +129,15 @@ export const LIMITES = {
   },
 
   /**
+   * Reseña (Módulo 10, HU-10.1). La puntuación es obligatoria de 1 a 5; el comentario es
+   * opcional. Espejo de `pethood-backend/src/shared/validation/limits.ts`.
+   */
+  resena: {
+    puntuacion: { min: 1, max: 5 },
+    comentario: { max: 500 },
+  },
+
+  /**
    * Mensaje de chat (HU-5.2). El techo lo fijó el backend, que rechaza con `VALIDACION`
    * pasado ese largo; acá corta el input antes para que el usuario no escriba de más.
    *
@@ -151,12 +179,23 @@ export const LIMITES = {
   animalPerdido: {
     nombre: { max: 30 },
     descripcion: { max: 300 },
-    /** Texto libre, como la ubicación del perfil, hasta que exista el catálogo de localidades. */
-    ubicacion: { max: 80 },
+    /**
+     * Dónde se perdió o se encontró, como la dirección del perfil: provincia y localidad del
+     * catálogo, y una referencia libre y opcional.
+     */
+    provincia: { max: 80 },
+    localidad: { max: 80 },
+    referencia: { max: 120 },
     /** Fotos por aviso: la primera es la portada de la tarjeta, el resto va en la galería. */
     imagenes: { max: 5 },
-    /** Cuántas ubicaciones se pueden elegir a la vez en el filtro del portal. */
-    filtroUbicaciones: { maximo: 20 },
+    /** Link de Google Maps que se pega a mano para corregir el lugar. */
+    mapaUrl: { max: 500 },
+    /** Cuántas provincias se pueden elegir a la vez en el filtro del portal: todas. */
+    filtroProvincias: { maximo: 24 },
+    /** Cuántas localidades se pueden elegir a la vez en el filtro del portal. */
+    filtroLocalidades: { maximo: 20 },
+    /** Radio del filtro por cercanía, en km. Mismo techo que el de publicaciones. */
+    radioKm: { min: 1, max: 500 },
     /** Tamaño de página del portal (paginación por cursor). El backend acepta hasta 50. */
     pagina: { porDefecto: 20, maximo: 50 },
   },

@@ -70,7 +70,7 @@ export function ConsultasTabla({
       {exito && <Feedback tipo="exito" mensaje={exito} />}
 
       <div className="overflow-x-auto rounded-lg border border-neutral-200 bg-white">
-        <table className="w-full text-left text-sm">
+        <table className="tabla-apilable w-full text-left text-sm">
           <thead className="border-b border-neutral-200 bg-neutral-50 text-xs uppercase text-neutral-500">
             <tr>
               <th className="px-4 py-3 text-center">Fecha</th>
@@ -91,12 +91,12 @@ export function ConsultasTabla({
             )}
             {consultas.map((c) => (
               <tr key={c.id} className="border-b border-neutral-100 last:border-0">
-                <td className="px-4 py-3 text-center text-neutral-600">{fecha(c.fechaAlta)}</td>
-                <td className="px-4 py-3 text-center text-neutral-900">{c.nombreCompleto}</td>
-                <td className="px-4 py-3 text-center text-neutral-600">{c.email}</td>
-                <td className="px-4 py-3 text-center text-neutral-900">{c.asunto}</td>
-                <td className="px-4 py-3 text-center text-neutral-600">{c.resuelta ? "Resuelta" : "Pendiente"}</td>
-                <td className="px-4 py-3">
+                <td data-label="Fecha" className="px-4 py-3 text-center text-neutral-600">{fecha(c.fechaAlta)}</td>
+                <td data-label="Nombre" className="px-4 py-3 text-center text-neutral-900">{c.nombreCompleto}</td>
+                <td data-label="Email" className="px-4 py-3 text-center text-neutral-600">{c.email}</td>
+                <td data-label="Asunto" className="px-4 py-3 text-center text-neutral-900">{c.asunto}</td>
+                <td data-label="Estado" className="px-4 py-3 text-center text-neutral-600">{c.resuelta ? "Resuelta" : "Pendiente"}</td>
+                <td data-label="Acciones" className="px-4 py-3">
                   <div className="flex flex-wrap justify-center gap-2">
                     <AccionButton icono={Eye} tono="info" onClick={() => setDetalle(c)}>
                       Ver

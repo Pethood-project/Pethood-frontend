@@ -28,6 +28,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useToast } from '@/components/feedback/Toast';
+import { FilaUbicacion } from '@/components/perfil/FilaUbicacion';
 import { Avatar } from '@/components/ui/Avatar';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { Chip } from '@/components/ui/Chip';
@@ -37,8 +38,9 @@ import { SwitchRefugio } from '@/components/ui/SwitchRefugio';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
 import { ApiError, urlAbsoluta } from '@/services/api';
-import { obtenerPerfilRefugio } from '@/services/refugio';
-import { obtenerPerfil } from '@/services/usuarios';
+import { actualizarUbicacionRefugio, obtenerPerfilRefugio } from '@/services/refugio';
+import { actualizarUbicacion, obtenerPerfil } from '@/services/usuarios';
+import { etiquetaUbicacion } from '@/shared/ubicacion';
 import type { Perfil } from '@/types/auth';
 import type { PerfilRefugio } from '@/types/refugio';
 
@@ -64,6 +66,7 @@ const MENU_ADOPTANTE: ItemMenu[] = [
   },
   { icono: 'footsteps-outline', label: 'Seguimientos', ruta: '/seguimientos' },
   { icono: 'heart-outline', label: 'Favoritos', ruta: '/favoritos' },
+  { icono: 'star-outline', label: 'Reseñas', ruta: '/resenas' as Href },
   { icono: 'heart-circle-outline', label: 'Campañas' },
 ];
 
@@ -86,6 +89,7 @@ const MENU_REFUGIO: ItemMenu[] = [
     ruta: { pathname: '/solicitudes', params: { vista: 'recibidas' } },
   },
   { icono: 'footsteps-outline', label: 'Seguimientos', ruta: '/seguimientos' },
+  { icono: 'star-outline', label: 'Reseñas del refugio', ruta: '/resenas' as Href },
   { icono: 'heart-circle-outline', label: 'Campañas del refugio' },
 ];
 
@@ -99,21 +103,52 @@ function formatearValoracion(valor: number | null | undefined): string {
   return valor.toFixed(1);
 }
 
-function Contador({ valor, etiqueta }: { valor: string | number; etiqueta: string }) {
-  return (
-    <View className="flex-1 items-center">
+function Contador({
+  valor,
+  etiqueta,
+  onPress,
+}: {
+  valor: string | number;
+  etiqueta: string;
+  onPress?: () => void;
+}) {
+  const contenido = (
+    <>
       <Text className="font-titulo text-[26px] leading-[29px] text-organic-accent-600">
         {valor}
       </Text>
       <Text className="mt-1 text-center font-cuerpo text-[13px] text-organic-neutral-600">
         {etiqueta}
       </Text>
-    </View>
+    </>
+  );
+
+  if (!onPress) {
+    return <View className="flex-1 items-center">{contenido}</View>;
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Ver reseñas (${etiqueta})`}
+      onPress={onPress}
+      className="flex-1 items-center active:opacity-70"
+    >
+      {contenido}
+    </Pressable>
   );
 }
 
 /** Artboard 19: la tarjeta es la del refugio, no la de quien lo está usando. */
-function TarjetaRefugio({ refugio }: { refugio: PerfilRefugio }) {
+function TarjetaRefugio({
+  refugio,
+  onGuardarUbicacion,
+  onVerResenas,
+}: {
+  refugio: PerfilRefugio;
+  onGuardarUbicacion: (mapaUrl: string) => Promise<void>;
+  onVerResenas: () => void;
+}) {
   const { promedio, cantidad } = refugio.valoracion;
 
   return (
@@ -129,9 +164,14 @@ function TarjetaRefugio({ refugio }: { refugio: PerfilRefugio }) {
             numberOfLines={2}
             className="mt-1 font-cuerpo text-[13px] text-organic-neutral-600"
           >
-            {refugio.direccion}
+            {etiquetaUbicacion(refugio)}
           </Text>
-          <View className="mt-1.5 flex-row items-center gap-1">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Ver reseñas del refugio"
+            onPress={onVerResenas}
+            className="mt-1.5 flex-row items-center gap-1 active:opacity-70"
+          >
             <Ionicons name="star" size={14} color={PALETA.calido.amarillo} />
             {promedio === null ? (
               <Text className="font-cuerpo text-[13px] text-organic-neutral-500">
@@ -147,7 +187,8 @@ function TarjetaRefugio({ refugio }: { refugio: PerfilRefugio }) {
                 </Text>
               </>
             )}
-          </View>
+            <Ionicons name="chevron-forward" size={14} color={PALETA.neutral[400]} />
+          </Pressable>
           {refugio.verificado ? null : (
             <View className="mt-2 flex-row">
               <Chip etiqueta="Pendiente de verificación" />
@@ -155,6 +196,8 @@ function TarjetaRefugio({ refugio }: { refugio: PerfilRefugio }) {
           )}
         </View>
       </View>
+
+      <FilaUbicacion mapaUrl={refugio.mapaUrl} onGuardar={onGuardarUbicacion} />
 
       <View className="mt-5 flex-row border-t border-organic-neutral-200 pt-5">
         <Contador valor={refugio.estadisticas.enRefugio} etiqueta="En el refugio" />
@@ -171,8 +214,15 @@ function TarjetaRefugio({ refugio }: { refugio: PerfilRefugio }) {
 export default function PerfilScreen() {
   const router = useRouter();
   const toast = useToast();
-  const { usuario, token, esRefugio, vistaRefugio, cambiarVistaRefugio, actualizarUsuario } =
-    useSesion();
+  const {
+    usuario,
+    token,
+    esRefugio,
+    vistaRefugio,
+    refugioEnRevision,
+    cambiarVistaRefugio,
+    actualizarUsuario,
+  } = useSesion();
 
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [perfilRefugio, setPerfilRefugio] = useState<PerfilRefugio | null>(null);
@@ -202,6 +252,26 @@ export default function PerfilScreen() {
     }
   }, [token, vistaRefugio, actualizarUsuario]);
 
+  // El lápiz de "Ubicación" corrige el link a mano; al guardar, el backend recalcula las
+  // coordenadas y se recarga el perfil para reflejar el link nuevo.
+  const guardarUbicacionPersonal = useCallback(
+    async (mapaUrl: string): Promise<void> => {
+      if (!token) return;
+      await actualizarUbicacion(token, mapaUrl);
+      await cargar();
+    },
+    [token, cargar],
+  );
+
+  const guardarUbicacionRefugio = useCallback(
+    async (mapaUrl: string): Promise<void> => {
+      if (!token) return;
+      await actualizarUbicacionRefugio(token, mapaUrl);
+      await cargar();
+    },
+    [token, cargar],
+  );
+
   useFocusEffect(
     useCallback(() => {
       void cargar();
@@ -223,8 +293,13 @@ export default function PerfilScreen() {
   // de los del refugio (que son los que se ven en su tarjeta).
   const incompleto = vistaRefugio
     ? Boolean(perfilRefugio) &&
-      (!perfilRefugio?.imagenUrl || !perfilRefugio?.telefono || !perfilRefugio?.descripcion)
-    : !visible?.imagenUrl || !visible?.telefono || !visible?.ubicacion;
+      (!perfilRefugio?.imagenUrl ||
+        !perfilRefugio?.telefono ||
+        !perfilRefugio?.descripcion ||
+        !etiquetaUbicacion(perfilRefugio))
+    : !visible?.imagenUrl ||
+      !visible?.telefono ||
+      !etiquetaUbicacion(visible ?? {});
   const rutaCompletar = (vistaRefugio ? '/perfil/refugio' : '/perfil/editar') as Href;
   const esperandoDatos = vistaRefugio ? !perfilRefugio : !visible;
 
@@ -262,6 +337,15 @@ export default function PerfilScreen() {
             showsVerticalScrollIndicator={false}
             contentContainerClassName="px-5 pb-8 pt-3"
           >
+            {refugioEnRevision ? (
+              <View className="mb-4 flex-row items-center gap-3 rounded-[22px] border border-organic-accent-300 bg-organic-accent-100 px-4 py-3.5">
+                <Ionicons name="hourglass-outline" size={20} color={PALETA.accent[700]} />
+                <Text className="flex-1 font-cuerpo-semi text-[15px] text-organic-accent-700">
+                  Tu refugio todavía está en revisión. Mientras tanto usás la app con tu perfil personal.
+                </Text>
+              </View>
+            ) : null}
+
             {incompleto ? (
               <Pressable
                 onPress={() => router.push(rutaCompletar)}
@@ -281,7 +365,13 @@ export default function PerfilScreen() {
             ) : null}
 
             {vistaRefugio ? (
-              perfilRefugio ? <TarjetaRefugio refugio={perfilRefugio} /> : null
+              perfilRefugio ? (
+                <TarjetaRefugio
+                  refugio={perfilRefugio}
+                  onGuardarUbicacion={guardarUbicacionRefugio}
+                  onVerResenas={() => router.push('/resenas' as Href)}
+                />
+              ) : null
             ) : (
               <View className="rounded-[30px] bg-organic-surface p-6 shadow-sm">
                 <View className="flex-row items-center">
@@ -305,16 +395,29 @@ export default function PerfilScreen() {
                   </View>
                 </View>
 
+                <FilaUbicacion
+                  mapaUrl={perfil?.mapaUrl ?? null}
+                  onGuardar={guardarUbicacionPersonal}
+                />
+
                 <View className="mt-5 flex-row border-t border-organic-neutral-200 pt-5">
                   <Contador valor={perfil?.mascotas ?? 0} etiqueta="Mascotas" />
                   <Contador valor={perfil?.favoritos ?? 0} etiqueta="Favoritos" />
-                  <Contador valor={formatearValoracion(perfil?.valoracion)} etiqueta="Valoración" />
+                  <Contador
+                    valor={formatearValoracion(perfil?.valoracion)}
+                    etiqueta="Valoración"
+                    onPress={() => router.push('/resenas' as Href)}
+                  />
                 </View>
               </View>
             )}
 
-            {/* Solo para quien administra un refugio: el resto no tiene qué alternar. */}
-            {esRefugio ? (
+            {/* Reputación (Módulo 10): la sección embebida se quitó de los dos perfiles. Se
+                entra por el ítem "Reseñas"/"Reseñas del refugio" del menú o tocando la
+                valoración de la tarjeta. */}
+
+            {/* Solo para quien administra un refugio ya Activo: el resto no tiene qué alternar. */}
+            {esRefugio && !refugioEnRevision ? (
               <View className="mt-5">
                 <SwitchRefugio activo={vistaRefugio} onCambiar={alternarVista} />
               </View>

@@ -1,0 +1,69 @@
+name: APK
+
+# Arma el APK de la app mobile sin EAS: expo prebuild + Gradle en el runner de GitHub.
+# El APK queda como artifact del run (pestaña Actions → el run → Artifacts).
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  android:
+    name: Mobile — APK release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    # EXPO_PUBLIC_* se hornean en el bundle JS durante assembleRelease. Se cargan como
+    # Variables (no Secrets) en Settings → Secrets and variables → Actions: terminan legibles
+    # dentro del APK de todas formas.
+    env:
+      EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
+      EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${{ vars.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID }}
+      EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: ${{ vars.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verificar que la URL de la API está cargada
+        run: |
+          if [ -z "$EXPO_PUBLIC_API_URL" ]; then
+            echo "::error::Falta la variable EXPO_PUBLIC_API_URL en Settings → Secrets and variables → Actions → Variables"
+            exit 1
+          fi
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: apps/mobile/.nvmrc
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Generar proyecto nativo Android
+        run: npx expo prebuild --platform android --no-install
+
+      # Firma con el debug.keystore del template de Expo: sirve para instalar a mano,
+      # no para Play Store. Para publicar, inyectar un keystore propio desde un secret.
+      - name: Compilar APK
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease
+
+      - name: Subir APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: pethood-apk
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error

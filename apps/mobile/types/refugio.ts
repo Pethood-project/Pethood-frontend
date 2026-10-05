@@ -5,7 +5,16 @@
 export interface PerfilRefugio {
   id: number;
   nombre: string;
-  direccion: string;
+  /** Dirección estructurada del refugio (para geocodificar). */
+  provincia: string | null;
+  localidad: string | null;
+  calleAltura: string | null;
+  /** Link de Google Maps del refugio (se muestra en Mi Refugio y en la ficha de la mascota). */
+  mapaUrl: string | null;
+  latitud: number | null;
+  longitud: number | null;
+  /** Si el refugio confirmó que el link de Maps apunta a su dirección real. */
+  ubicacionVerificada: boolean;
   telefono: string | null;
   email: string | null;
   descripcion: string | null;
@@ -34,8 +43,11 @@ export interface RespuestaPerfilRefugio {
 /** Viajan todos siempre: un opcional vacío es un dato que se borra. */
 export interface ActualizarPerfilRefugioPayload {
   nombre: string;
-  direccion: string;
+  provincia: string;
+  localidad: string;
+  calleAltura: string;
   telefono: string;
   email: string;
   descripcion: string;
+  ubicacionVerificada: boolean;
 }

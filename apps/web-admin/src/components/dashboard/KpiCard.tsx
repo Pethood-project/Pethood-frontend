@@ -32,13 +32,13 @@ export function KpiCard({ etiqueta, valor, icono: Icono, color, href, destacado 
         className="text-white"
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-semibold uppercase tracking-wide text-white/90">{etiqueta}</p>
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white/15">
-            <Icono className="h-6 w-6" strokeWidth={2} />
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/90 sm:text-sm">{etiqueta}</p>
+          <span className="flex h-9 w-9 shrink-0 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-white/15">
+            <Icono className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2} />
           </span>
         </div>
-        <p className="mt-2 font-heading text-5xl tracking-tight">{valor}</p>
-        {nota && <p className="mt-1 text-sm font-medium text-white/90">{nota}</p>}
+        <p className="mt-2 font-heading text-3xl tracking-tight sm:text-5xl">{valor}</p>
+        {nota && <p className="mt-1 text-xs font-medium sm:text-sm text-white/90">{nota}</p>}
       </Card>
     );
   }
@@ -46,13 +46,13 @@ export function KpiCard({ etiqueta, valor, icono: Icono, color, href, destacado 
   return (
     <Card href={href}>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold uppercase tracking-wide text-neutral-600">{etiqueta}</p>
-        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${COLORES_BADGE[color]}`}>
-          <Icono className="h-6 w-6" strokeWidth={2} />
+        <p className="text-xs font-semibold uppercase tracking-wide text-neutral-600 sm:text-sm">{etiqueta}</p>
+        <span className={`flex h-9 w-9 shrink-0 sm:h-11 sm:w-11 items-center justify-center rounded-lg ${COLORES_BADGE[color]}`}>
+          <Icono className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2} />
         </span>
       </div>
-      <p className="mt-2 font-heading text-5xl tracking-tight text-neutral-900">{valor}</p>
-      {nota && <p className="mt-1 text-sm font-medium text-neutral-600">{nota}</p>}
+      <p className="mt-2 font-heading text-3xl tracking-tight sm:text-5xl text-neutral-900">{valor}</p>
+      {nota && <p className="mt-1 text-xs font-medium sm:text-sm text-neutral-600">{nota}</p>}
     </Card>
   );
 }

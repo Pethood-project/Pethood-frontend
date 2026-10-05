@@ -222,7 +222,19 @@
 .lp .hero-copy {
   position: relative;
   padding: 56px 48px;
-  max-width: 520px;
+  max-width: 560px;
+}
+.lp .hero-copy h1 {
+  font-size: clamp(40px, 6.5vw, 68px);
+  line-height: 1.05;
+  margin: 0 0 20px;
+}
+.lp .hero-copy .hero-sub {
+  color: var(--n-900);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-bottom: 12px;
 }
 .lp .hero-copy p {
   color: var(--n-700);
@@ -424,6 +436,10 @@
   outline: 2px solid var(--orange);
   border-color: var(--orange);
 }
+.lp input[aria-invalid="true"],
+.lp textarea[aria-invalid="true"] {
+  border-color: #dc2626;
+}
 .lp .hint {
   font-size: 12px;
   color: var(--n-500);
@@ -605,8 +621,6 @@
   height: 72px;
   margin: 0 auto 12px;
   border-radius: 50%;
-  background: var(--badge);
-  color: var(--accent-700);
   font:
     400 24px var(--font-caprasimo),
     Georgia,
@@ -791,5 +805,206 @@ html {
   .lp .brand img {
     width: 36px;
     height: 36px;
+  }
+}
+
+/*
+ * Bloque de contenido con una foto (con crédito de autor) al costado; `.izquierda` la pasa al otro lado.
+ * La foto ocupa `--filas` filas, o sea que puede acompañar a varios grupos de preguntas seguidos.
+ */
+.lp .con-foto {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 0 40px;
+  align-items: start;
+}
+.lp .con-foto > :not(aside) {
+  grid-column: 1;
+}
+.lp .con-foto > aside {
+  grid-column: 2;
+  grid-row: 1 / span var(--filas, 1);
+  /* Anclada arriba y sin estirarse: al abrir una pregunta el contenido crece, la foto no se mueve. */
+  align-self: start;
+  margin-top: 32px;
+}
+.lp .con-foto.izquierda {
+  grid-template-columns: 300px minmax(0, 1fr);
+}
+.lp .con-foto.izquierda > :not(aside) {
+  grid-column: 2;
+}
+.lp .con-foto.izquierda > aside {
+  grid-column: 1;
+}
+/* Foto que abarca varios bloques: columna más ancha, más alta, con alto fijo y recortada. */
+.lp .con-foto:has(> aside.alta) {
+  grid-template-columns: minmax(0, 1fr) 560px;
+}
+.lp .con-foto.izquierda:has(> aside.alta) {
+  grid-template-columns: 560px minmax(0, 1fr);
+}
+.lp .con-foto > aside.alta .foto img {
+  height: 480px;
+  max-height: none;
+}
+.lp .foto {
+  position: relative;
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--n-200);
+}
+.lp .foto img {
+  width: 100%;
+  height: auto;
+  max-height: 380px;
+  object-fit: cover;
+}
+.lp .foto figcaption {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  font-size: 11px;
+  color: rgb(255 255 255 / 0.9);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+}
+.lp .foto figcaption a:hover {
+  text-decoration: underline;
+}
+@media (max-width: 900px) {
+  .lp .con-foto,
+  .lp .con-foto.izquierda,
+  .lp .con-foto:has(> aside.alta),
+  .lp .con-foto.izquierda:has(> aside.alta) {
+    grid-template-columns: 1fr;
+  }
+  .lp .con-foto > :not(aside),
+  .lp .con-foto > aside {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  /* En mobile la foto va arriba de su bloque. */
+  .lp .con-foto > aside {
+    order: -1;
+    margin-top: 16px;
+  }
+  .lp .con-foto > aside.alta .foto img {
+    height: 260px;
+  }
+}
+
+/*
+ * Banda a todo el ancho con foto de fondo (Equipo). La foto se funde hacia abajo con el fondo de la página.
+ * El velo la deja clara en los costados y casi tapada detrás de la columna central, donde va el contenido.
+ */
+.lp .banda-foto {
+  position: relative;
+}
+.lp .banda-foto-fondo {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, #000 78%, transparent);
+}
+.lp .banda-foto-fondo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 55%;
+}
+.lp .banda-foto-fondo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgb(245 234 216 / 0.3) 0%,
+    rgb(245 234 216 / 0.9) 22%,
+    rgb(245 234 216 / 0.9) 78%,
+    rgb(245 234 216 / 0.3) 100%
+  );
+}
+.lp .banda-foto-contenido {
+  position: relative;
+  padding-block: 56px 72px;
+}
+.lp .banda-foto-credito {
+  position: absolute;
+  z-index: 1;
+  top: 10px;
+  left: 14px;
+  font-size: 11px;
+  color: rgb(255 255 255 / 0.9);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
+}
+.lp .banda-foto-credito:hover {
+  text-decoration: underline;
+}
+@media (max-width: 700px) {
+  .lp .banda-foto-contenido {
+    padding-block: 40px 56px;
+  }
+  /* Sin costados que mostrar: velo parejo. */
+  .lp .banda-foto-fondo::after {
+    background: rgb(245 234 216 / 0.9);
+  }
+}
+
+/* /descargar: una foto en cada costado que se funde hacia el centro, donde va el contenido.
+ * En mobile las dos fotos pasan a una franja arriba, una al lado de la otra y sin fundido. */
+.lp .dos-lados .banda-lado {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36%;
+  overflow: hidden;
+}
+.lp .dos-lados .banda-lado img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lp .dos-lados .banda-lado.izq {
+  left: 0;
+  mask-image: linear-gradient(to right, #000 35%, transparent);
+}
+.lp .dos-lados .banda-lado.der {
+  right: 0;
+  mask-image: linear-gradient(to left, #000 35%, transparent);
+}
+.lp .dos-lados .banda-foto-credito.der {
+  left: auto;
+  right: 14px;
+}
+.lp .dos-lados .banda-foto-contenido {
+  max-width: 600px;
+  padding-block: 96px 120px;
+  text-align: center;
+}
+.lp .dos-lados .banda-foto-contenido > p {
+  max-width: none;
+}
+.lp .dos-lados .cta {
+  justify-content: center;
+}
+.lp .dos-lados ol {
+  display: inline-grid;
+  text-align: left;
+}
+@media (max-width: 900px) {
+  .lp .dos-lados {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .lp .dos-lados .banda-lado {
+    position: relative;
+    width: auto;
+    height: 220px;
+    mask-image: none;
+  }
+  .lp .dos-lados .banda-foto-contenido {
+    grid-column: 1 / -1;
+    padding-block: 40px 56px;
   }
 }

@@ -18,7 +18,7 @@ import { Text, View, Pressable } from 'react-native';
 import { Avatar } from '@/components/ui/Avatar';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
-import type { ContactoChat, SolicitudEnChat } from '@/services/chats';
+import type { AvisoEnChat, CabeceraChat, ContactoChat, SolicitudEnChat } from '@/services/chats';
 
 const AVATAR = 44;
 const AVATAR_TEXTO = 16;
@@ -28,11 +28,19 @@ interface CabeceraConversacionProps {
   enLinea: boolean;
   /** En cuántos minutos suele responder el contacto, o `null` si no hay tendencia. */
   minutosRespuesta?: number | null;
-  /** La solicitud que abrió la sala, si la hay: manda sobre el estado en el subtítulo. */
+  /** La solicitud vigente de la sala, si la hay: manda sobre el estado en el subtítulo. */
   solicitud?: SolicitudEnChat | null;
+  /** El aviso de mascota perdida vigente de la sala (HU-13.2), si lo hay. */
+  aviso?: AvisoEnChat | null;
+  /** Cuál de los dos nombra el subtítulo. Lo decide el backend: es el más reciente. */
+  contexto?: CabeceraChat['contexto'];
   /** Muestra la franja de "Sin conexión" bajo la cabecera. */
   desconectado: boolean;
   onVolver: () => void;
+  /** Reporta al contacto (spec 008). Sin esto no se muestra la bandera. */
+  onReportar?: () => void;
+  /** Abre el perfil público del contacto (spec 023). Se toca la foto. */
+  onVerPerfil?: () => void;
 }
 
 /**
@@ -63,12 +71,29 @@ function subtitulo(
   enLinea: boolean,
   minutosRespuesta: number | null,
   solicitud: SolicitudEnChat | null,
+  aviso: AvisoEnChat | null,
+  contexto: CabeceraChat['contexto'],
 ): string {
   if (!contacto.activo) return 'Cuenta dada de baja';
 
-  // Con una solicitud de por medio, de qué se está hablando importa más que la presencia:
-  // es el subtítulo del artboard 36.
-  if (solicitud) {
+  // Con una tarjeta de por medio, de qué se está hablando importa más que la presencia: es el
+  // subtítulo del artboard 36. Una conversación puede tener una solicitud Y un aviso desde
+  // HU-13.2 (el reclamo entra en la sala que ya existía con esa persona), así que cuál mostrar
+  // lo decide el backend en `contexto` — es la más reciente.
+  if (contexto === 'ANIMAL_PERDIDO' && aviso) {
+    // El nombre, o la especie si el aviso no lo tiene (un "Encontrado" puede no saberlo).
+    const quien = aviso.nombre ?? aviso.especie;
+    return `${aviso.estado}${quien ? ` · ${quien}` : ''}`;
+  }
+
+  if (contexto === 'SOLICITUD' && solicitud) {
+    const mascota = solicitud.mascota.nombre;
+    return `Solicitud #${solicitud.id}${mascota ? ` · ${mascota}` : ''}`;
+  }
+
+  // Sin `contexto` (salas viejas, o un cliente contra un backend anterior) se mantiene el
+  // comportamiento de antes: la solicitud manda si está.
+  if (contexto === null && solicitud) {
     const mascota = solicitud.mascota.nombre;
     return `Solicitud #${solicitud.id}${mascota ? ` · ${mascota}` : ''}`;
   }
@@ -86,8 +111,12 @@ export function CabeceraConversacion({
   enLinea,
   minutosRespuesta = null,
   solicitud = null,
+  aviso = null,
+  contexto = null,
   desconectado,
   onVolver,
+  onReportar,
+  onVerPerfil,
 }: CabeceraConversacionProps) {
   return (
     <View>
@@ -102,15 +131,23 @@ export function CabeceraConversacion({
           <Ionicons name="arrow-back" size={24} color={PALETA.neutral[700]} />
         </Pressable>
 
-        <Avatar
-          uri={urlAbsoluta(contacto?.imagenUrl)}
-          nombre={contacto?.nombre}
-          tamanio={AVATAR}
-          tamanioTexto={AVATAR_TEXTO}
-          variante="organic"
-          tono={contacto?.tipo === 'REFUGIO' ? 'acento' : 'neutro'}
-          accessibilityLabel={contacto ? `Foto de ${contacto.nombre}` : 'Foto del contacto'}
-        />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={contacto ? `Ver el perfil de ${contacto.nombre}` : 'Ver el perfil'}
+          disabled={!contacto || !onVerPerfil}
+          onPress={onVerPerfil}
+          className="active:opacity-70"
+        >
+          <Avatar
+            uri={urlAbsoluta(contacto?.imagenUrl)}
+            nombre={contacto?.nombre}
+            tamanio={AVATAR}
+            tamanioTexto={AVATAR_TEXTO}
+            variante="organic"
+            tono={contacto?.tipo === 'REFUGIO' ? 'acento' : 'neutro'}
+            accessibilityLabel={contacto ? `Foto de ${contacto.nombre}` : 'Foto del contacto'}
+          />
+        </Pressable>
 
         <View className="min-w-0 flex-1">
           <Text
@@ -125,10 +162,22 @@ export function CabeceraConversacion({
 
           {contacto ? (
             <Text numberOfLines={1} className="font-cuerpo text-[11px] text-organic-neutral-600">
-              {subtitulo(contacto, enLinea, minutosRespuesta, solicitud)}
+              {subtitulo(contacto, enLinea, minutosRespuesta, solicitud, aviso, contexto)}
             </Text>
           ) : null}
         </View>
+
+        {contacto && onReportar ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Reportar a ${contacto.nombre}`}
+            onPress={onReportar}
+            hitSlop={8}
+            className="h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-red-50 active:opacity-70"
+          >
+            <Ionicons name="flag-outline" size={17} color={PALETA.estado.error} />
+          </Pressable>
+        ) : null}
       </View>
 
       {/* GUI-14 no contempla este aviso, pero sin él una conversación sin tiempo real se ve

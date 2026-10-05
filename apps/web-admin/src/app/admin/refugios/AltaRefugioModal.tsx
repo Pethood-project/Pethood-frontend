@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { bordeCampo, ErrorCampo } from "@/components/ui/ErrorCampo";
 import { Modal } from "@/components/ui/Modal";
+import { useTocados } from "@/lib/useTocados";
+import { hayErrores, LIMITES, validarEmail, validarTelefono, validarTexto } from "@/lib/validation";
 import { altaRefugio } from "@/services/admin-usuarios";
 import { ApiError } from "@/services/api";
 import type { AltaRefugioBody } from "@/types/admin-usuarios";
 
-const CAMPO_VACIO = "Este campo es obligatorio.";
+const INPUT = "w-full rounded-md border px-3 py-2 text-sm text-neutral-900";
 
 // HU-2.4 — alta de refugio. Nace en Pendiente_Verificacion/verificado=false (regla 10, spec 002),
 // no hay atajo desde el alta: la habilitación pasa siempre por HU-2.2 (verificar).
@@ -24,17 +27,22 @@ export function AltaRefugioModal({
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const valido = form.nombre.trim().length > 0 && form.direccion.trim().length > 0;
+  const { ver, tocar, intentarEnviar } = useTocados();
+  const errores = {
+    nombre: validarTexto(form.nombre, { etiqueta: "El nombre", ...LIMITES.refugio.nombre }),
+    direccion: validarTexto(form.direccion, { etiqueta: "La dirección", ...LIMITES.refugio.direccion }),
+    telefono: validarTelefono(form.telefono ?? "", false),
+    email: validarEmail(form.email ?? "", false),
+    descripcion: validarTexto(form.descripcion ?? "", { etiqueta: "La descripción", ...LIMITES.refugio.descripcion, obligatorio: false }),
+  };
 
   function set<K extends keyof AltaRefugioBody>(campo: K, valor: string) {
     setForm((prev) => ({ ...prev, [campo]: valor }));
   }
 
   async function confirmar() {
-    if (!valido) {
-      setError(CAMPO_VACIO);
-      return;
-    }
+    intentarEnviar();
+    if (hayErrores(errores)) return;
     setError(null);
     setEnviando(true);
     try {
@@ -56,59 +64,35 @@ export function AltaRefugioModal({
     }
   }
 
+  const campo = (id: "nombre" | "direccion" | "telefono" | "email", etiqueta: string, tipo: string, max: number) => (
+    <div>
+      <label className="mb-1 block text-sm font-medium text-neutral-700" htmlFor={id}>
+        {etiqueta}
+      </label>
+      <input
+        id={id}
+        type={tipo}
+        maxLength={max}
+        value={form[id] ?? ""}
+        onChange={(e) => set(id, e.target.value)}
+        onBlur={() => tocar(id)}
+        aria-invalid={!!ver(id, errores[id])}
+        aria-describedby={`${id}-error`}
+        className={`${INPUT} ${bordeCampo(ver(id, errores[id]))}`}
+      />
+      <ErrorCampo id={id} error={ver(id, errores[id])} />
+    </div>
+  );
+
   return (
     <Modal titulo="Nuevo refugio" onCerrar={onCerrar}>
       <div className="space-y-3">
-        <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700" htmlFor="nombre">
-            Nombre *
-          </label>
-          <input
-            id="nombre"
-            value={form.nombre}
-            onChange={(e) => set("nombre", e.target.value)}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
-          />
+        {campo("nombre", "Nombre *", "text", 100)}
+        {campo("direccion", "Dirección *", "text", 150)}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {campo("telefono", "Teléfono", "tel", 20)}
+          {campo("email", "Email", "email", 100)}
         </div>
-
-        <div>
-          <label className="mb-1 block text-sm font-medium text-neutral-700" htmlFor="direccion">
-            Dirección *
-          </label>
-          <input
-            id="direccion"
-            value={form.direccion}
-            onChange={(e) => set("direccion", e.target.value)}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-neutral-700" htmlFor="telefono">
-              Teléfono
-            </label>
-            <input
-              id="telefono"
-              value={form.telefono}
-              onChange={(e) => set("telefono", e.target.value)}
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium text-neutral-700" htmlFor="email">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={form.email}
-              onChange={(e) => set("email", e.target.value)}
-              className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
-            />
-          </div>
-        </div>
-
         <div>
           <label className="mb-1 block text-sm font-medium text-neutral-700" htmlFor="descripcion">
             Descripción
@@ -116,10 +100,15 @@ export function AltaRefugioModal({
           <textarea
             id="descripcion"
             rows={3}
+            maxLength={LIMITES.refugio.descripcion.max}
             value={form.descripcion}
             onChange={(e) => set("descripcion", e.target.value)}
-            className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900"
+            onBlur={() => tocar("descripcion")}
+            aria-invalid={!!ver("descripcion", errores.descripcion)}
+            aria-describedby="descripcion-error"
+            className={`${INPUT} ${bordeCampo(ver("descripcion", errores.descripcion))}`}
           />
+          <ErrorCampo id="descripcion" error={ver("descripcion", errores.descripcion)} />
         </div>
 
         {error && <p className="text-sm text-red-700">{error}</p>}
@@ -128,7 +117,7 @@ export function AltaRefugioModal({
           <Button variant="secondary" onClick={onCerrar} disabled={enviando}>
             Cancelar
           </Button>
-          <Button onClick={confirmar} disabled={enviando || !valido}>
+          <Button onClick={confirmar} disabled={enviando}>
             {enviando ? "Creando…" : "Crear refugio"}
           </Button>
         </div>

@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { Download } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import { descargarExportacionRefugio } from "@/services/dashboard";
-import { ENTIDADES_EXPORTABLES_REFUGIO, type EntidadExportableRefugio, type PeriodoDashboard } from "@/types/dashboard";
+import { type EntidadExportableRefugio, type PeriodoDashboard } from "@/types/dashboard";
 
 const ETIQUETAS: Record<EntidadExportableRefugio, string> = {
   mascotas: "Mascotas",
@@ -12,15 +11,23 @@ const ETIQUETAS: Record<EntidadExportableRefugio, string> = {
   donaciones: "Donaciones",
 };
 
-// GUI-38/GUI-41 — export CSV por panel del dashboard de refugio (HU-14.3, alcance Refugio), mismo
-// patrón que ExportacionAdmin: un botón por entidad, en vez de un único reporte consolidado.
-export function ExportacionRefugio({ periodo, token }: { periodo: PeriodoDashboard; token: string }) {
-  const [descargando, setDescargando] = useState<EntidadExportableRefugio | null>(null);
+// GUI-38/GUI-41 — export CSV del dashboard de refugio (HU-14.3, alcance Refugio): un botón por
+// entidad, que se monta en el panel (Card) de esa entidad.
+export function ExportacionRefugio({
+  entidad,
+  periodo,
+  token,
+}: {
+  entidad: EntidadExportableRefugio;
+  periodo: PeriodoDashboard;
+  token: string;
+}) {
+  const [descargando, setDescargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function exportar(entidad: EntidadExportableRefugio) {
+  async function exportar() {
     setError(null);
-    setDescargando(entidad);
+    setDescargando(true);
     try {
       const blob = await descargarExportacionRefugio(entidad, periodo, token);
       const url = URL.createObjectURL(blob);
@@ -32,27 +39,25 @@ export function ExportacionRefugio({ periodo, token }: { periodo: PeriodoDashboa
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo generar la exportación.");
     } finally {
-      setDescargando(null);
+      setDescargando(false);
     }
   }
 
+  const titulo = error ?? `Exportar ${ETIQUETAS[entidad]} (CSV)`;
+
+  // Ícono suave: sin caja ni texto. Si falla la descarga (GUI-41) se pinta rojo y el tooltip dice por qué.
   return (
-    <div className="flex flex-col items-end gap-1">
-      <div className="flex flex-wrap justify-end gap-2">
-        {ENTIDADES_EXPORTABLES_REFUGIO.map((entidad) => (
-          <Button
-            key={entidad}
-            onClick={() => exportar(entidad)}
-            disabled={descargando === entidad}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-5 w-5" strokeWidth={2} />
-            {descargando === entidad ? "Generando…" : `Exportar ${ETIQUETAS[entidad]}`}
-          </Button>
-        ))}
-      </div>
-      {/* GUI-41 — error de exportación */}
-      {error && <span className="text-sm text-red-600">{error}</span>}
-    </div>
+    <button
+      type="button"
+      onClick={exportar}
+      disabled={descargando}
+      title={titulo}
+      aria-label={titulo}
+      className={`shrink-0 rounded-md p-1.5 transition-colors hover:bg-pethood-orange/10 disabled:opacity-50 ${
+        error ? "text-red-500" : "text-pethood-orange/70 hover:text-pethood-orange-dark"
+      }`}
+    >
+      <Download className={`h-5 w-5 ${descargando ? "animate-pulse" : ""}`} strokeWidth={2} />
+    </button>
   );
 }

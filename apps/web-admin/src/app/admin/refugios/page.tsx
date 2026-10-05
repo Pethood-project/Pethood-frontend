@@ -26,8 +26,8 @@ export default async function RefugiosAdminPage({ searchParams }: PageProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-neutral-900">Refugios</h1>
-          <p className="text-sm text-neutral-700">Alta, validación, suspensión y baja de refugios.</p>
+          <h1 className="font-heading text-2xl text-neutral-900">Refugios</h1>
+          <p className="text-base text-neutral-700">Alta, validación, suspensión y baja de refugios.</p>
         </div>
       </div>
 

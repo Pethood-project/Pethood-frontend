@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
 import type { PublicacionPorMes } from "@/types/dashboard";
 
@@ -8,8 +9,10 @@ const COLOR_ADOPCIONES = "var(--color-pethood-success-600)";
 // spec 009 no pide interactividad, así que no suma una librería de gráficos para esto.
 export function GraficoPublicacionesPorMes({
   items,
+  accion,
 }: {
   items: PublicacionPorMes[];
+  accion?: ReactNode;
 }) {
   const max = Math.max(
     1,
@@ -18,11 +21,14 @@ export function GraficoPublicacionesPorMes({
 
   return (
     <Card className="flex h-full flex-col">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <h2 className="text-lg font-semibold text-neutral-900">
           Publicaciones y adopciones (últimos 6 meses)
         </h2>
-        <div className="flex shrink-0 items-center gap-3 text-sm font-medium text-neutral-700">
+        {accion}
+      </div>
+      <div className="mt-2 flex items-center gap-3 text-sm font-medium text-neutral-700">
+        <div className="flex shrink-0 items-center gap-3">
           <span className="flex items-center gap-1.5">
             <span
               className="h-2.5 w-2.5 rounded-full"
@@ -39,11 +45,11 @@ export function GraficoPublicacionesPorMes({
           </span>
         </div>
       </div>
-      <div className="mt-6 flex flex-1 justify-between gap-2">
+      <div className="mt-6 flex min-h-48 flex-1 justify-between gap-1 overflow-x-auto sm:gap-2">
         {items.map((item) => (
           <div
             key={item.mes}
-            className="flex flex-1 flex-col items-center gap-2"
+            className="flex min-w-12 flex-1 flex-col items-center gap-2"
           >
             <div className="flex w-full flex-1 items-end justify-center gap-1">
               <div
@@ -63,7 +69,7 @@ export function GraficoPublicacionesPorMes({
                 title={`Adopciones: ${item.adopciones}`}
               />
             </div>
-            <span className="text-sm font-medium text-neutral-700">{item.mes}</span>
+            <span className="text-xs font-medium text-neutral-700 sm:text-sm">{item.mes}</span>
           </div>
         ))}
       </div>

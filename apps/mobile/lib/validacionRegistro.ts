@@ -1,3 +1,5 @@
+import { LIMITES } from '@/shared/validation/limits';
+
 const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const REGEX_LETRAS = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]+$/;
 
@@ -78,13 +80,34 @@ export function validarConfirmacionPassword(
   return undefined;
 }
 
-export function validarUbicacion(valor: string): string | undefined {
+/**
+ * "Calle y altura" de la dirección estructurada. Opcional: si está vacío no se valida, y el
+ * backend simplemente no geocodifica.
+ */
+export function validarCalleAltura(valor: string): string | undefined {
   const recortado = valor.trim();
-  if (!recortado) {
-    return 'El barrio / ciudad es obligatorio';
+  if (!recortado) return undefined;
+  if (recortado.length > LIMITES.usuario.calleAltura.max) {
+    return `La calle y altura no puede superar los ${LIMITES.usuario.calleAltura.max} caracteres`;
   }
-  if (recortado.length > 80) {
-    return 'El barrio / ciudad no puede superar los 80 caracteres';
+  return undefined;
+}
+
+/**
+ * Link de Google Maps que el usuario pega a mano en "Ubicación". Valida que sea una URL
+ * http(s) y el largo; que el link traiga coordenadas lo verifica el backend al guardarlo.
+ */
+export function validarLinkMapa(valor: string): string | undefined {
+  const recortado = valor.trim();
+  if (!recortado) return 'El link es obligatorio';
+  if (recortado.length > LIMITES.usuario.mapaUrl.max) {
+    return `El link no puede superar los ${LIMITES.usuario.mapaUrl.max} caracteres`;
+  }
+  try {
+    const url = new URL(recortado);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return 'Ingresá un link válido';
+  } catch {
+    return 'Ingresá un link válido';
   }
   return undefined;
 }

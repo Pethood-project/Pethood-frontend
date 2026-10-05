@@ -96,9 +96,9 @@ const CARTELES: Record<
     descartar: 'Cerrar',
   },
   NO_VERIFICADO: {
-    titulo: 'Tenés que verificarte para solicitar',
+    titulo: 'Tenés que verificar tu cuenta para solicitar',
     icono: 'shield-checkmark-outline',
-    accion: 'Verificar mi cuenta',
+    accion: 'Ir a mi perfil',
     descartar: 'Más tarde',
   },
   LIMITE_ALCANZADO: {
@@ -281,7 +281,9 @@ export function BotonSolicitar({
           accionPrincipal={{ etiqueta: cartel.accion, onPress: resolverBloqueo }}
           textoDescartar={cartel.descartar}
           onCerrar={() => setBloqueo(null)}
-        />
+        >
+          {bloqueo.motivo === 'NO_VERIFICADO' ? <PasosVerificacion /> : null}
+        </ConfirmDialog>
       ) : null}
 
       {/* Solo se monta al abrirlo: en la grilla de Favoritos habría un formulario entero
@@ -310,7 +312,7 @@ export function BotonSolicitar({
 /** Segunda línea del cartel: explica el bloqueo con los números concretos del usuario. */
 function detalleDe(elegibilidad: Elegibilidad): string | undefined {
   if (elegibilidad.motivo === 'NO_VERIFICADO') {
-    return 'Necesitamos tu DNI y una selfie para confirmar tu identidad. La verificación tarda como máximo 24 horas.';
+    return 'Los refugios y quienes publican una mascota necesitan saber que del otro lado hay una persona real. Por eso, antes de tu primera solicitud, confirmamos tu identidad. Es un trámite único.';
   }
 
   if (elegibilidad.motivo === 'LIMITE_ALCANZADO') {
@@ -318,6 +320,36 @@ function detalleDe(elegibilidad: Elegibilidad): string | undefined {
   }
 
   return undefined;
+}
+
+/** Qué hay que tener a mano y qué pasa después, para que el cartel no deje dudas. */
+function PasosVerificacion() {
+  const pasos: { icono: keyof typeof Ionicons.glyphMap; texto: string }[] = [
+    { icono: 'card-outline', texto: 'Una foto del frente de tu DNI' },
+    { icono: 'card-outline', texto: 'Una foto del dorso de tu DNI' },
+    { icono: 'person-circle-outline', texto: 'Una selfie tuya, con buena luz y sin anteojos de sol' },
+  ];
+
+  return (
+    <View className="gap-2.5 rounded-2xl bg-organic-neutral-100 p-4">
+      <Text className="font-cuerpo-semi text-[13px] uppercase tracking-wide text-organic-neutral-500">
+        Qué vas a necesitar
+      </Text>
+      {pasos.map(({ icono, texto }, i) => (
+        <View key={i} className="flex-row items-center gap-3">
+          <Ionicons name={icono} size={20} color={PALETA.accent[600]} />
+          <Text className="flex-1 text-sm leading-5 text-organic-neutral-700">{texto}</Text>
+        </View>
+      ))}
+      <Text className="mt-1 text-[13px] leading-[18px] text-organic-neutral-500">
+        Un administrador las revisa en un máximo de 24 horas y te avisamos apenas tu cuenta quede
+        verificada. Tus fotos se usan solo para esto y no se muestran en tu perfil público.
+      </Text>
+      <Text className="text-[13px] leading-[18px] text-organic-neutral-500">
+        Tocá “Ir a mi perfil” para empezar.
+      </Text>
+    </View>
+  );
 }
 
 interface BotonAbrirProps {

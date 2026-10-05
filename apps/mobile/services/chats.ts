@@ -38,8 +38,11 @@ export interface UltimoMensaje {
   tieneImagen: boolean;
   /** Ese adjunto es un video: el preview dice "Video" en vez de "Foto". */
   tieneVideo: boolean;
-  /** `SOLICITUD` es la tarjeta de un pedido: `contenido` vacío, el texto lo pone la fila. */
-  tipo: 'TEXTO' | 'SOLICITUD';
+  /**
+   * `SOLICITUD` es la tarjeta de un pedido y `ANIMAL_PERDIDO` la de un aviso reclamado
+   * (HU-13.2): en los dos el `contenido` va vacío y el texto lo pone la fila.
+   */
+  tipo: 'TEXTO' | 'SOLICITUD' | 'ANIMAL_PERDIDO';
 }
 
 export interface Conversacion {
@@ -95,6 +98,31 @@ export interface SolicitudEnChat {
 }
 
 /**
+ * El aviso de mascota perdida/encontrada de una tarjeta de la conversación (HU-13.2).
+ *
+ * Es un resumen, no el aviso entero: el detalle completo sale del portal. **No trae
+ * coordenadas ni distancia** — las del dispositivo no se exponen nunca y la distancia depende
+ * de dónde está quien mira.
+ */
+export interface AvisoEnChat {
+  id: number;
+  /** `null` en un aviso "Encontrado" sin nombre: se muestra la especie en su lugar. */
+  nombre: string | null;
+  /** Del catálogo, o `null` en avisos cargados antes de HU-13.1. */
+  especie: string | null;
+  /** Estado vigente: "Perdido", "Encontrado" o "Resuelto", resuelto al momento del pedido. */
+  estado: string;
+  /** Portada del aviso. Ruta relativa o absoluta: siempre pasa por `urlAbsoluta`. */
+  imagenUrl: string;
+  /** Ya armada: «referencia, localidad - provincia». Puede ser `null`. */
+  ubicacion: string | null;
+  /** Sólo el día (`AAAA-MM-DD`), o `null`. */
+  fechaSuceso: string | null;
+  /** ISO 8601 crudo: cuándo se publicó el aviso. */
+  fechaAlta: string;
+}
+
+/**
  * Un mensaje. **Misma forma en el historial, en la respuesta del envío y en el evento
  * `chat:mensaje-nuevo`**, así que hay un solo tipo y un solo mapper para los tres.
  */
@@ -102,7 +130,7 @@ export interface Mensaje {
   /** Clave de deduplicación contra el broadcast, y cursor de paginación. */
   id: number;
   chatId: number;
-  /** Cadena vacía en un mensaje de sólo foto o en uno de tipo `SOLICITUD`. */
+  /** Cadena vacía en un mensaje de sólo foto o en una tarjeta (`SOLICITUD`, `ANIMAL_PERDIDO`). */
   contenido: string;
   /** PRIMERA foto: es siempre `imagenes[0]`. Se conserva por compatibilidad. */
   imagenUrl: string | null;
@@ -119,10 +147,11 @@ export interface Mensaje {
   /** Id del emisor. El backend NO manda `esMio`: se compara con la sesión. */
   usuarioId: number;
   /**
-   * `SOLICITUD` es la tarjeta que deja PetHood al enviarse una solicitud: no es una
-   * burbuja y su emisor es el usuario SISTEMA, que no participa de la sala.
+   * `SOLICITUD` es la tarjeta que deja PetHood al enviarse una solicitud y
+   * `ANIMAL_PERDIDO` la del aviso reclamado (HU-13.2): ninguna de las dos es una burbuja, y
+   * su emisor es el usuario SISTEMA, que no participa de la sala.
    */
-  tipo: 'TEXTO' | 'SOLICITUD';
+  tipo: 'TEXTO' | 'SOLICITUD' | 'ANIMAL_PERDIDO';
   /**
    * Le llegó al destinatario aunque no lo haya abierto: el segundo tilde.
    *
@@ -137,6 +166,8 @@ export interface Mensaje {
   fechaLectura: string | null;
   /** Sólo en los de `tipo: 'SOLICITUD'`. */
   solicitud: SolicitudEnChat | null;
+  /** Sólo en los de `tipo: 'ANIMAL_PERDIDO'` (HU-13.2). */
+  aviso: AvisoEnChat | null;
   /** ISO 8601 crudo. La hora la arma `horaVisible`. */
   fechaAlta: string;
 }
@@ -159,8 +190,22 @@ export interface CabeceraChat {
    * El texto ("responde en ~2 h") lo arma el cliente.
    */
   minutosRespuesta: number | null;
-  /** La solicitud que abrió la sala, o `null` si no nació de una. */
+  /** La solicitud vigente de la sala, o `null` si no hay ninguna. */
   solicitud: SolicitudEnChat | null;
+  /**
+   * El aviso de la última tarjeta de aviso de la sala (HU-13.2), o `null`.
+   *
+   * **No es excluyente con `solicitud`**: desde que el reclamo entra en la conversación que ya
+   * existía con esa persona, una sala puede tener las dos tarjetas.
+   */
+  aviso: AvisoEnChat | null;
+  /**
+   * De cuál de las dos tarjetas se está hablando: la más reciente, o `null` si no hay ninguna.
+   * Alimenta el subtítulo de la cabecera.
+   *
+   * Lo decide el backend para que la pantalla no tenga que comparar fechas ni conocer la regla.
+   */
+  contexto: 'SOLICITUD' | 'ANIMAL_PERDIDO' | null;
 }
 
 export interface ResultadoLeidos {

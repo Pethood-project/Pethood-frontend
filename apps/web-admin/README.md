@@ -26,7 +26,6 @@ src/
 │   │   ├── usuarios/         # HU-2.3, HU-2.5 — validación y baja de usuarios
 │   │   ├── moderacion/       # Módulo 3 — reportes, suspensión
 │   │   ├── catalogos/        # Especie, Raza, Estado_*, Rol
-│   │   └── exportacion/      # GUI-41 — exportación CSV
 │   └── refugio/               # exclusivo rol Refugio (ya verificado)
 │       ├── dashboard/        # GUI-38
 │       ├── campanas/         # GUI-36 / GUI-37

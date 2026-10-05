@@ -1,5 +1,7 @@
 import Image from "next/image";
-import type { ReactNode } from "react";
+import { Foto } from "./Foto";
+import { FOTO_REGISTRO } from "./fotos";
+import { RegistroRefugioForm } from "./RegistroRefugioForm";
 import { SiteFooter } from "./SiteFooter";
 import { SiteHeader } from "./SiteHeader";
 
@@ -14,39 +16,6 @@ const FUNCIONES = [
   "Red de mascotas perdidas y encontradas",
 ];
 
-function Campo({
-  id,
-  label,
-  tipo = "text",
-  full,
-  hint,
-  auto,
-}: {
-  id: string;
-  label: string;
-  tipo?: string;
-  full?: boolean;
-  hint?: string;
-  auto?: string;
-}) {
-  return (
-    <div className={full ? "full" : undefined}>
-      <label htmlFor={id}>{label}</label>
-      <input id={id} type={tipo} autoComplete={auto} />
-      {hint && <p className="hint">{hint}</p>}
-    </div>
-  );
-}
-
-function Grupo({ titulo, children }: { titulo: string; children: ReactNode }) {
-  return (
-    <fieldset>
-      <legend>{titulo}</legend>
-      <div className="fields">{children}</div>
-    </fieldset>
-  );
-}
-
 export default function Landing() {
   return (
     <div className="lp">
@@ -60,9 +29,11 @@ export default function Landing() {
               aria-label="Perro mirando a lo lejos al sol"
             />
             <div className="hero-copy">
-              <h1>
+              {/* Eslogan del póster: punto principal de la página. */}
+              <h1>Adoptar es cambiar dos vidas.</h1>
+              <p className="hero-sub">
                 Adopción responsable y rescate animal, en una sola plataforma
-              </h1>
+              </p>
               <p>
                 PetHood conecta a dos actores que hoy no tienen un lugar en
                 común: <strong>adoptantes</strong> con{" "}
@@ -98,8 +69,8 @@ export default function Landing() {
             </article>
             <article className="card">
               <Image
-                src="/img/puppy.jpg"
-                alt="Cachorro bernés en el pasto"
+                src="/img/refugio.jpg"
+                alt="Perro sonriendo esperando un hogar"
                 width={640}
                 height={480}
               />
@@ -129,13 +100,6 @@ export default function Landing() {
 
         <section className="why">
           <div className="wrap grid2">
-            <div
-              className="ph wide"
-              role="img"
-              aria-label="Imagen pendiente: captura del panel web"
-            >
-              Imagen pendiente: captura del panel web / dashboard — 16:9
-            </div>
             <div>
               <h2>Por qué existe</h2>
               <p>
@@ -150,6 +114,13 @@ export default function Landing() {
                 adoptantes como de refugios.
               </p>
             </div>
+            <Image
+              src="/img/panel.jpg"
+              alt="Perro junto a una notebook mostrando su foto"
+              width={1200}
+              height={800}
+              style={{ width: "100%", height: "auto", borderRadius: 20 }}
+            />
           </div>
         </section>
 
@@ -157,77 +128,16 @@ export default function Landing() {
           <div className="wrap grid2">
             <div>
               <h2>Registrá tu refugio u ONG</h2>
-              <p className="lead">
+              <p className="lead" style={{ marginBottom: 24 }}>
                 Completá tus datos y los del refugio. Tu cuenta queda{" "}
                 <strong>pendiente de verificación</strong>: mientras tanto podés
                 completar el perfil, pero no publicar hasta que el equipo de
                 administración la apruebe.
               </p>
-              <div
-                className="ph"
-                role="img"
-                aria-label="Imagen pendiente: foto del refugio"
-              >
-                Imagen pendiente: foto del refugio
-              </div>
+              <Foto {...FOTO_REGISTRO} />
             </div>
 
-            <form aria-label="Registro de refugio u ONG">
-              <Grupo titulo="Tus datos">
-                <Campo id="nombre" label="Nombre *" auto="given-name" />
-                <Campo id="apellido" label="Apellido *" auto="family-name" />
-                <Campo
-                  id="email"
-                  label="Email *"
-                  tipo="email"
-                  auto="email"
-                  full
-                />
-                <Campo
-                  id="pass"
-                  label="Contraseña *"
-                  tipo="password"
-                  auto="new-password"
-                  hint="Mínimo 8 caracteres, con una mayúscula y un número."
-                />
-                <Campo
-                  id="pass2"
-                  label="Confirmar contraseña *"
-                  tipo="password"
-                  auto="new-password"
-                />
-              </Grupo>
-              <Grupo titulo="Datos del refugio">
-                <Campo id="rnombre" label="Nombre del refugio / ONG *" full />
-                <Campo
-                  id="rdir"
-                  label="Dirección *"
-                  auto="street-address"
-                  full
-                />
-                <Campo id="rtel" label="Teléfono" tipo="tel" />
-                <Campo id="remail" label="Email del refugio" tipo="email" />
-                <div className="full">
-                  <label htmlFor="rdesc">Descripción</label>
-                  <textarea id="rdesc" rows={3} />
-                </div>
-                <div className="full">
-                  <label htmlFor="rimg">Logo o foto del refugio</label>
-                  <input
-                    id="rimg"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                  />
-                  <p className="hint">JPG, PNG o WEBP, hasta 5 MB.</p>
-                </div>
-              </Grupo>
-              <div className="actions">
-                <p className="hint">Maqueta: todavía no envía datos.</p>
-                <button type="button" className="btn">
-                  Registrar refugio
-                </button>
-              </div>
-            </form>
+            <RegistroRefugioForm />
           </div>
         </section>
       </main>

@@ -14,6 +14,8 @@ export interface Usuario {
   apellido: string;
   email: string;
   roles: RolUsuario[];
+  /** Refugio de la persona, o `null`. `estado`: Activo, Pendiente_Verificacion, Suspendido o Inactivo. */
+  refugio?: { id: number; nombre: string; estado: string } | null;
 }
 
 export interface RespuestaLogin {

@@ -11,6 +11,8 @@ import { FechaNacimientoPicker } from '@/components/FechaNacimientoPicker';
 import { useToast } from '@/components/feedback/Toast';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
+import { SelectField } from '@/components/ui/SelectField';
+import { PROVINCIAS, localidadesDe } from '@/constants/Provincias';
 import { PALETA } from '@/constants/theme';
 import {
   enmascararFechaNacimiento,
@@ -29,6 +31,7 @@ import type { ArchivoImagenLocal } from '@/lib/formDataImagen';
 import {
   sanitizarNombrePersona,
   sanitizarTelefono,
+  validarCalleAltura,
   validarConfirmacionPassword,
   validarEmail,
   validarNombrePersona,
@@ -37,6 +40,7 @@ import {
 } from '@/lib/validacionRegistro';
 import { ApiError } from '@/services/api';
 import { registro } from '@/services/auth';
+import { LIMITES } from '@/shared/validation/limits';
 
 interface RegisterForm {
   firstName: string;
@@ -46,6 +50,9 @@ interface RegisterForm {
   birthDate: string;
   password: string;
   confirmPassword: string;
+  provincia: string;
+  localidad: string;
+  calleAltura: string;
 }
 
 interface RegisterErrors {
@@ -56,6 +63,7 @@ interface RegisterErrors {
   birthDate?: string;
   password?: string;
   confirmPassword?: string;
+  calleAltura?: string;
   foto?: string;
 }
 
@@ -73,6 +81,9 @@ export default function RegisterScreen() {
     birthDate: '',
     password: '',
     confirmPassword: '',
+    provincia: '',
+    localidad: '',
+    calleAltura: '',
   });
   const [foto, setFoto] = useState<ArchivoImagenLocal | undefined>();
   const [showPassword, setShowPassword] = useState(false);
@@ -126,6 +137,20 @@ export default function RegisterScreen() {
     const formateado = sanitizarTelefono(value);
     setForm((prev) => ({ ...prev, phone: formateado }));
     setFieldError('phone', formateado ? validarTelefono(formateado) : undefined);
+  };
+
+  // Al cambiar de provincia se limpia la localidad: las del listado anterior ya no aplican.
+  const handleProvinciaChange = (value: string): void => {
+    setForm((prev) => ({ ...prev, provincia: value, localidad: '' }));
+  };
+
+  const handleLocalidadChange = (value: string): void => {
+    setForm((prev) => ({ ...prev, localidad: value }));
+  };
+
+  const handleCalleAlturaChange = (value: string): void => {
+    setForm((prev) => ({ ...prev, calleAltura: value }));
+    setFieldError('calleAltura', value.trim() ? validarCalleAltura(value) : undefined);
   };
 
   const handleBirthDateChange = (value: string): void => {
@@ -205,6 +230,7 @@ export default function RegisterScreen() {
       birthDate: validarFechaNacimiento(form.birthDate),
       password: validarPassword(form.password),
       confirmPassword: validarConfirmacionPassword(form.password, form.confirmPassword),
+      calleAltura: validarCalleAltura(form.calleAltura),
     };
 
     setErrors((prev) => ({ ...nextErrors, foto: prev.foto }));
@@ -230,6 +256,9 @@ export default function RegisterScreen() {
           password: form.password,
           fechaNacimiento: form.birthDate.trim(),
           telefono: form.phone.trim(),
+          provincia: form.provincia.trim(),
+          localidad: form.localidad.trim(),
+          calleAltura: form.calleAltura.trim(),
         },
         foto,
       );
@@ -369,7 +398,7 @@ export default function RegisterScreen() {
           <CustomInput
             organic
             label="Teléfono"
-            placeholder="Ej. 2615123456"
+            placeholder="Ej. +2615123456"
             value={form.phone}
             onChangeText={handlePhoneChange}
             onBlur={() => setFieldError('phone', validarTelefono(form.phone))}
@@ -379,6 +408,52 @@ export default function RegisterScreen() {
             textContentType="telephoneNumber"
             maxLength={16}
             required
+          />
+
+          <View className="mb-4">
+            <SelectField
+              organic
+              grande
+              label="Provincia"
+              placeholder="Elegí tu provincia"
+              opciones={PROVINCIAS.map((provincia) => ({
+                valor: provincia.nombre,
+                etiqueta: provincia.nombre,
+              }))}
+              valor={form.provincia || null}
+              onChange={handleProvinciaChange}
+              buscable
+            />
+          </View>
+
+          <View className="mb-4">
+            <SelectField
+              organic
+              grande
+              label="Localidad"
+              placeholder="Elegí tu localidad"
+              opciones={localidadesDe(form.provincia).map((localidad) => ({
+                valor: localidad,
+                etiqueta: localidad,
+              }))}
+              valor={form.localidad || null}
+              onChange={handleLocalidadChange}
+              deshabilitado={!form.provincia}
+              textoDeshabilitado="Elegí primero la provincia"
+              buscable
+            />
+          </View>
+
+          <CustomInput
+            organic
+            label="Calle y altura"
+            placeholder="Ej. Av. San Martín 123"
+            value={form.calleAltura}
+            onChangeText={handleCalleAlturaChange}
+            onBlur={() => setFieldError('calleAltura', validarCalleAltura(form.calleAltura))}
+            error={errors.calleAltura}
+            autoCapitalize="words"
+            maxLength={LIMITES.usuario.calleAltura.max}
           />
 
           <CustomInput

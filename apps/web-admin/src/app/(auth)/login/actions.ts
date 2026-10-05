@@ -37,6 +37,12 @@ export async function loginAction(_estadoPrevio: EstadoLogin, formData: FormData
     return { error: "Este panel es exclusivo para administradores y refugios." };
   }
 
+  // Refugio todavía no Activo (pendiente, suspendido o de baja): no se abre el panel ni se guarda
+  // la sesión; se explica por qué. El backend igual lo rechaza con 403 REFUGIO_NO_VERIFICADO.
+  if (!esAdmin && respuesta.usuario.refugio && respuesta.usuario.refugio.estado !== "Activo") {
+    redirect("/en-revision");
+  }
+
   const exp = tokenExp(respuesta.token);
   const maxAge = Math.max(exp - Math.floor(Date.now() / 1000), 0);
 

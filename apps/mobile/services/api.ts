@@ -15,7 +15,7 @@ import { Platform } from 'react-native';
 
 import type { ApiErrorBody } from '@/types/api';
 
-import { invalidarSesionPorToken, obtenerAmbito, obtenerToken } from './sesion';
+import { avisarRefugioNoVerificado, invalidarSesionPorToken, obtenerAmbito, obtenerToken } from './sesion';
 
 /** Error de la API ya traducido a algo mostrable al usuario. */
 export class ApiError extends Error {
@@ -129,6 +129,11 @@ async function rechazarRespuesta(status: number, cuerpo: unknown): Promise<never
   // Solo NO_AUTENTICADO: CREDENCIALES_INVALIDAS (login / contraseña actual) no cierra sesión.
   if (error.status === 401 && error.codigo === 'NO_AUTENTICADO') {
     await invalidarSesionPorToken();
+  }
+
+  // El refugio todavía no fue aprobado: la app pasa sola al perfil personal (ver SesionProvider).
+  if (error.status === 403 && error.codigo === 'REFUGIO_NO_VERIFICADO') {
+    avisarRefugioNoVerificado();
   }
 
   throw error;

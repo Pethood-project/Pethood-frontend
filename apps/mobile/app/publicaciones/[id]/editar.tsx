@@ -34,6 +34,7 @@ import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import type { FotoElegida } from '@/components/ui/PhotosPickerField';
 import { TextField } from '@/components/ui/TextField';
 import { PALETA } from '@/constants/theme';
+import { pedirUbicacion } from '@/lib/ubicacion';
 import { urlAbsoluta } from '@/services/api';
 import {
   ESTADO_PUBLICACION,
@@ -142,9 +143,15 @@ export default function EditarPublicacionScreen() {
 
     setGuardando(true);
     try {
+      // Coordenadas best-effort, igual que al publicar (Módulo 11).
+      const ubicacion = await pedirUbicacion();
+
       await editarPublicacion(publicacion.id, {
         descripcion: valores.descripcion.trim(),
         ubicacion: valores.ubicacion.trim(),
+        ...(ubicacion.ok
+          ? { latitud: ubicacion.coordenadas.latitud, longitud: ubicacion.coordenadas.longitud }
+          : {}),
         requisitos: valores.requisitos,
         personalidad: valores.personalidad,
         desparasitado: valores.desparasitado,

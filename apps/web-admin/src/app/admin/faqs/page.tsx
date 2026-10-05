@@ -11,16 +11,9 @@ export default async function FaqsAdminPage() {
   const faqsPorCategoria = new Map(publicas.map((c) => [c.id, c.faqs]));
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold text-neutral-900">Preguntas frecuentes</h1>
-        <p className="text-sm text-neutral-700">Categorías y preguntas que ve el público en /faq y en la app.</p>
-      </div>
-
-      <FaqsAdmin
-        token={token}
-        categorias={categorias.map((c) => ({ ...c, faqs: faqsPorCategoria.get(c.id) ?? [] }))}
-      />
-    </div>
+    <FaqsAdmin
+      token={token}
+      categorias={categorias.map((c) => ({ ...c, faqs: faqsPorCategoria.get(c.id) ?? [] }))}
+    />
   );
 }

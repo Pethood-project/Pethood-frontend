@@ -1,7 +1,8 @@
-import { apiFetch } from "./api";
+import { apiFetch, aQueryString } from "./api";
 import type {
   AltaRefugioBody,
   DetalleRefugio,
+  DetalleUsuario,
   FiltrosRefugios,
   FiltrosUsuarios,
   ListaRefugios,
@@ -10,15 +11,6 @@ import type {
   RolesBody,
   UsuarioAdmin,
 } from "@/types/admin-usuarios";
-
-function aQueryString(filtros: object): string {
-  const params = new URLSearchParams();
-  for (const [clave, valor] of Object.entries(filtros as Record<string, string | number | undefined>)) {
-    if (valor !== undefined && valor !== "") params.set(clave, String(valor));
-  }
-  const query = params.toString();
-  return query ? `?${query}` : "";
-}
 
 // --- Usuarios ----------------------------------------------------------------------------
 
@@ -86,4 +78,8 @@ export function reactivarRefugio(id: number, token: string): Promise<{ refugio: 
 
 export function bajaRefugio(id: number, motivo: string, token: string): Promise<{ refugio: Partial<RefugioAdmin> }> {
   return apiFetch(`/admin/refugios/${id}/baja`, { method: "PATCH", body: { motivo }, token });
+}
+
+export function obtenerUsuario(id: number, token: string): Promise<DetalleUsuario> {
+  return apiFetch(`/admin/usuarios/${id}`, { token });
 }

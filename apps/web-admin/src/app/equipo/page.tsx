@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import type { ReactNode } from "react";
 import { Mail, MapPin, MessageCircle } from "lucide-react";
-import { EQUIPO, SiteFooter } from "@/components/landing/SiteFooter";
+import { FOTO_EQUIPO_FONDO } from "@/components/landing/fotos";
+import { EMAIL_CONTACTO, EQUIPO, SiteFooter } from "@/components/landing/SiteFooter";
 import { SiteHeader } from "@/components/landing/SiteHeader";
 
 export const metadata: Metadata = { title: "PetHood — Equipo y contacto" };
@@ -18,7 +20,7 @@ const LinkedIn = () => (
 
 // Contenido mockeado: los href son de relleno hasta tener las cuentas reales.
 const CONTACTOS: { icono: ReactNode; titulo: string; detalle: string; href: string }[] = [
-  { icono: <Mail />, titulo: "Email", detalle: "contacto@pethood.example", href: "mailto:contacto@pethood.example" },
+  { icono: <Mail />, titulo: "Email", detalle: EMAIL_CONTACTO, href: `mailto:${EMAIL_CONTACTO}` },
   { icono: <MessageCircle />, titulo: "WhatsApp", detalle: "+54 261 000 0000", href: "#" },
   { icono: <Instagram />, titulo: "Instagram", detalle: "@pethood.ar", href: "#" },
   { icono: <LinkedIn />, titulo: "LinkedIn", detalle: "PetHood", href: "#" },
@@ -31,45 +33,59 @@ const VALORES = [
   { t: "Comunidad", d: "Refugios, ONGs y adoptantes en un mismo lugar, con reglas claras y moderación del equipo de administración." },
 ];
 
-const iniciales = (n: string) => n.split(" ").map((p) => p[0]).slice(0, 2).join("");
+const FOTOS: Record<string, string> = {
+  "Agustín Leyes": "Agustin-leyes.jpeg",
+  "Camila Fabián": "Camila-Fabian.jpeg",
+  "Juan Ignacio Castro": "Juan-Ignacio-Castro.jpeg",
+  "Matías Hansen": "Matias-Hansen.jpeg",
+  "Nicolás Correa": "Nicolas-Correa.png",
+};
 
 export default function EquipoPage() {
   return (
     <div className="lp">
       <SiteHeader />
-      <main className="wrap page">
-        <h1>Equipo</h1>
-        <p>Las personas detrás de PetHood y las formas de escribirnos.</p>
+      {/* Banda con la foto de fondo: solo detrás de Equipo, Quiénes somos y Qué nos mueve. */}
+      <div className="banda-foto">
+        <div className="banda-foto-fondo" aria-hidden>
+          <Image src={FOTO_EQUIPO_FONDO.src} alt="" width={FOTO_EQUIPO_FONDO.width} height={FOTO_EQUIPO_FONDO.height} priority sizes="100vw" />
+        </div>
+        <a className="banda-foto-credito" href={FOTO_EQUIPO_FONDO.url} target="_blank" rel="noreferrer">
+          Foto: {FOTO_EQUIPO_FONDO.autor} / {FOTO_EQUIPO_FONDO.licencia}
+        </a>
+        <div className="wrap page banda-foto-contenido">
+          <h1>Equipo</h1>
+          <p>Las personas detrás de PetHood y las formas de escribirnos.</p>
 
-        <section className="bloque">
-          <div className="grid2">
+          <section className="bloque">
             <div className="muted">
               <h2>Quiénes somos</h2>
               <p>Somos estudiantes de Ingeniería en Sistemas de Información de la UTN Regional Mendoza. PetHood nació como proyecto final, pero lo pensamos desde el primer día para funcionar como un producto real.</p>
               <p style={{ marginTop: 12 }}>Trabajamos junto a refugios y ONGs para que cada adopción sea responsable, trazable y acompañada en el tiempo.</p>
             </div>
-            <div className="ph wide" role="img" aria-label="Imagen pendiente: foto del equipo">Imagen pendiente: foto del equipo</div>
-          </div>
-        </section>
+          </section>
 
-        <section className="bloque">
-          <h2>Qué nos mueve</h2>
-          <div className="cards">
-            {VALORES.map(({ t, d }) => (
-              <article key={t} className="card">
-                <h3>{t}</h3>
-                <p>{d}</p>
-              </article>
-            ))}
-          </div>
-        </section>
+          <section className="bloque">
+            <h2>Qué nos mueve</h2>
+            <div className="cards">
+              {VALORES.map(({ t, d }) => (
+                <article key={t} className="card">
+                  <h3>{t}</h3>
+                  <p>{d}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
 
+      <main className="wrap page">
         <section className="bloque">
           <h2>Integrantes</h2>
           <ul className="miembros">
             {EQUIPO.map((n) => (
               <li key={n} className="miembro">
-                <span className="avatar" aria-hidden>{iniciales(n)}</span>
+                <Image className="avatar" src={`/team/${FOTOS[n]}`} alt={n} width={72} height={72} />
                 <strong>{n}</strong>
                 <span>Ing. en Sistemas · UTN FRM</span>
               </li>

@@ -5,8 +5,11 @@ import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { AccionButton } from "@/components/ui/AccionButton";
 import { Button } from "@/components/ui/Button";
+import { CampoTexto } from "@/components/ui/CampoTexto";
 import { Feedback } from "@/components/ui/Feedback";
 import { Modal } from "@/components/ui/Modal";
+import { useTocados } from "@/lib/useTocados";
+import { hayErrores, LIMITES, validarEntero, validarTexto } from "@/lib/validation";
 import { ApiError } from "@/services/api";
 import { bajaCategoria, bajaFaq, crearCategoria, crearFaq, editarCategoria, editarFaq } from "@/services/soporte";
 import type { Categoria, FaqPublica } from "@/types/soporte";
@@ -45,7 +48,11 @@ export function FaqsAdmin({ categorias, token }: { categorias: CategoriaConFaqs[
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-neutral-900">Preguntas frecuentes</h1>
+          <p className="text-sm text-neutral-700">Categorías y preguntas que ve el público en /faq y en la app.</p>
+        </div>
         <Button onClick={() => setDialogo({ tipo: "categoria" })}>Nueva categoría</Button>
       </div>
 
@@ -181,26 +188,31 @@ function CategoriaForm({
   onGuardar: (body: { nombre: string; descripcion?: string }) => Promise<void>;
 }) {
   const [enviando, setEnviando] = useState(false);
+  const [nombre, setNombre] = useState(editando?.nombre ?? "");
+  const [descripcion, setDescripcion] = useState(editando?.descripcion ?? "");
+  const { ver, tocar, intentarEnviar } = useTocados();
+  const L = LIMITES.faqCategoria;
+  const errores = {
+    nombre: validarTexto(nombre, { etiqueta: "El nombre", ...L.nombre }),
+    descripcion: validarTexto(descripcion, { etiqueta: "La descripción", ...L.descripcion, obligatorio: false }),
+  };
+
   return (
     <Modal titulo={editando ? "Editar categoría" : "Nueva categoría"} onCerrar={onCerrar}>
       <form
+        noValidate
         className="space-y-3"
         onSubmit={async (e) => {
           e.preventDefault();
-          const f = new FormData(e.currentTarget);
+          intentarEnviar();
+          if (hayErrores(errores)) return;
           setEnviando(true);
-          await onGuardar({ nombre: String(f.get("nombre")), descripcion: String(f.get("descripcion")) });
+          await onGuardar({ nombre: nombre.trim(), descripcion: descripcion.trim() });
           setEnviando(false);
         }}
       >
-        <div>
-          <label className={LABEL} htmlFor="nombre">Nombre</label>
-          <input id="nombre" name="nombre" required minLength={2} maxLength={50} defaultValue={editando?.nombre} className={INPUT} />
-        </div>
-        <div>
-          <label className={LABEL} htmlFor="descripcion">Descripción (opcional)</label>
-          <textarea id="descripcion" name="descripcion" rows={2} maxLength={200} defaultValue={editando?.descripcion ?? ""} className={INPUT} />
-        </div>
+        <CampoTexto id="nombre" label="Nombre" value={nombre} onChange={setNombre} onBlur={() => tocar("nombre")} error={ver("nombre", errores.nombre)} maxLength={L.nombre.max} />
+        <CampoTexto id="descripcion" label="Descripción (opcional)" rows={2} value={descripcion} onChange={setDescripcion} onBlur={() => tocar("descripcion")} error={ver("descripcion", errores.descripcion)} maxLength={L.descripcion.max} />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onCerrar}>Cancelar</Button>
           <Button type="submit" disabled={enviando}>{enviando ? "Guardando…" : "Guardar"}</Button>
@@ -224,43 +236,48 @@ function FaqForm({
   onGuardar: (body: { pregunta: string; respuesta: string; orden: number; faqCategoriaId: number }) => Promise<void>;
 }) {
   const [enviando, setEnviando] = useState(false);
+  const [pregunta, setPregunta] = useState(editando?.pregunta ?? "");
+  const [respuesta, setRespuesta] = useState(editando?.respuesta ?? "");
+  const [orden, setOrden] = useState(String(editando?.orden ?? 1));
+  const [faqCategoriaId, setFaqCategoriaId] = useState(String(categoriaId));
+  const { ver, tocar, intentarEnviar } = useTocados();
+  const L = LIMITES.faq;
+  const errores = {
+    pregunta: validarTexto(pregunta, { etiqueta: "La pregunta", ...L.pregunta }),
+    respuesta: validarTexto(respuesta, { etiqueta: "La respuesta", ...L.respuesta }),
+    orden: validarEntero(orden, { etiqueta: "El orden", ...L.orden }),
+  };
+
   return (
     <Modal titulo={editando ? "Editar pregunta" : "Nueva pregunta"} onCerrar={onCerrar}>
       <form
+        noValidate
         className="space-y-3"
         onSubmit={async (e) => {
           e.preventDefault();
-          const f = new FormData(e.currentTarget);
+          intentarEnviar();
+          if (hayErrores(errores)) return;
           setEnviando(true);
           await onGuardar({
-            pregunta: String(f.get("pregunta")),
-            respuesta: String(f.get("respuesta")),
-            orden: Number(f.get("orden")),
-            faqCategoriaId: Number(f.get("faqCategoriaId")),
+            pregunta: pregunta.trim(),
+            respuesta: respuesta.trim(),
+            orden: Number(orden),
+            faqCategoriaId: Number(faqCategoriaId),
           });
           setEnviando(false);
         }}
       >
         <div>
           <label className={LABEL} htmlFor="faqCategoriaId">Categoría</label>
-          <select id="faqCategoriaId" name="faqCategoriaId" defaultValue={categoriaId} className={INPUT}>
+          <select id="faqCategoriaId" name="faqCategoriaId" value={faqCategoriaId} onChange={(e) => setFaqCategoriaId(e.target.value)} className={INPUT}>
             {categorias.map((c) => (
               <option key={c.id} value={c.id}>{c.nombre}</option>
             ))}
           </select>
         </div>
-        <div>
-          <label className={LABEL} htmlFor="pregunta">Pregunta</label>
-          <input id="pregunta" name="pregunta" required minLength={5} maxLength={200} defaultValue={editando?.pregunta} className={INPUT} />
-        </div>
-        <div>
-          <label className={LABEL} htmlFor="respuesta">Respuesta (texto plano)</label>
-          <textarea id="respuesta" name="respuesta" required rows={5} minLength={5} maxLength={2000} defaultValue={editando?.respuesta} className={INPUT} />
-        </div>
-        <div>
-          <label className={LABEL} htmlFor="orden">Orden</label>
-          <input id="orden" name="orden" type="number" required min={1} max={999} defaultValue={editando?.orden ?? 1} className={INPUT} />
-        </div>
+        <CampoTexto id="pregunta" label="Pregunta" value={pregunta} onChange={setPregunta} onBlur={() => tocar("pregunta")} error={ver("pregunta", errores.pregunta)} maxLength={L.pregunta.max} />
+        <CampoTexto id="respuesta" label="Respuesta (texto plano)" rows={5} value={respuesta} onChange={setRespuesta} onBlur={() => tocar("respuesta")} error={ver("respuesta", errores.respuesta)} maxLength={L.respuesta.max} />
+        <CampoTexto id="orden" label="Orden" type="number" min={L.orden.min} max={L.orden.max} value={orden} onChange={setOrden} onBlur={() => tocar("orden")} error={ver("orden", errores.orden)} />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="secondary" onClick={onCerrar}>Cancelar</Button>
           <Button type="submit" disabled={enviando}>{enviando ? "Guardando…" : "Guardar"}</Button>

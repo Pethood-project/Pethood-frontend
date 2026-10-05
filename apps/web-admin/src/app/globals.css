@@ -111,8 +111,137 @@ body {
   animation: dashboard-fade-in 0.3s ease-out;
 }
 
+/* Deslizamiento lateral al cambiar de catálogo: entra desde el lado hacia el que se avanza. */
+@keyframes slide-desde-derecha {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+@keyframes slide-desde-izquierda {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-slide-desde-derecha {
+  animation: slide-desde-derecha 0.3s ease-out;
+}
+.animate-slide-desde-izquierda {
+  animation: slide-desde-izquierda 0.3s ease-out;
+}
+
+/* Modales: el fondo hace fade y el panel sube con un leve zoom; al cerrar se invierte. */
+@keyframes modal-fondo-entrada { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-fondo-salida { from { opacity: 1; } to { opacity: 0; } }
+@keyframes modal-entrada {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes modal-salida {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+.animate-modal-fondo { animation: modal-fondo-entrada 0.15s ease-out; }
+.animate-modal-fondo-salida { animation: modal-fondo-salida 0.15s ease-in forwards; }
+.animate-modal-entrada { animation: modal-entrada 0.2s ease-out; }
+.animate-modal-salida { animation: modal-salida 0.15s ease-in forwards; }
+
+/* En celular el modal es una hoja que sube desde abajo. */
+@keyframes hoja-entrada { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes hoja-salida { from { transform: translateY(0); } to { transform: translateY(100%); } }
+@media (max-width: 639px) {
+  .animate-modal-entrada { animation: hoja-entrada 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
+  .animate-modal-salida { animation: hoja-salida 0.2s ease-in forwards; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animate-dashboard-in {
+  .animate-dashboard-in,
+  .animate-slide-desde-derecha,
+  .animate-slide-desde-izquierda,
+  .animate-modal-fondo,
+  .animate-modal-fondo-salida,
+  .animate-modal-entrada,
+  .animate-modal-salida {
     animation: none;
+  }
+}
+
+/* Tablas apilables: en mobile cada fila pasa a ser una tarjeta y cada celda "etiqueta: valor"
+   (la etiqueta sale del atributo data-label del <td>). Desde md vuelve a ser una tabla normal. */
+@media (max-width: 767px) {
+  .tabla-apilable,
+  .tabla-apilable tbody {
+    display: block;
+    min-width: 0;
+  }
+  .tabla-apilable thead {
+    display: none;
+  }
+  .tabla-apilable tr {
+    display: block;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--color-neutral-200);
+  }
+  .tabla-apilable tr:nth-child(even) {
+    background: var(--color-neutral-50);
+  }
+  /* La primera celda es el título de la tarjeta: sin etiqueta, a la izquierda y destacada. */
+  .tabla-apilable td:first-child[data-label] {
+    justify-content: flex-start;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px solid var(--color-neutral-100);
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: left;
+  }
+  .tabla-apilable td:first-child[data-label]::before {
+    display: none;
+  }
+  /* Acciones: botones grandes (blanco táctil), de a dos por línea, ocupando todo el ancho. */
+  .tabla-apilable td[data-label="Acciones"] {
+    display: block;
+    padding-top: 0.6rem;
+  }
+  .tabla-apilable td[data-label="Acciones"]::before {
+    display: none;
+  }
+  .tabla-apilable td[data-label="Acciones"] > div {
+    justify-content: stretch;
+  }
+  .tabla-apilable td[data-label="Acciones"] button {
+    flex: 1 1 calc(50% - 0.5rem);
+    justify-content: center;
+    min-height: 2.5rem;
+    font-size: 0.8rem;
+  }
+  .tabla-apilable td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.4rem 0;
+    text-align: right;
+  }
+  .tabla-apilable td[data-label]::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-neutral-500);
+  }
+  .tabla-apilable td[colspan] {
+    justify-content: center;
   }
 }

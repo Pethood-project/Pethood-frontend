@@ -19,6 +19,7 @@ import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantal
 import { useToast } from '@/components/feedback/Toast';
 import { LineaTiempoEstados } from '@/components/solicitudes/LineaTiempoEstados';
 import { ResolverSolicitudModal } from '@/components/solicitudes/ResolverSolicitudModal';
+import { ResumenReputacion } from '@/components/resenas/ResumenReputacion';
 import { Avatar } from '@/components/ui/Avatar';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { EstadoSolicitudBadge } from '@/components/ui/EstadoSolicitudBadge';
@@ -295,6 +296,15 @@ export default function DetalleSolicitudScreen() {
                   </Text>
                 </View>
               </View>
+
+              {/* Reputación del solicitante (Módulo 10, HU-10.5): quien evalúa la solicitud
+                  ve cómo lo valoraron otras personas que adoptaron o hicieron tránsito. */}
+              <ResumenReputacion
+                tipo="usuario"
+                id={solicitud.solicitante.id}
+                mostrarLista
+                className="mt-2.5"
+              />
             </SeccionTitulada>
             )}
 

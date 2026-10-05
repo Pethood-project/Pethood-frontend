@@ -8,20 +8,19 @@
  * - "denegado" se puede volver a pedir; "bloqueado" (el sistema ya no muestra el diálogo)
  *   lleva a Ajustes, y al volver a la app se revisa solo.
  * - Las coordenadas se piden recién al publicar, así el GPS no se enciende de más.
+ *
+ * Las coordenadas salen de `lib/ubicacion`, la misma lectura que usan las distancias y el
+ * filtro por cercanía de toda la app: así la posición que se toma acá queda recordada para el
+ * resto de la sesión. Este hook sólo agrega lo que el alta necesita además: saber el estado
+ * del permiso para mostrar la nota y llevar a Ajustes cuando el sistema ya no pregunta.
  */
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useState } from 'react';
 import { AppState, Linking } from 'react-native';
 
+import { pedirUbicacion, type Coordenadas } from '@/lib/ubicacion';
+
 export type EstadoPermisoUbicacion = 'verificando' | 'concedido' | 'denegado' | 'bloqueado';
-
-export interface Coordenadas {
-  latitud: number;
-  longitud: number;
-}
-
-/** Una posición de hace unos minutos alcanza: nadie cambió de barrio mientras completaba. */
-const ANTIGUEDAD_MAXIMA_MS = 5 * 60_000;
 
 function estadoDe(permiso: Location.LocationPermissionResponse): EstadoPermisoUbicacion {
   if (permiso.granted) return 'concedido';
@@ -75,20 +74,19 @@ export function useUbicacionDispositivo() {
    * teléfono está apagada o no se pudo obtener.
    */
   const obtenerCoordenadas = useCallback(async (): Promise<Coordenadas> => {
-    if (!(await Location.hasServicesEnabledAsync())) {
+    // `forzar`: la posición es la del momento de publicar, no una recordada de antes.
+    const resultado = await pedirUbicacion({ forzar: true });
+    if (resultado.ok) return resultado.coordenadas;
+
+    if (resultado.motivo === 'DESACTIVADO') {
       throw new Error('Activá la ubicación del teléfono para poder publicar el aviso.');
     }
-
-    try {
-      const posicion =
-        (await Location.getLastKnownPositionAsync({ maxAge: ANTIGUEDAD_MAXIMA_MS })) ??
-        (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
-
-      return { latitud: posicion.coords.latitude, longitud: posicion.coords.longitude };
-    } catch {
-      throw new Error('No pudimos obtener tu ubicación. Intentalo de nuevo en unos segundos.');
+    if (resultado.motivo === 'DENEGADO') {
+      void revisar().catch(() => undefined);
+      throw new Error('Permití el acceso a tu ubicación para publicar el aviso.');
     }
-  }, []);
+    throw new Error('No pudimos obtener tu ubicación. Intentalo de nuevo en unos segundos.');
+  }, [revisar]);
 
   return { estado, permitir, obtenerCoordenadas };
 }

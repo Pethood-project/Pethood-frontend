@@ -84,6 +84,7 @@ export interface DetalleRefugio {
   refugio: RefugioAdmin;
   miembros: MiembroRefugio[];
   resumen: ResumenRefugio;
+  resenas: ResumenResenas;
 }
 
 export interface AltaRefugioBody {
@@ -98,4 +99,34 @@ export interface RolesBody {
   agregar?: RolUsuario[];
   quitar?: RolUsuario[];
   refugioId?: number;
+}
+
+// --- Reseñas (mismo resumen que el perfil público) ----------------------------------------
+
+export interface ResenaAdmin {
+  id: number;
+  puntuacion: number;
+  comentario: string | null;
+  fecha: string;
+  autor: { id: number; nombre: string; apellido: string; imagenUrl: string | null };
+}
+
+export interface ResumenResenas {
+  promedio: number | null;
+  cantidad: number;
+  distribucion: { puntuacion: number; cantidad: number }[];
+  resenas: ResenaAdmin[];
+}
+
+/** `GET /admin/usuarios/:id`. */
+export interface DetalleUsuario {
+  usuario: UsuarioAdmin & {
+    imagenUrl: string | null;
+    fechaNacimiento: string | null;
+    fechaAlta: string;
+    ubicacion: string | null;
+    refugio: { id: number; nombre: string } | null;
+  };
+  resumen: { mascotas: number; solicitudes: number; donaciones: number };
+  resenas: ResumenResenas;
 }

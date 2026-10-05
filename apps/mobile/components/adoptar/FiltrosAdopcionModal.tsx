@@ -6,18 +6,25 @@
  * alcanza con levantar el estado un nivel.
  *
  * Se edita sobre un borrador local y recién al tocar "Aplicar" se avisa hacia afuera: así
- * cambiar tres cosas no recarga el feed tres veces. Cerrar sin aplicar descarta el
- * borrador.
+ * cambiar tres cosas no recarga el feed tres veces. Cerrar sin aplicar descarta el borrador.
+ *
+ * Módulo 11: además de los filtros por características agrega orden y fecha de publicación
+ * (HU-11.2) y ubicación por cercanía (HU-11.3). La ubicación se calcula con las coordenadas
+ * del usuario (GPS) contra la ubicación del refugio; el radio por defecto es "Ninguno", que
+ * no limita la búsqueda.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { SeccionTitulada } from '@/components/ui/SeccionTitulada';
+import { useToast } from '@/components/feedback/Toast';
+import { DateField } from '@/components/ui/DateField';
+import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { SelectorChips, type OpcionSelector } from '@/components/ui/SelectorChips';
 import { ToggleField } from '@/components/ui/ToggleField';
 import { PALETA } from '@/constants/theme';
+import { pedirUbicacion } from '@/lib/ubicacion';
 import { listarEspecies, type OpcionCatalogo } from '@/services/catalogos';
 import type { Genero, Tamanio } from '@/services/mascotas';
 import {
@@ -48,6 +55,32 @@ const GENEROS: OpcionSelector<Genero>[] = [
   { valor: 'HEMBRA', etiqueta: 'Hembra' },
 ];
 
+/** Orden por fecha de alta (HU-11.2). "Más recientes" es el default del backend. */
+const ORDEN: OpcionSelector<'recientes' | 'antiguas'>[] = [
+  { valor: 'recientes', etiqueta: 'Más recientes' },
+  { valor: 'antiguas', etiqueta: 'Más antiguas' },
+];
+
+/** Radios ofrecidos para el filtro por cercanía, en kilómetros (HU-11.3). */
+const RADIOS: OpcionSelector<number>[] = [
+  { valor: 5, etiqueta: '5 km' },
+  { valor: 10, etiqueta: '10 km' },
+  { valor: 25, etiqueta: '25 km' },
+  { valor: 50, etiqueta: '50 km' },
+];
+
+/** Bloque con rótulo en mayúsculas, como las secciones del resto de los filtros. */
+function Seccion({ titulo, children, className = '' }: { titulo: string; children: ReactNode; className?: string }) {
+  return (
+    <View className={`mb-5 ${className}`}>
+      <Text className="mb-2 text-[11px] font-bold uppercase tracking-wide text-gray-500">
+        {titulo}
+      </Text>
+      {children}
+    </View>
+  );
+}
+
 interface FiltrosAdopcionModalProps {
   visible: boolean;
   /** Filtros aplicados hoy; el borrador se reinicia con ellos cada vez que se abre. */
@@ -63,8 +96,10 @@ export function FiltrosAdopcionModal({
   onCerrar,
 }: FiltrosAdopcionModalProps) {
   const insets = useSafeAreaInsets();
+  const toast = useToast();
   const [borrador, setBorrador] = useState<FiltrosAdopcion>(filtros);
   const [especies, setEspecies] = useState<OpcionCatalogo[]>([]);
+  const [buscandoUbicacion, setBuscandoUbicacion] = useState(false);
 
   // Al abrir se descarta cualquier borrador anterior: lo que se ve tiene que ser lo que
   // está aplicado, no lo que el usuario tocó y no confirmó la vez pasada.
@@ -81,11 +116,87 @@ export function FiltrosAdopcionModal({
       .catch(() => setEspecies([]));
   }, []);
 
-  const activos = contarFiltrosActivos(borrador);
+  // El texto libre no es un filtro del modal (vive en la barra de búsqueda de la pantalla),
+  // así que no cuenta para "Limpiar" ni para el contador del botón.
+  const activos = contarFiltrosActivos({ ...borrador, texto: undefined });
 
   const rangoActivo = RANGOS_DE_EDAD.find(
     (rango) => rango.desde === borrador.edadMin && rango.hasta === borrador.edadMax,
   );
+
+  const usaGps = borrador.latitud !== undefined && borrador.longitud !== undefined;
+
+  /**
+   * Pide la ubicación actual y la guarda en el borrador. Si falla, avisa: sin coordenadas no
+   * hay filtro por cercanía (ya no hay localidad de texto como alternativa).
+   */
+  const usarUbicacionActual = async (): Promise<void> => {
+    setBuscandoUbicacion(true);
+    // `forzar`: el botón explícitamente pide la posición de nuevo ("Actualizar mi ubicación").
+    const resultado = await pedirUbicacion({ forzar: true });
+    setBuscandoUbicacion(false);
+
+    if (resultado.ok) {
+      setBorrador((actual) => ({
+        ...actual,
+        latitud: resultado.coordenadas.latitud,
+        longitud: resultado.coordenadas.longitud,
+      }));
+      toast.mostrarExito('Ya tenemos tu ubicación: elegí un radio para filtrar.');
+      return;
+    }
+
+    toast.mostrarAdvertencia(
+      resultado.motivo === 'DENEGADO'
+        ? 'Sin permiso de ubicación no podemos filtrar por cercanía. Podés seguir explorando el feed completo.'
+        : 'No pudimos obtener tu ubicación. Probá de nuevo.',
+    );
+  };
+
+  /**
+   * Elige el radio. "Ninguno" (`undefined`) no limita la búsqueda. Elegir un radio necesita
+   * las coordenadas: si todavía no están, se piden en el momento y, si se deniegan, queda
+   * "Ninguno".
+   */
+  const elegirRadio = async (radioKm: number | undefined): Promise<void> => {
+    if (radioKm === undefined) {
+      setBorrador((actual) => ({ ...actual, radioKm: undefined }));
+      return;
+    }
+
+    if (usaGps) {
+      setBorrador((actual) => ({ ...actual, radioKm }));
+      return;
+    }
+
+    setBuscandoUbicacion(true);
+    const resultado = await pedirUbicacion();
+    setBuscandoUbicacion(false);
+
+    if (!resultado.ok) {
+      toast.mostrarAdvertencia(
+        'Sin tu ubicación no podemos limitar por distancia. El filtro queda en "Ninguno".',
+      );
+      return;
+    }
+
+    setBorrador((actual) => ({
+      ...actual,
+      radioKm,
+      latitud: resultado.coordenadas.latitud,
+      longitud: resultado.coordenadas.longitud,
+    }));
+  };
+
+  /** Deja de usar la ubicación: sin coordenadas no hay radio que aplicar. */
+  const quitarUbicacion = (): void => {
+    setBorrador((actual) => ({
+      ...actual,
+      latitud: undefined,
+      longitud: undefined,
+      radioKm: undefined,
+    }));
+  };
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onCerrar} statusBarTranslucent>
@@ -112,7 +223,13 @@ export function FiltrosAdopcionModal({
 
             <Pressable
               accessibilityRole="button"
-              onPress={() => setBorrador(SIN_FILTROS)}
+              onPress={() =>
+                setBorrador({
+                  ...SIN_FILTROS,
+                  // El texto de la barra de búsqueda no es un filtro del modal: se conserva.
+                  texto: borrador.texto,
+                })
+              }
               disabled={activos === 0}
               hitSlop={10}
               className="active:opacity-70"
@@ -127,9 +244,96 @@ export function FiltrosAdopcionModal({
             </Pressable>
           </View>
 
-          <ScrollView contentContainerStyle={{ padding: 16 }}>
+          <ScrollView contentContainerStyle={{ padding: 16 }} keyboardShouldPersistTaps="handled">
+            <Seccion titulo="Ordenar por">
+              <SelectorChips
+                prefijo="orden"
+                opciones={ORDEN}
+                valor={borrador.orden ?? 'recientes'}
+                onChange={(orden) => setBorrador({ ...borrador, orden })}
+              />
+            </Seccion>
+
+            <Seccion titulo="Fecha de publicación">
+              <FormCard>
+                <FormCardRow>
+                  <DateField
+                    label="Desde"
+                    placeholder="Sin límite"
+                    valor={borrador.fechaDesde ?? null}
+                    onChange={(fechaDesde) => setBorrador({ ...borrador, fechaDesde })}
+                    fechaMaxima={borrador.fechaHasta ?? new Date()}
+                    mostrarEdad={false}
+                    grande
+                  />
+                </FormCardRow>
+                <FormCardRow ultima>
+                  <DateField
+                    label="Hasta"
+                    placeholder="Sin límite"
+                    valor={borrador.fechaHasta ?? null}
+                    onChange={(fechaHasta) => setBorrador({ ...borrador, fechaHasta })}
+                    fechaMinima={borrador.fechaDesde}
+                    mostrarEdad={false}
+                    grande
+                  />
+                </FormCardRow>
+              </FormCard>
+            </Seccion>
+
+            <Seccion titulo="Ubicación">
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Usar mi ubicación actual"
+                onPress={() => void usarUbicacionActual()}
+                disabled={buscandoUbicacion}
+                className="flex-row items-center justify-center gap-2 rounded-2xl border border-organic-accent-600 bg-organic-surface py-3.5 active:opacity-80"
+              >
+                <Ionicons
+                  name={usaGps ? 'navigate' : 'navigate-outline'}
+                  size={18}
+                  color={PALETA.accent[600]}
+                />
+                <Text className="font-cuerpo-semi text-[15px] text-organic-accent-600">
+                  {buscandoUbicacion
+                    ? 'Buscando…'
+                    : usaGps
+                      ? 'Actualizar mi ubicación'
+                      : 'Usar mi ubicación actual'}
+                </Text>
+              </Pressable>
+
+              <View className="mt-3">
+                <Text className="mb-2 font-cuerpo text-[14px] text-organic-neutral-700">
+                  Mostrar publicaciones en un radio de:
+                </Text>
+                {/* "Ninguno" es el default: no limita la búsqueda. Elegir un radio pide la
+                    ubicación del usuario en el momento si todavía no la tenemos. */}
+                <SelectorChips
+                  prefijo="radio"
+                  etiquetaSinFiltro="Ninguno"
+                  opciones={RADIOS}
+                  valor={borrador.radioKm}
+                  onChange={(radioKm) => void elegirRadio(radioKm)}
+                />
+              </View>
+
+              {usaGps ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={quitarUbicacion}
+                  hitSlop={8}
+                  className="mt-3 self-start active:opacity-60"
+                >
+                  <Text className="font-cuerpo-semi text-[13px] text-organic-accent-700">
+                    Quitar ubicación actual
+                  </Text>
+                </Pressable>
+              ) : null}
+            </Seccion>
+
             {especies.length > 0 ? (
-              <SeccionTitulada titulo="Especie" className="mb-5">
+              <Seccion titulo="Especie">
                 <SelectorChips
                   prefijo="especie"
                   etiquetaSinFiltro="Todas"
@@ -140,10 +344,10 @@ export function FiltrosAdopcionModal({
                   valor={borrador.especieId}
                   onChange={(especieId) => setBorrador({ ...borrador, especieId })}
                 />
-              </SeccionTitulada>
+              </Seccion>
             ) : null}
 
-            <SeccionTitulada titulo="Tamaño" className="mb-5">
+            <Seccion titulo="Tamaño">
               <SelectorChips
                 prefijo="tamanio"
                 etiquetaSinFiltro="Todos"
@@ -151,9 +355,9 @@ export function FiltrosAdopcionModal({
                 valor={borrador.tamanio}
                 onChange={(tamanio) => setBorrador({ ...borrador, tamanio })}
               />
-            </SeccionTitulada>
+            </Seccion>
 
-            <SeccionTitulada titulo="Edad" className="mb-5">
+            <Seccion titulo="Edad">
               {/* El selector maneja valores planos, así que el rango viaja por su etiqueta
                   y se vuelve a resolver acá para escribir `edadMin`/`edadMax`. */}
               <SelectorChips
@@ -169,9 +373,9 @@ export function FiltrosAdopcionModal({
                   setBorrador({ ...borrador, edadMin: rango?.desde, edadMax: rango?.hasta });
                 }}
               />
-            </SeccionTitulada>
+            </Seccion>
 
-            <SeccionTitulada titulo="Sexo" className="mb-5">
+            <Seccion titulo="Sexo">
               <SelectorChips
                 prefijo="genero"
                 etiquetaSinFiltro="Todos"
@@ -179,9 +383,9 @@ export function FiltrosAdopcionModal({
                 valor={borrador.genero}
                 onChange={(genero) => setBorrador({ ...borrador, genero })}
               />
-            </SeccionTitulada>
+            </Seccion>
 
-            <SeccionTitulada titulo="Compatible con" className="mb-5">
+            <Seccion titulo="Compatible con" className="mb-5">
               <View className="gap-3.5 rounded-2xl bg-white p-3.5">
                 <ToggleField
                   label="Chicos"
@@ -205,7 +409,7 @@ export function FiltrosAdopcionModal({
               <Text className="mt-2 text-xs leading-4 text-gray-500">
                 La compatibilidad la declara quien publica al elegir los rasgos de la mascota.
               </Text>
-            </SeccionTitulada>
+            </Seccion>
           </ScrollView>
 
           {/* El inset va en el padding y no en el `edges` del SafeAreaView para que el

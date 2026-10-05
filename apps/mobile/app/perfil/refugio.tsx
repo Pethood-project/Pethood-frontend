@@ -16,7 +16,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import type { ImagePickerAsset } from 'expo-image-picker';
 import { useNavigation, useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -26,24 +26,38 @@ import {
   FORMA_BOTON_ORGANIC_PRINCIPAL,
 } from '@/components/CustomButton';
 import { useToast } from '@/components/feedback/Toast';
+import { AvisoVerificacionUbicacion } from '@/components/perfil/AvisoVerificacionUbicacion';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { LogoRefugio } from '@/components/ui/LogoRefugio';
+import { SelectField } from '@/components/ui/SelectField';
 import { TextAreaField } from '@/components/ui/TextAreaField';
 import { TextField } from '@/components/ui/TextField';
+import { PROVINCIAS, localidadesDe } from '@/constants/Provincias';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
+import { usePreviewUbicacion, type DireccionEstructurada } from '@/hooks/usePreviewUbicacion';
 import {
   abrirSelectorImagen,
   assetAArchivoLocal,
   validarAssetImagen,
 } from '@/lib/elegirImagen';
 import type { ArchivoImagenLocal } from '@/lib/formDataImagen';
-import { sanitizarTelefono, validarEmail, validarTelefono } from '@/lib/validacionRegistro';
+import {
+  sanitizarTelefono,
+  validarCalleAltura,
+  validarEmail,
+  validarTelefono,
+} from '@/lib/validacionRegistro';
 import { ApiError, urlAbsoluta } from '@/services/api';
-import { actualizarPerfilRefugio, obtenerPerfilRefugio } from '@/services/refugio';
+import {
+  actualizarPerfilRefugio,
+  actualizarUbicacionRefugio,
+  obtenerPerfilRefugio,
+  previewUbicacionRefugio,
+} from '@/services/refugio';
 import { LIMITES } from '@/shared/validation/limits';
 import { validarTexto } from '@/shared/validation/text';
 import type { PerfilRefugio } from '@/types/refugio';
@@ -51,7 +65,9 @@ import type { PerfilRefugio } from '@/types/refugio';
 interface Formulario {
   nombre: string;
   descripcion: string;
-  direccion: string;
+  provincia: string;
+  localidad: string;
+  calleAltura: string;
   telefono: string;
   email: string;
 }
@@ -59,14 +75,24 @@ interface Formulario {
 type Errores = Partial<Record<keyof Formulario, string>>;
 
 function vacio(): Formulario {
-  return { nombre: '', descripcion: '', direccion: '', telefono: '', email: '' };
+  return {
+    nombre: '',
+    descripcion: '',
+    provincia: '',
+    localidad: '',
+    calleAltura: '',
+    telefono: '',
+    email: '',
+  };
 }
 
 function aFormulario(refugio: PerfilRefugio): Formulario {
   return {
     nombre: refugio.nombre,
     descripcion: refugio.descripcion ?? '',
-    direccion: refugio.direccion,
+    provincia: refugio.provincia ?? '',
+    localidad: refugio.localidad ?? '',
+    calleAltura: refugio.calleAltura ?? '',
     telefono: refugio.telefono ?? '',
     email: refugio.email ?? '',
   };
@@ -80,11 +106,8 @@ function validarCampo(campo: keyof Formulario, valor: string): string | undefine
         validarTexto(valor, { ...LIMITES.refugio.nombre, etiqueta: 'El nombre del refugio' }) ??
         undefined
       );
-    case 'direccion':
-      return (
-        validarTexto(valor, { ...LIMITES.refugio.direccion, etiqueta: 'La dirección' }) ??
-        undefined
-      );
+    case 'calleAltura':
+      return validarCalleAltura(valor);
     case 'descripcion':
       return (
         validarTexto(valor, {
@@ -97,10 +120,12 @@ function validarCampo(campo: keyof Formulario, valor: string): string | undefine
       return valor.trim() ? validarTelefono(valor) : undefined;
     case 'email':
       return valor.trim() ? validarEmail(valor) : undefined;
+    default:
+      return undefined;
   }
 }
 
-const CAMPOS: (keyof Formulario)[] = ['nombre', 'descripcion', 'direccion', 'telefono', 'email'];
+const CAMPOS: (keyof Formulario)[] = ['nombre', 'descripcion', 'calleAltura', 'telefono', 'email'];
 
 export default function DatosRefugioScreen() {
   const router = useRouter();
@@ -110,6 +135,8 @@ export default function DatosRefugioScreen() {
 
   const [form, setForm] = useState<Formulario>(vacio);
   const [inicial, setInicial] = useState<Formulario>(vacio);
+  const [verificada, setVerificada] = useState(false);
+  const [inicialVerificada, setInicialVerificada] = useState(false);
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
   const [fotoNueva, setFotoNueva] = useState<ArchivoImagenLocal | undefined>();
   const [puedeEditar, setPuedeEditar] = useState(false);
@@ -120,11 +147,33 @@ export default function DatosRefugioScreen() {
   const [confirmarSalida, setConfirmarSalida] = useState(false);
   const permitirSalir = useRef(false);
 
-  const hayCambios = JSON.stringify(form) !== JSON.stringify(inicial) || Boolean(fotoNueva);
+  const hayCambios =
+    JSON.stringify(form) !== JSON.stringify(inicial) ||
+    verificada !== inicialVerificada ||
+    Boolean(fotoNueva);
 
   const formularioValido = useMemo(
     () => CAMPOS.every((campo) => !validarCampo(campo, form[campo])),
     [form],
+  );
+
+  const previsualizar = useCallback(
+    (direccion: DireccionEstructurada) => {
+      if (!token) {
+        return Promise.reject(new ApiError('No encontramos tu sesión.', 'NO_AUTENTICADO', 401));
+      }
+      return previewUbicacionRefugio(token, direccion).then((r) => r.ubicacion);
+    },
+    [token],
+  );
+
+  const {
+    ubicacion: ubicacionPreview,
+    cargando: cargandoPreview,
+    error: errorPreview,
+  } = usePreviewUbicacion(
+    { provincia: form.provincia, localidad: form.localidad, calleAltura: form.calleAltura },
+    previsualizar,
   );
 
   useEffect(() => {
@@ -134,6 +183,8 @@ export default function DatosRefugioScreen() {
         const siguiente = aFormulario(refugio);
         setForm(siguiente);
         setInicial(siguiente);
+        setVerificada(refugio.ubicacionVerificada);
+        setInicialVerificada(refugio.ubicacionVerificada);
         setFotoUrl(urlAbsoluta(refugio.imagenUrl));
         setPuedeEditar(refugio.puedeEditar);
       })
@@ -176,6 +227,7 @@ export default function DatosRefugioScreen() {
 
   const cancelarEdicion = (): void => {
     setForm(inicial);
+    setVerificada(inicialVerificada);
     setFotoNueva(undefined);
     setErrors({});
     setFormError(undefined);
@@ -184,10 +236,33 @@ export default function DatosRefugioScreen() {
   const cambiar = (campo: keyof Formulario, valor: string): void => {
     const formateado = campo === 'telefono' ? sanitizarTelefono(valor) : valor;
     setForm((prev) => ({ ...prev, [campo]: formateado }));
+    // Cambiar la dirección invalida la verificación anterior.
+    if (campo === 'calleAltura' || campo === 'localidad' || campo === 'provincia') {
+      setVerificada(false);
+    }
     // Mientras escribe solo se marca lo que ya está mal; un obligatorio vacío espera al blur.
     const error = formateado.trim() ? validarCampo(campo, formateado) : undefined;
     setErrors((prev) => (prev[campo] === error ? prev : { ...prev, [campo]: error }));
   };
+
+  // Al cambiar de provincia se limpia la localidad: las del listado anterior ya no aplican.
+  const handleProvinciaChange = (value: string): void => {
+    setForm((prev) => ({ ...prev, provincia: value, localidad: '' }));
+    setVerificada(false);
+  };
+
+  const handleLocalidadChange = (value: string): void => {
+    cambiar('localidad', value);
+  };
+
+  const guardarUbicacionManual = useCallback(
+    async (mapaUrl: string): Promise<void> => {
+      if (!token) return;
+      await actualizarUbicacionRefugio(token, mapaUrl);
+      setVerificada(true);
+    },
+    [token],
+  );
 
   const alSalirDelCampo = (campo: keyof Formulario): void => {
     const error = validarCampo(campo, form[campo]);
@@ -238,9 +313,12 @@ export default function DatosRefugioScreen() {
         {
           nombre: form.nombre.trim(),
           descripcion: form.descripcion.trim(),
-          direccion: form.direccion.trim(),
+          provincia: form.provincia.trim(),
+          localidad: form.localidad.trim(),
+          calleAltura: form.calleAltura.trim(),
           telefono: form.telefono.trim(),
           email: form.email.trim(),
+          ubicacionVerificada: verificada,
         },
         fotoNueva,
       );
@@ -327,19 +405,51 @@ export default function DatosRefugioScreen() {
                 />
               </FormCardRow>
               <FormCardRow>
+                <SelectField
+                  lapiz={puedeEditar}
+                  grande
+                  label="Provincia"
+                  placeholder="Elegí la provincia"
+                  opciones={PROVINCIAS.map((provincia) => ({
+                    valor: provincia.nombre,
+                    etiqueta: provincia.nombre,
+                  }))}
+                  valor={form.provincia || null}
+                  onChange={handleProvinciaChange}
+                  deshabilitado={!puedeEditar}
+                  buscable
+                />
+              </FormCardRow>
+              <FormCardRow>
+                <SelectField
+                  lapiz={puedeEditar}
+                  grande
+                  label="Localidad"
+                  placeholder="Elegí la localidad"
+                  opciones={localidadesDe(form.provincia).map((localidad) => ({
+                    valor: localidad,
+                    etiqueta: localidad,
+                  }))}
+                  valor={form.localidad || null}
+                  onChange={handleLocalidadChange}
+                  deshabilitado={!puedeEditar || !form.provincia}
+                  textoDeshabilitado="Elegí primero la provincia"
+                  buscable
+                />
+              </FormCardRow>
+              <FormCardRow>
                 <TextField
-                  label="Dirección"
-                  obligatorio
+                  label="Calle y altura"
                   lapiz={puedeEditar}
                   editable={puedeEditar}
                   grande
-                  value={form.direccion}
-                  onChangeText={(valor) => cambiar('direccion', valor)}
-                  onBlur={() => alSalirDelCampo('direccion')}
-                  error={errors.direccion}
+                  value={form.calleAltura}
+                  onChangeText={(valor) => cambiar('calleAltura', valor)}
+                  onBlur={() => alSalirDelCampo('calleAltura')}
+                  error={errors.calleAltura}
                   autoCapitalize="words"
                   textContentType="fullStreetAddress"
-                  maxLength={LIMITES.refugio.direccion.max}
+                  maxLength={LIMITES.refugio.calleAltura.max}
                 />
               </FormCardRow>
               <FormCardRow>
@@ -373,6 +483,19 @@ export default function DatosRefugioScreen() {
                 />
               </FormCardRow>
             </FormCard>
+
+            {puedeEditar ? (
+              <View className="mt-3">
+                <AvisoVerificacionUbicacion
+                  ubicacion={ubicacionPreview}
+                  cargando={cargandoPreview}
+                  error={errorPreview}
+                  verificada={verificada}
+                  onVerificar={() => setVerificada(true)}
+                  onGuardarManual={guardarUbicacionManual}
+                />
+              </View>
+            ) : null}
 
             {formError ? (
               <Text className="mt-3 text-center text-sm text-red-500">{formError}</Text>

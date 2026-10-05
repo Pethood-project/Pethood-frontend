@@ -120,6 +120,22 @@ export function suscribirSesionInvalida(listener: ListenerSesionInvalida): () =>
   };
 }
 
+type ListenerRefugioNoVerificado = () => void;
+const listenersRefugioNoVerificado = new Set<ListenerRefugioNoVerificado>();
+
+/** El provider de sesión se anota acá para pasar al perfil personal si el refugio no está Activo. */
+export function suscribirRefugioNoVerificado(listener: ListenerRefugioNoVerificado): () => void {
+  listenersRefugioNoVerificado.add(listener);
+  return () => {
+    listenersRefugioNoVerificado.delete(listener);
+  };
+}
+
+/** Lo llama el cliente HTTP ante un 403 `REFUGIO_NO_VERIFICADO` (refugio pendiente, suspendido o de baja). */
+export function avisarRefugioNoVerificado(): void {
+  listenersRefugioNoVerificado.forEach((listener) => listener());
+}
+
 /**
  * True si el JWT no se puede leer o ya pasó su `exp`. No verifica firma: eso lo hace
  * el backend. Sirve para no restaurar una sesión que el usuario ya no podría usar.

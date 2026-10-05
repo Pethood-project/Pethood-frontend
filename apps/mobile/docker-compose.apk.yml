@@ -1,0 +1,50 @@
+# Compila el APK release en un contenedor con Android SDK + JDK 17 + Node 22, sin instalar nada
+# en la máquina. Instrucciones completas en APK.md.
+#
+#   podman compose -f docker-compose.apk.yml run --rm apk     (o docker compose ...)
+#
+# El APK queda en dist/pethood.apk (gitignoreado).
+services:
+  apk:
+    image: docker.io/reactnativecommunity/react-native-android:latest
+    volumes:
+      # el código entra de solo lectura y se copia adentro: prebuild genera android/ y reescribe
+      # scripts de package.json, y nada de eso tiene que tocar el working tree
+      - .:/src:ro
+      - ./dist:/out
+      # caches que sobreviven entre builds: sin ellos cada build baja ~2 GB de Gradle y todo npm
+      - gradle-cache:/opt/gradle-home # la imagen usa GRADLE_USER_HOME=/opt/gradle-home
+      - npm-cache:/root/.npm
+      # la imagen no trae platform/build-tools 36 y Gradle los baja al SDK en cada build. El
+      # volumen vacío se llena con el SDK de la imagen la primera vez y conserva lo que se agregue
+      - android-sdk:/opt/android
+    environment:
+      # arm64-v8a cubre casi cualquier celular actual. Para el emulador x86_64 o un APK universal:
+      # ARQUITECTURAS=arm64-v8a,armeabi-v7a,x86,x86_64
+      # Sin valor: se pasa tal cual desde el host y el default lo pone bash más abajo, porque
+      # podman-compose no interpola ${VAR:-default} y mandaba el texto literal a Gradle.
+      - ARQUITECTURAS
+    command:
+      - bash
+      - -euo
+      - pipefail
+      - -c
+      - |
+        mkdir -p /work
+        tar -C /src --exclude=./node_modules --exclude=./android --exclude=./.expo --exclude=./dist -cf - . | tar -C /work -xf -
+        cd /work
+        npm ci --no-audit --no-fund
+        npx expo prebuild --platform android --no-install
+        # EXPO_PUBLIC_API_URL sale del .env, que en local suele ser HTTP plano (IP de la LAN o de
+        # Tailscale). Un release de Android bloquea HTTP sin TLS, así que este build lo habilita.
+        # El de GitHub Actions no: ese apunta a la API con HTTPS.
+        sed -i 's/<application /<application android:usesCleartextTraffic="true" /' android/app/src/main/AndroidManifest.xml
+        cd android
+        ./gradlew assembleRelease -PreactNativeArchitectures="$${ARQUITECTURAS:-arm64-v8a}" --no-daemon --console=plain
+        cp app/build/outputs/apk/release/app-release.apk /out/pethood.apk
+        echo "APK listo: dist/pethood.apk"
+
+volumes:
+  gradle-cache:
+  npm-cache:
+  android-sdk:

@@ -24,14 +24,14 @@ export function PeriodoSelector({ periodo }: { periodo: PeriodoDashboard }) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
-      <div className="flex items-center gap-2.5 rounded-lg border border-neutral-300 bg-neutral-100 px-3.5 py-2">
+    <div className="flex w-full flex-col items-stretch gap-1 sm:w-auto sm:items-end">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg sm:gap-2.5 border border-neutral-300 bg-neutral-100 px-3.5 py-2">
         <span className="text-sm font-semibold text-neutral-700">Período:</span>
         <input
           type="month"
           value={desde}
           onChange={(e) => setDesde(e.target.value)}
-          className="rounded border border-transparent bg-transparent text-base font-medium text-neutral-900 outline-none hover:border-neutral-300 focus:border-pethood-orange"
+          className="min-w-0 flex-1 rounded border border-transparent bg-transparent text-base font-medium text-neutral-900 outline-none hover:border-neutral-300 focus:border-pethood-orange"
           aria-label="Mes desde"
         />
         <span className="text-neutral-500">–</span>
@@ -39,13 +39,13 @@ export function PeriodoSelector({ periodo }: { periodo: PeriodoDashboard }) {
           type="month"
           value={hasta}
           onChange={(e) => setHasta(e.target.value)}
-          className="rounded border border-transparent bg-transparent text-base font-medium text-neutral-900 outline-none hover:border-neutral-300 focus:border-pethood-orange"
+          className="min-w-0 flex-1 rounded border border-transparent bg-transparent text-base font-medium text-neutral-900 outline-none hover:border-neutral-300 focus:border-pethood-orange"
           aria-label="Mes hasta"
         />
         <button
           type="button"
           onClick={aplicar}
-          className="ml-1 rounded-md bg-pethood-orange px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-pethood-orange-dark"
+          className="ml-auto rounded-md bg-pethood-orange px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-pethood-orange-dark"
         >
           Aplicar
         </button>

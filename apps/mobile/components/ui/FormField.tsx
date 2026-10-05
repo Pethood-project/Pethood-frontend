@@ -63,6 +63,11 @@ interface FormFieldProps {
   grande?: boolean;
   /** Pinta un lapicito junto a la etiqueta, para marcar que el campo se puede editar (perfil). */
   lapiz?: boolean;
+  /**
+   * Fuerza la paleta cuando el campo NO está dentro de una `FormCard` (ej. el registro, que
+   * usa `CustomInput organic` suelto). Sin esto, se usa la paleta de la tarjeta que envuelve.
+   */
+  paleta?: PaletaFormulario;
   children: ReactNode;
 }
 
@@ -76,10 +81,12 @@ export function FormField({
   conCaja = true,
   grande = false,
   lapiz = false,
+  paleta,
   children,
 }: FormFieldProps) {
   const esPregunta = variante === 'pregunta';
-  const colores = COLORES[usePaletaFormulario()];
+  const paletaContexto = usePaletaFormulario();
+  const colores = COLORES[paleta ?? paletaContexto];
 
   return (
     // Sin flex acá: el reparto de ancho lo hace FormCardColumns. Con flex-1, los campos

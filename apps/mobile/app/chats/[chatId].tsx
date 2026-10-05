@@ -18,7 +18,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Keyboard, Platform, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,12 +27,15 @@ import { BarraEscritura } from '@/components/chat/BarraEscritura';
 import { BurbujaMensaje } from '@/components/chat/BurbujaMensaje';
 import { CabeceraConversacion } from '@/components/chat/CabeceraConversacion';
 import { HojaAdjuntos, type OrigenAdjunto } from '@/components/chat/HojaAdjuntos';
+import { DetalleAvisoModal } from '@/components/perdidos/DetalleAvisoModal';
 import { VisorAdjuntos } from '@/components/chat/VisorAdjuntos';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
+import { ReporteModal, type ObjetoReportado } from '@/components/reportes/ReporteModal';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EditorFotoModal } from '@/components/ui/EditorFotoModal';
 import { SeparadorFecha } from '@/components/ui/SeparadorFecha';
 import { PALETA } from '@/constants/theme';
+import { useGestionAviso } from '@/hooks/useGestionAviso';
 import { useSalaChat } from '@/hooks/useSalaChat';
 import { useSesion } from '@/hooks/useSesion';
 import {
@@ -42,8 +45,11 @@ import {
   validarAssetAdjunto,
 } from '@/lib/elegirImagen';
 import { esMimeDeVideo, tipoDeMime, type Adjunto } from '@/lib/adjuntos';
+import { tomarAvisoEditado } from '@/lib/avisoRecienCreado';
 import { intercalarSeparadores, type FilaSala } from '@/lib/mensajesChat';
-import type { ArchivoAdjunto } from '@/services/api';
+import { coordenadasRecordadas } from '@/lib/ubicacion';
+import { obtenerAviso, type AvisoPerdido } from '@/services/animalesPerdidos';
+import { ApiError, type ArchivoAdjunto } from '@/services/api';
 import { LIMITES } from '@/shared/validation/limits';
 
 const EXTENSION_POR_TIPO: Record<string, string> = {
@@ -61,6 +67,8 @@ function normalizarTipo(tipo?: string | null): string {
 export default function ConversacionScreen() {
   const router = useRouter();
   const { usuario, token } = useSesion();
+  /** Lo que se está reportando (un mensaje o el contacto), o `null` con el modal cerrado. */
+  const [reportado, setReportado] = useState<ObjetoReportado | null>(null);
   const { chatId: parametro } = useLocalSearchParams<{ chatId: string }>();
   const chatId = Number(parametro);
 
@@ -92,6 +100,63 @@ export default function ConversacionScreen() {
   const [ampliado, setAmpliado] = useState<{ adjuntos: Adjunto[]; indice: number } | null>(null);
 
   const sala = useSalaChat(chatId, usuario?.id ?? 0, token);
+
+  /**
+   * El aviso de la tarjeta tocada, abierto en su popup encima de la conversación (HU-13.2). Se
+   * pide fresco por su id: la tarjeta trae sólo un resumen, y así el popup muestra el estado de
+   * hoy y la distancia, como en el portal.
+   */
+  const [avisoAbierto, setAvisoAbierto] = useState<AvisoPerdido | null>(null);
+  /** Candado contra el doble toque mientras se trae el aviso. */
+  const abriendoAviso = useRef(false);
+
+  const verAviso = useCallback(async (avisoId: number): Promise<void> => {
+    if (abriendoAviso.current) return;
+    abriendoAviso.current = true;
+
+    try {
+      setAvisoAbierto(await obtenerAviso(avisoId, coordenadasRecordadas()));
+    } catch (err) {
+      // La tarjeta queda en la conversación aunque quien lo publicó lo haya eliminado: es lo
+      // que se habló. Al tocarla se explica qué pasó en vez de abrir un popup vacío.
+      setAviso(
+        err instanceof ApiError && err.codigo === 'AVISO_ELIMINADO'
+          ? {
+              titulo: 'Se eliminó esta publicación',
+              mensaje:
+                'Quien la publicó la eliminó, así que ya no se puede ver. Pueden seguir hablando por acá.',
+            }
+          : {
+              titulo: 'No pudimos abrir el aviso',
+              mensaje:
+                err instanceof ApiError ? err.message : 'Revisá tu conexión e intentalo de nuevo.',
+            },
+      );
+    } finally {
+      abriendoAviso.current = false;
+    }
+  }, []);
+
+  // Resolver o editar cambia lo que muestra la tarjeta (el estado, la foto): la conversación
+  // se recarga para que la tarjeta lo refleje. Eliminar no la cambia: la tarjeta queda igual.
+  const { recargar } = sala;
+  const gestionAviso = useGestionAviso({
+    onActualizado: useCallback(
+      (actualizado: AvisoPerdido) => {
+        setAvisoAbierto(actualizado);
+        recargar();
+      },
+      [recargar],
+    ),
+    onEliminado: useCallback(() => setAvisoAbierto(null), []),
+    onAntesDeEditar: useCallback(() => setAvisoAbierto(null), []),
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      if (tomarAvisoEditado()) recargar();
+    }, [recargar]),
+  );
 
   /**
    * Alto del teclado, para levantar la barra de escritura junto con él.
@@ -313,16 +378,19 @@ export default function ConversacionScreen() {
             onReintentar={() => sala.reintentar(fila.item.clave)}
             onDescartar={() => sala.descartar(fila.item.clave)}
             onAbrirImagen={(indice) => setAmpliado({ adjuntos: fila.item.adjuntos, indice })}
+            onReportar={() => setReportado({ tipo: 'MENSAJE', objetoId: Number(fila.item.clave) })}
             onVerSolicitud={
               fila.item.solicitud
                 ? () => router.push(`/solicitudes/${fila.item.solicitud!.id}`)
                 : undefined
             }
+            // El popup del aviso se abre acá mismo, sin pasar por el portal.
+            onVerAviso={fila.item.aviso ? () => void verAviso(fila.item.aviso!.id) : undefined}
           />
         )}
       </View>
     ),
-    [sala, router],
+    [sala, router, verAviso],
   );
 
   const volver = useCallback((): void => {
@@ -342,8 +410,23 @@ export default function ConversacionScreen() {
           enLinea={sala.enLinea}
           minutosRespuesta={sala.cabecera?.minutosRespuesta ?? null}
           solicitud={sala.cabecera?.solicitud ?? null}
+          aviso={sala.cabecera?.aviso ?? null}
+          contexto={sala.cabecera?.contexto ?? null}
           desconectado={sala.desconectado}
           onVolver={volver}
+          onReportar={() => {
+            const contacto = sala.cabecera?.contacto;
+            if (contacto) setReportado({ tipo: contacto.tipo, objetoId: contacto.id });
+          }}
+          onVerPerfil={() => {
+            const contacto = sala.cabecera?.contacto;
+            if (!contacto) return;
+            if (contacto.tipo === 'REFUGIO') {
+              router.push({ pathname: '/perfiles/refugio/[id]', params: { id: contacto.id } });
+            } else {
+              router.push({ pathname: '/perfiles/usuario/[id]', params: { id: contacto.id } });
+            }
+          }}
         />
 
         {/* El padding inferior sigue al teclado, así la barra de escritura sube con él y el
@@ -413,6 +496,17 @@ export default function ConversacionScreen() {
 
       {/* Un solo visor para toda la conversación: montar un Modal por burbuja sería un
           componente por mensaje para algo que sólo se ve de a uno. */}
+      <ReporteModal objeto={reportado} onCerrar={() => setReportado(null)} />
+
+      {/* Sin "Enviar mensaje": ya se está en la conversación. Si el aviso es propio, quedan
+          las acciones de quien lo publicó. */}
+      <DetalleAvisoModal
+        aviso={avisoAbierto}
+        onCerrar={() => setAvisoAbierto(null)}
+        onResolver={gestionAviso.resolver}
+        onEditar={gestionAviso.editar}
+        onEliminar={gestionAviso.eliminar}
+      />
       <VisorAdjuntos
         adjuntos={ampliado?.adjuntos ?? []}
         indiceInicial={ampliado?.indice ?? null}

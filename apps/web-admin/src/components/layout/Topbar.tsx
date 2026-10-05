@@ -1,4 +1,6 @@
 import { LogOut, PawPrint, UserRound } from "lucide-react";
+import Link from "next/link";
+import { BotonMenu } from "./MenuMovil";
 import { logoutAction } from "@/app/actions";
 
 interface TopbarProps {
@@ -7,16 +9,23 @@ interface TopbarProps {
 
 export function Topbar({ rol }: TopbarProps) {
   return (
-    <header className="flex h-16 items-center justify-between border-b border-neutral-300 bg-neutral-100 px-6">
-      <span className="flex items-center gap-2 font-heading text-lg text-pethood-orange-dark">
-        <PawPrint className="h-6 w-6" strokeWidth={2} />
-        PetHood
-      </span>
+    <header className="flex h-16 items-center justify-between border-b border-neutral-300 bg-neutral-100 px-4 md:px-6">
+      <div className="flex items-center gap-2">
+        <BotonMenu />
+        <Link
+          href="/"
+          title="Ir al inicio"
+          className="flex items-center gap-2 font-heading text-lg text-pethood-orange-dark"
+        >
+          <PawPrint className="h-6 w-6" strokeWidth={2} />
+          PetHood
+        </Link>
+      </div>
       <div className="flex items-center gap-3 text-base text-neutral-700">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pethood-orange/10 text-pethood-orange-dark">
           <UserRound className="h-5 w-5" strokeWidth={2} />
         </span>
-        {rol}
+        <span className="hidden sm:inline">{rol}</span>
         <form action={logoutAction}>
           <button
             type="submit"

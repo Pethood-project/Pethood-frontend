@@ -15,12 +15,14 @@ export function AccionButton({
   icono: Icono,
   tono,
   disabled,
+  title,
   onClick,
   children,
 }: {
   icono: LucideIcon;
   tono: Tono;
   disabled?: boolean;
+  title?: string;
   onClick: () => void;
   children: string;
 }) {
@@ -28,6 +30,7 @@ export function AccionButton({
     <button
       type="button"
       disabled={disabled}
+      title={title}
       onClick={onClick}
       className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${ESTILOS[tono]}`}
     >

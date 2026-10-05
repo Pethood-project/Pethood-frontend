@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
+import { Download } from "lucide-react";
 import { descargarExportacion } from "@/services/dashboard";
-import { ENTIDADES_EXPORTABLES, type EntidadExportable } from "@/types/dashboard";
+import { type EntidadExportable } from "@/types/dashboard";
 
 const ETIQUETAS: Record<EntidadExportable, string> = {
   usuarios: "Usuarios",
@@ -13,13 +13,14 @@ const ETIQUETAS: Record<EntidadExportable, string> = {
   campanias: "Campañas",
 };
 
-export function ExportacionAdmin({ token }: { token: string }) {
-  const [descargando, setDescargando] = useState<EntidadExportable | null>(null);
+// GUI-41 — export CSV del dashboard de admin: un botón por entidad, montado en el panel de esa entidad.
+export function ExportacionAdmin({ entidad, token }: { entidad: EntidadExportable; token: string }) {
+  const [descargando, setDescargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function exportar(entidad: EntidadExportable) {
+  async function exportar() {
     setError(null);
-    setDescargando(entidad);
+    setDescargando(true);
     try {
       const blob = await descargarExportacion(entidad, token);
       const url = URL.createObjectURL(blob);
@@ -31,29 +32,25 @@ export function ExportacionAdmin({ token }: { token: string }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo generar la exportación.");
     } finally {
-      setDescargando(null);
+      setDescargando(false);
     }
   }
 
+  const titulo = error ?? `Exportar ${ETIQUETAS[entidad]} (CSV)`;
+
+  // Ícono suave: sin caja ni texto. Si falla la descarga (GUI-41) se pinta rojo y el tooltip dice por qué.
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-neutral-300 bg-neutral-100 p-6">
-        <h1 className="font-heading text-xl text-neutral-900">Exportar datos</h1>
-        <p className="mt-1 text-base text-neutral-700">Descarga un CSV por entidad, sin dados de baja.</p>
-
-        <div className="mt-4 flex flex-wrap gap-3">
-          {ENTIDADES_EXPORTABLES.map((entidad) => (
-            <Button key={entidad} onClick={() => exportar(entidad)} disabled={descargando === entidad}>
-              {descargando === entidad ? "Generando…" : `Exportar ${ETIQUETAS[entidad]}`}
-            </Button>
-          ))}
-        </div>
-      </div>
-
-      {/* GUI-41 — error de exportación */}
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-base text-red-700">{error}</div>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={exportar}
+      disabled={descargando}
+      title={titulo}
+      aria-label={titulo}
+      className={`shrink-0 rounded-md p-1.5 transition-colors hover:bg-pethood-orange/10 disabled:opacity-50 ${
+        error ? "text-red-500" : "text-pethood-orange/70 hover:text-pethood-orange-dark"
+      }`}
+    >
+      <Download className={`h-5 w-5 ${descargando ? "animate-pulse" : ""}`} strokeWidth={2} />
+    </button>
   );
 }

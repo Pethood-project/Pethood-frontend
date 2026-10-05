@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
 import type { DonacionPorMes } from "@/types/dashboard";
 
@@ -11,14 +12,15 @@ function formatoMoneda(monto: number): string {
 
 // Barras verticales + línea de objetivo en CSS puro — mismo criterio que el resto de
 // components/dashboard: spec 009 no pide interactividad, así que no suma librería de gráficos.
-export function DonacionesChart({ items }: { items: DonacionPorMes[] }) {
+export function DonacionesChart({ items, accion }: { items: DonacionPorMes[]; accion?: ReactNode }) {
   const max = Math.max(1, ...items.flatMap((item) => [item.monto, item.objetivo]));
   const ultimoMes = items.at(-1)?.mes;
 
   return (
     <Card className="flex h-full flex-col">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <h2 className="text-lg font-semibold text-neutral-900">Flujo de donaciones</h2>
+        {accion}
         <div className="flex shrink-0 items-center gap-3 text-sm font-medium text-neutral-700">
           <span className="flex items-center gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: COLOR_BARRA_ULTIMO_MES }} />
@@ -30,10 +32,10 @@ export function DonacionesChart({ items }: { items: DonacionPorMes[] }) {
           </span>
         </div>
       </div>
-      <div className="mt-6 flex flex-1 justify-between gap-2">
+      <div className="mt-6 flex min-h-48 flex-1 justify-between gap-1 overflow-x-auto sm:gap-2">
         {items.map((item) => (
-          <div key={item.mes} className="flex flex-1 flex-col items-center gap-2">
-            <span className="text-sm font-semibold text-neutral-900">{formatoMoneda(item.monto)}</span>
+          <div key={item.mes} className="flex min-w-12 flex-1 flex-col items-center gap-2">
+            <span className="text-[11px] font-semibold text-neutral-900 sm:text-sm">{formatoMoneda(item.monto)}</span>
             <div className="relative w-full flex-1">
               <div
                 className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-14 rounded-t-sm transition-[height] duration-500 ease-out"
@@ -49,7 +51,7 @@ export function DonacionesChart({ items }: { items: DonacionPorMes[] }) {
                 title={`Objetivo: ${formatoMoneda(item.objetivo)}`}
               />
             </div>
-            <span className="text-sm font-medium text-neutral-700">{item.mes}</span>
+            <span className="text-xs font-medium text-neutral-700 sm:text-sm">{item.mes}</span>
           </div>
         ))}
       </div>

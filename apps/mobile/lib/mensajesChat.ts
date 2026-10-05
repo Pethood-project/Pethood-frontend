@@ -17,7 +17,7 @@
  */
 import type { ArchivoAdjunto } from '@/services/api';
 import { urlAbsoluta } from '@/services/api';
-import type { Mensaje, SolicitudEnChat } from '@/services/chats';
+import type { AvisoEnChat, Mensaje, SolicitudEnChat } from '@/services/chats';
 import { tipoDeMime, type Adjunto } from '@/lib/adjuntos';
 import { etiquetaDia, inicioDelDia } from '@/shared/validation/dates';
 
@@ -55,10 +55,12 @@ export interface ItemChat {
   entregado: boolean;
   /** Lo leyó el destinatario. Sólo tiene sentido en los propios. */
   leido: boolean;
-  /** `SOLICITUD` se pinta como tarjeta y no como burbuja. */
-  tipo: 'TEXTO' | 'SOLICITUD';
+  /** `SOLICITUD` y `ANIMAL_PERDIDO` se pintan como tarjeta y no como burbuja. */
+  tipo: 'TEXTO' | 'SOLICITUD' | 'ANIMAL_PERDIDO';
   /** Sólo en los de tipo `SOLICITUD`. */
   solicitud: SolicitudEnChat | null;
+  /** Sólo en los de tipo `ANIMAL_PERDIDO` (HU-13.2). */
+  aviso: AvisoEnChat | null;
   estado: 'enviado' | 'enviando' | 'error';
 }
 
@@ -183,6 +185,7 @@ export function aItems(
       leido: false,
       tipo: 'TEXTO' as const,
       solicitud: null,
+      aviso: null,
       estado: pendiente.fallo ? ('error' as const) : ('enviando' as const),
     }))
     // Los pendientes se guardan en orden de envío y la lista va al revés.
@@ -204,6 +207,7 @@ export function aItems(
     leido: mensaje.leido,
     tipo: mensaje.tipo,
     solicitud: mensaje.solicitud,
+    aviso: mensaje.aviso,
     estado: 'enviado' as const,
   }));
 

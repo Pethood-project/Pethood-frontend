@@ -43,6 +43,18 @@ export async function actualizarPerfil(
  * Corrige a mano el link de Google Maps del perfil. El backend recalcula latitud/longitud a
  * partir del link nuevo (lápiz de "Ubicación" en Mi Perfil).
  */
+/**
+ * Carga el DNI, sólo si todavía no tiene (spec 027). Con DNI cargado el backend responde
+ * DNI_YA_CARGADO: lo corrige un admin.
+ */
+export function cargarDni(token: string, dni: string): Promise<RespuestaPerfil> {
+  return apiFetch<RespuestaPerfil>('/usuarios/me/dni', {
+    method: 'PATCH',
+    token,
+    body: { dni: dni.trim() },
+  });
+}
+
 export function actualizarUbicacion(token: string, mapaUrl: string): Promise<RespuestaPerfil> {
   return apiFetch<RespuestaPerfil>('/usuarios/me/ubicacion', {
     method: 'PATCH',

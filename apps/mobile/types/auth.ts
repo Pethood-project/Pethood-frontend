@@ -40,6 +40,8 @@ export interface Usuario {
 
 export interface Perfil extends Usuario {
   telefono: string | null;
+  /** Se carga una sola vez; `null` en cuentas viejas y de Google (spec 027). */
+  dni: string | null;
   provincia: string | null;
   localidad: string | null;
   calleAltura: string | null;
@@ -75,6 +77,8 @@ export interface RegistroPayload {
   password: string;
   fechaNacimiento: string;
   telefono: string;
+  /** Obligatorio (HU-1.1, spec 027): 7 u 8 dígitos. */
+  dni: string;
   /** Dirección opcional; si vienen las tres, el backend geocodifica y guarda coordenadas. */
   provincia?: string;
   localidad?: string;

@@ -67,7 +67,7 @@ const MENU_ADOPTANTE: ItemMenu[] = [
   { icono: 'footsteps-outline', label: 'Seguimientos', ruta: '/seguimientos' },
   { icono: 'heart-outline', label: 'Favoritos', ruta: '/favoritos' },
   { icono: 'star-outline', label: 'Reseñas', ruta: '/resenas' as Href },
-  { icono: 'heart-circle-outline', label: 'Campañas' },
+  { icono: 'heart-circle-outline', label: 'Campañas', ruta: '/campanias' as Href },
 ];
 
 /**
@@ -90,7 +90,11 @@ const MENU_REFUGIO: ItemMenu[] = [
   },
   { icono: 'footsteps-outline', label: 'Seguimientos', ruta: '/seguimientos' },
   { icono: 'star-outline', label: 'Reseñas del refugio', ruta: '/resenas' as Href },
-  { icono: 'heart-circle-outline', label: 'Campañas del refugio' },
+  {
+    icono: 'heart-circle-outline',
+    label: 'Campañas del refugio',
+    ruta: '/campanias/refugio' as Href,
+  },
 ];
 
 /** Solo se muestra en la vista personal: en la de refugio la tarjeta es la del refugio. */
@@ -299,6 +303,8 @@ export default function PerfilScreen() {
         !etiquetaUbicacion(perfilRefugio))
     : !visible?.imagenUrl ||
       !visible?.telefono ||
+      // El DNI es obligatorio desde la spec 027: las cuentas viejas y las de Google no lo tienen.
+      (perfil ? !perfil.dni : false) ||
       !etiquetaUbicacion(visible ?? {});
   const rutaCompletar = (vistaRefugio ? '/perfil/refugio' : '/perfil/editar') as Href;
   const esperandoDatos = vistaRefugio ? !perfilRefugio : !visible;

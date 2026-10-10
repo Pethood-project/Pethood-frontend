@@ -40,6 +40,7 @@ import {
 } from '@/lib/validacionRegistro';
 import { ApiError } from '@/services/api';
 import { registro } from '@/services/auth';
+import { validarDni } from '@/shared/validation/documento';
 import { LIMITES } from '@/shared/validation/limits';
 
 interface RegisterForm {
@@ -47,6 +48,7 @@ interface RegisterForm {
   lastName: string;
   email: string;
   phone: string;
+  dni: string;
   birthDate: string;
   password: string;
   confirmPassword: string;
@@ -60,6 +62,7 @@ interface RegisterErrors {
   lastName?: string;
   email?: string;
   phone?: string;
+  dni?: string;
   birthDate?: string;
   password?: string;
   confirmPassword?: string;
@@ -78,6 +81,7 @@ export default function RegisterScreen() {
     lastName: '',
     email: '',
     phone: '',
+    dni: '',
     birthDate: '',
     password: '',
     confirmPassword: '',
@@ -103,6 +107,7 @@ export default function RegisterScreen() {
       !validarNombrePersona(form.lastName, 'apellido') &&
       !validarEmail(form.email) &&
       !validarTelefono(form.phone) &&
+      !validarDni(form.dni) &&
       !validarFechaNacimiento(form.birthDate) &&
       !validarPassword(form.password) &&
       !validarConfirmacionPassword(form.password, form.confirmPassword),
@@ -137,6 +142,13 @@ export default function RegisterScreen() {
     const formateado = sanitizarTelefono(value);
     setForm((prev) => ({ ...prev, phone: formateado }));
     setFieldError('phone', formateado ? validarTelefono(formateado) : undefined);
+  };
+
+  // Sólo dígitos: el DNI se carga sin puntos (HU-1.1, spec 027).
+  const handleDniChange = (value: string): void => {
+    const formateado = value.replace(/\D/g, '');
+    setForm((prev) => ({ ...prev, dni: formateado }));
+    setFieldError('dni', formateado ? (validarDni(formateado) ?? undefined) : undefined);
   };
 
   // Al cambiar de provincia se limpia la localidad: las del listado anterior ya no aplican.
@@ -227,6 +239,7 @@ export default function RegisterScreen() {
       lastName: validarNombrePersona(form.lastName, 'apellido'),
       email: validarEmail(form.email),
       phone: validarTelefono(form.phone),
+      dni: validarDni(form.dni) ?? undefined,
       birthDate: validarFechaNacimiento(form.birthDate),
       password: validarPassword(form.password),
       confirmPassword: validarConfirmacionPassword(form.password, form.confirmPassword),
@@ -256,6 +269,7 @@ export default function RegisterScreen() {
           password: form.password,
           fechaNacimiento: form.birthDate.trim(),
           telefono: form.phone.trim(),
+          dni: form.dni.trim(),
           provincia: form.provincia.trim(),
           localidad: form.localidad.trim(),
           calleAltura: form.calleAltura.trim(),
@@ -407,6 +421,19 @@ export default function RegisterScreen() {
             autoComplete="tel"
             textContentType="telephoneNumber"
             maxLength={16}
+            required
+          />
+
+          <CustomInput
+            organic
+            label="DNI"
+            placeholder="Sin puntos, ej. 30123456"
+            value={form.dni}
+            onChangeText={handleDniChange}
+            onBlur={() => setFieldError('dni', validarDni(form.dni) ?? undefined)}
+            error={errors.dni}
+            keyboardType="number-pad"
+            maxLength={8}
             required
           />
 

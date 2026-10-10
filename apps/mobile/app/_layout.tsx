@@ -87,6 +87,11 @@ function RootNavigator() {
         <Stack.Screen name="perdidos/index" />
         {/* GUI-25. Pantalla y no modal, como en el diseño (pantalla 26). */}
         <Stack.Screen name="perdidos/nuevo" options={{ presentation: 'card' }} />
+        <Stack.Screen name="campanias/index" />
+        <Stack.Screen name="campanias/[id]/donar" options={{ presentation: 'card' }} />
+        <Stack.Screen name="campanias/refugio/index" />
+        <Stack.Screen name="campanias/refugio/nueva" options={{ presentation: 'card' }} />
+        <Stack.Screen name="campanias/refugio/[id]/donaciones" options={{ presentation: 'card' }} />
         {/* HU-13.3. El mismo formulario del alta, desde el popup del aviso propio. */}
         <Stack.Screen name="perdidos/[id]/editar" options={{ presentation: 'card' }} />
         <Stack.Screen name="mascotas/crear" options={{ presentation: 'card' }} />

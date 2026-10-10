@@ -7,10 +7,10 @@
  * interruptor de Perfil (`vistaRefugio`), no de esta pantalla.
  *
  * Cada sección trae sus propios datos y falla por separado (ver `useDatosInicio`).
- * Campañas todavía no tiene módulo: ver `SeccionesProximamente.tsx`. Mascotas perdidas lleva
- * al portal (GUI-06) desde `PerdidasInicio.tsx`.
+ * Campañas lleva al portal (GUI-13) o a «Mis Campañas» (GUI-36) desde `CampaniasInicio.tsx`, y
+ * Mascotas perdidas al portal (GUI-06) desde `PerdidasInicio.tsx`.
  */
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,7 +22,7 @@ import {
 } from '@/components/home/PanelSolicitudesRefugio';
 import { PublicacionesInicio } from '@/components/home/PublicacionesInicio';
 import { PerdidasAdoptante, PerdidasRefugio } from '@/components/home/PerdidasInicio';
-import { CampaniasAdoptante } from '@/components/home/SeccionesProximamente';
+import { CampaniasAdoptante } from '@/components/home/CampaniasInicio';
 import { TarjetaAdoptar } from '@/components/home/TarjetaAdoptar';
 import { TarjetasAdoptante } from '@/components/home/TarjetasAdoptante';
 import { TarjetasRefugio } from '@/components/home/TarjetasRefugio';
@@ -128,7 +128,7 @@ function InicioAdoptante({ subtitulo }: { subtitulo: string }) {
         errorSeguimientos={secciones.seguimientos.error}
       />
       <PerdidasAdoptante onPress={() => router.push('/perdidos')} />
-      <CampaniasAdoptante />
+      <CampaniasAdoptante onPress={() => router.push('/campanias' as Href)} />
     </PantallaInicio>
   );
 }

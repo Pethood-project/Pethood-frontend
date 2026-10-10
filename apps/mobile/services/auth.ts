@@ -20,6 +20,7 @@ export async function registro(
   form.append('password', payload.password);
   form.append('fechaNacimiento', payload.fechaNacimiento);
   form.append('telefono', payload.telefono);
+  form.append('dni', payload.dni);
   form.append('provincia', payload.provincia ?? '');
   form.append('localidad', payload.localidad ?? '');
   form.append('calleAltura', payload.calleAltura ?? '');

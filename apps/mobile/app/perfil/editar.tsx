@@ -54,10 +54,12 @@ import { ApiError, urlAbsoluta } from '@/services/api';
 import {
   actualizarPerfil,
   actualizarUbicacion,
+  cargarDni,
   darDeBajaCuenta,
   obtenerPerfil,
   previewUbicacion,
 } from '@/services/usuarios';
+import { validarDni } from '@/shared/validation/documento';
 import { LIMITES } from '@/shared/validation/limits';
 
 interface Formulario {
@@ -65,6 +67,8 @@ interface Formulario {
   apellido: string;
   email: string;
   telefono: string;
+  /** Vacío si todavía no lo cargó: se carga una sola vez (spec 027). */
+  dni: string;
   provincia: string;
   localidad: string;
   calleAltura: string;
@@ -75,6 +79,7 @@ interface Errores {
   apellido?: string;
   email?: string;
   telefono?: string;
+  dni?: string;
   calleAltura?: string;
 }
 
@@ -84,6 +89,7 @@ function vacio(): Formulario {
     apellido: '',
     email: '',
     telefono: '',
+    dni: '',
     provincia: '',
     localidad: '',
     calleAltura: '',
@@ -101,6 +107,8 @@ export default function EditarPerfilScreen() {
   const [verificada, setVerificada] = useState(false);
   const [inicialVerificada, setInicialVerificada] = useState(false);
   const [fotoUrl, setFotoUrl] = useState<string | null>(null);
+  /** Con DNI ya guardado el campo es de solo lectura: lo corrige un admin (spec 027). */
+  const [dniGuardado, setDniGuardado] = useState(false);
   const [fotoNueva, setFotoNueva] = useState<ArchivoImagenLocal | undefined>();
   const [errors, setErrors] = useState<Errores>({});
   const [formError, setFormError] = useState<string | undefined>();
@@ -123,8 +131,9 @@ export default function EditarPerfilScreen() {
       !validarNombrePersona(form.apellido, 'apellido') &&
       !validarEmail(form.email) &&
       !validarTelefono(form.telefono) &&
+      (dniGuardado || !form.dni.trim() || !validarDni(form.dni)) &&
       !validarCalleAltura(form.calleAltura),
-    [form],
+    [form, dniGuardado],
   );
 
   const previsualizar = useCallback(
@@ -155,6 +164,7 @@ export default function EditarPerfilScreen() {
           apellido: respuesta.usuario.apellido,
           email: respuesta.usuario.email,
           telefono: respuesta.usuario.telefono ?? '',
+          dni: respuesta.usuario.dni ?? '',
           provincia: respuesta.usuario.provincia ?? '',
           localidad: respuesta.usuario.localidad ?? '',
           calleAltura: respuesta.usuario.calleAltura ?? '',
@@ -164,6 +174,7 @@ export default function EditarPerfilScreen() {
         setVerificada(respuesta.usuario.ubicacionVerificada);
         setInicialVerificada(respuesta.usuario.ubicacionVerificada);
         setFotoUrl(urlAbsoluta(respuesta.usuario.imagenUrl));
+        setDniGuardado(Boolean(respuesta.usuario.dni));
       })
       .catch((error) => {
         const mensaje =
@@ -335,6 +346,8 @@ export default function EditarPerfilScreen() {
       apellido: validarNombrePersona(form.apellido, 'apellido'),
       email: validarEmail(form.email),
       telefono: validarTelefono(form.telefono),
+      // Opcional al editar: si lo escribió, tiene que ser válido.
+      dni: !dniGuardado && form.dni.trim() ? (validarDni(form.dni) ?? undefined) : undefined,
       calleAltura: validarCalleAltura(form.calleAltura),
     };
     setErrors(next);
@@ -352,6 +365,11 @@ export default function EditarPerfilScreen() {
     setGuardando(true);
     setFormError(undefined);
     try {
+      // El DNI va primero y por su endpoint (carga única): si falla, no se guarda nada más.
+      if (!dniGuardado && form.dni.trim()) {
+        await cargarDni(token, form.dni);
+        setDniGuardado(true);
+      }
       const respuesta = await actualizarPerfil(
         token,
         {
@@ -492,6 +510,24 @@ export default function EditarPerfilScreen() {
                   autoComplete="tel"
                   textContentType="telephoneNumber"
                   maxLength={16}
+                />
+              </FormCardRow>
+              <FormCardRow>
+                <TextField
+                  label="DNI"
+                  obligatorio={!dniGuardado}
+                  lapiz={!dniGuardado}
+                  grande
+                  value={form.dni}
+                  editable={!dniGuardado}
+                  onChangeText={(texto) => setCampo('dni', texto.replace(/\D/g, ''))}
+                  onBlur={() =>
+                    setFieldError('dni', form.dni.trim() ? (validarDni(form.dni) ?? undefined) : undefined)
+                  }
+                  error={errors.dni}
+                  ayuda={dniGuardado ? 'Para corregirlo, escribinos desde Soporte.' : undefined}
+                  keyboardType="number-pad"
+                  maxLength={8}
                 />
               </FormCardRow>
               <FormCardRow>

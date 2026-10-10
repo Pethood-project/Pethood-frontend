@@ -205,4 +205,22 @@ export const LIMITES = {
     /** Tamaño de página de la bandeja (paginación por cursor). El backend acepta hasta 50. */
     pagina: { porDefecto: 20, maximo: 50 },
   },
+
+  /** Campaña de donación (spec 026, HU-12.1). Espejo del backend. */
+  campania: {
+    titulo: { min: 3, max: 50 },
+    descripcion: { max: 300 },
+    /** «Solo números», sin decimales. */
+    objetivo: { min: 10000, max: 2500000, decimales: 0 },
+    alias: { min: 6, max: 20 },
+    cbu: { largo: 22 },
+    vigentesPorRefugio: 5,
+    pagina: { porDefecto: 20, maximo: 50 },
+  },
+
+  /** Donación declarada (spec 026, HU-12.3). Espejo del backend. */
+  donacion: {
+    monto: { min: 1, max: 2500000, decimales: 2 },
+    pagina: { porDefecto: 30, maximo: 50 },
+  },
 } as const;

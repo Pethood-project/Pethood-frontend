@@ -17,6 +17,10 @@
  *
  * `cargarPagina` tiene que ser estable (`useCallback` con los filtros como dependencia):
  * cada identidad nueva reinicia el listado.
+ *
+ * `claveDe` también tiene que ser estable (definida fuera del componente): de ella dependen
+ * `agregarAlPrincipio` y la carga de páginas siguientes, y una función inline los recrea en
+ * cada render. Si la pantalla usa `agregarAlPrincipio` en un efecto, eso lo redispara en bucle.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 

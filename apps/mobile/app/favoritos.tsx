@@ -21,7 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
 import { BotonSolicitar } from '@/components/solicitudes/BotonSolicitar';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { ESTADO_SOLICITABLE } from '@/constants/Mascotas';
 import { PALETA } from '@/constants/theme';
@@ -319,18 +319,11 @@ function GrillaFavoritos() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-[22px] pb-4 pt-2">
-          <BotonCircular icono="arrow-back" etiqueta="Volver" onPress={volver} grande />
-
-          <View>
-            <Text className="font-titulo text-[28px] leading-[28px] text-organic-accent-600">
-              Favoritos
-            </Text>
-            <Text className="mt-1.5 font-cuerpo text-base text-organic-neutral-700">
-              {cargando ? 'Cargando…' : subtituloContador(favoritos.length)}
-            </Text>
-          </View>
-        </View>
+        <EncabezadoPantalla
+          titulo="Favoritos"
+          subtitulo={cargando ? 'Cargando…' : subtituloContador(favoritos.length)}
+          onVolver={volver}
+        />
 
         {cargando ? (
           <EstadoCargando />

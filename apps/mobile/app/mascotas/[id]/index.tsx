@@ -14,7 +14,7 @@
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GaleriaFotos } from '@/components/adoptar/GaleriaFotos';
@@ -34,6 +34,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { PressableAnimado } from '@/components/ui/PressableAnimado';
 import { VacunasMascota } from '@/components/vacunas/VacunasMascota';
+import { BotonVolver } from '@/components/ui/BotonVolver';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
 import { ApiError } from '@/services/api';
@@ -276,12 +277,9 @@ export default function FichaMascotaScreen() {
 
       {/* Después del ScrollView y con zIndex alto: en web la galería (transform) pintaba
           encima de un overlay hermano y se comía la flecha (igual que en la publicación). */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Volver"
+      <BotonVolver
+        sobreFoto
         onPress={() => router.back()}
-        hitSlop={12}
-        className="h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
         style={{
           position: 'absolute',
           top: insets.top + 8,
@@ -289,9 +287,7 @@ export default function FichaMascotaScreen() {
           zIndex: 9999,
           elevation: 9999,
         }}
-      >
-        <Ionicons name="arrow-back" size={20} color={PALETA.grisCalido[900]} />
-      </Pressable>
+      />
 
       <ConfirmDialog
         visible={confirmarEliminar}

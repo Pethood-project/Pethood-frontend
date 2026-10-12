@@ -12,10 +12,9 @@
  * El formulario manda la publicación entera, como el alta: las fotos que ya estaban viajan
  * por su ruta y las nuevas como archivo, en el orden de la galería.
  */
-import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -33,7 +32,7 @@ import {
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import type { FotoElegida } from '@/components/ui/PhotosPickerField';
 import { TextField } from '@/components/ui/TextField';
-import { PALETA } from '@/constants/theme';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { pedirUbicacion } from '@/lib/ubicacion';
 import { urlAbsoluta } from '@/services/api';
 import {
@@ -175,21 +174,7 @@ export default function EditarPublicacionScreen() {
   return (
     <Animated.View entering={FadeInDown.duration(220)} className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-5 py-[13px]">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-            onPress={salir}
-            hitSlop={8}
-            className="h-11 w-11 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100 active:opacity-80"
-          >
-            <Ionicons name="chevron-back" size={22} color={PALETA.neutral[700]} />
-          </Pressable>
-
-          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
-            Editar publicación
-          </Text>
-        </View>
+        <EncabezadoPantalla barra titulo="Editar publicación" onVolver={salir} />
 
         {cargando ? (
           <EstadoCargando />

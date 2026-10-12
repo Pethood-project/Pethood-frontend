@@ -23,6 +23,8 @@ import { DateField } from '@/components/ui/DateField';
 import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { SelectorChips, type OpcionSelector } from '@/components/ui/SelectorChips';
 import { ToggleField } from '@/components/ui/ToggleField';
+import { BotonVolver } from '@/components/ui/BotonVolver';
+import { TituloPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { pedirUbicacion } from '@/lib/ubicacion';
 import { listarEspecies, type OpcionCatalogo } from '@/services/catalogos';
@@ -206,19 +208,10 @@ export function FiltrosAdopcionModal({
             debajo de la hora y la batería. `statusBarTranslucent` hace que Android también
             dibuje debajo de la barra, así el mismo margen sirve en las dos plataformas. */}
         <View className="flex-1" style={{ paddingTop: insets.top }}>
-          <View className="flex-row items-center justify-between border-b border-gray-200 bg-white/85 px-3.5 py-2.5">
-            <View className="flex-row items-center gap-2.5">
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Cerrar filtros"
-                onPress={onCerrar}
-                hitSlop={10}
-                className="h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white active:opacity-70"
-              >
-                <Ionicons name="arrow-back" size={18} color={PALETA.grisCalido[700]} />
-              </Pressable>
-
-              <Text className="text-xl font-bold text-pethood-orange">Filtros</Text>
+          <View className="flex-row items-center justify-between border-b border-organic-neutral-300 bg-organic-neutral-100 px-[22px] pb-3.5 pt-2.5">
+            <View className="flex-row items-center gap-2">
+              <BotonVolver etiqueta="Cerrar filtros" onPress={onCerrar} />
+              <TituloPantalla>Filtros</TituloPantalla>
             </View>
 
             <Pressable

@@ -19,6 +19,7 @@ import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantal
 import { BotonFlotante } from '@/components/ui/BotonFlotante';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { FiltroEstados, type OpcionEstado } from '@/components/ui/FiltroEstados';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { estiloDeEstado } from '@/constants/EstadosMascota';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
@@ -248,14 +249,15 @@ export default function MisMascotasScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="border-b border-organic-neutral-300 bg-organic-neutral-100 px-[21px] py-[13px]">
-          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
-            {vistaRefugio ? 'Mascotas del refugio' : 'Mis mascotas'}
-          </Text>
-          <Text className="mt-[4px] font-cuerpo text-[13px] text-organic-neutral-600">
-            {cargando ? 'Cargando…' : `${mascotas.length} ${mascotas.length === 1 ? 'mascota' : 'mascotas'}`}
-          </Text>
-        </View>
+        <EncabezadoPantalla
+          barra
+          titulo={vistaRefugio ? 'Mascotas' : 'Mis mascotas'}
+          subtitulo={
+            cargando
+              ? 'Cargando…'
+              : `${mascotas.length} ${mascotas.length === 1 ? 'mascota' : 'mascotas'}`
+          }
+        />
 
         {vistaRefugio && opcionesEstado.length > 0 ? (
           <View className="bg-organic-bg pt-3">

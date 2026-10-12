@@ -10,7 +10,7 @@ import { CustomInput } from '@/components/CustomInput';
 import { FechaNacimientoPicker } from '@/components/FechaNacimientoPicker';
 import { useToast } from '@/components/feedback/Toast';
 import { Avatar } from '@/components/ui/Avatar';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { SelectField } from '@/components/ui/SelectField';
 import { PROVINCIAS, localidadesDe } from '@/constants/Provincias';
@@ -293,17 +293,7 @@ export default function RegisterScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-[19px] py-[13px]">
-          <BotonCircular
-            icono="chevron-back"
-            etiqueta="Volver"
-            variante="neutro"
-            onPress={() => router.back()}
-          />
-          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
-            Crear cuenta
-          </Text>
-        </View>
+        <EncabezadoPantalla barra titulo="Crear cuenta" onVolver={() => router.back()} />
 
         <FormularioConTeclado
           showsVerticalScrollIndicator={false}

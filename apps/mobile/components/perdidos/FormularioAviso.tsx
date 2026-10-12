@@ -34,7 +34,7 @@
  */
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Text, View } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
@@ -44,7 +44,7 @@ import {
   AvisoVerificacionUbicacion,
   type TextosVerificacionUbicacion,
 } from '@/components/perfil/AvisoVerificacionUbicacion';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { DateField } from '@/components/ui/DateField';
 import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
@@ -488,17 +488,12 @@ export function FormularioAviso({ aviso, ubicacion }: FormularioAvisoProps) {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-surface px-[22px] pb-4 pt-2">
-          <BotonCircular
-            icono="arrow-back"
-            etiqueta="Cancelar y volver"
-            onPress={() => router.back()}
-            grande
-          />
-          <Text className="font-titulo text-[28px] leading-[32px] text-organic-accent-600">
-            {edicion ? 'Editar aviso' : 'Reportar mascota'}
-          </Text>
-        </View>
+        <EncabezadoPantalla
+          barra
+          titulo={edicion ? 'Editar aviso' : 'Reportar mascota'}
+          etiquetaVolver="Cancelar y volver"
+          onVolver={() => router.back()}
+        />
 
         {cargandoCatalogos ? (
           <EstadoCargando />

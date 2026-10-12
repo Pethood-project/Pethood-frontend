@@ -14,10 +14,9 @@
  *
  * La validación es para UX; la fuente de verdad es el backend.
  */
-import { Ionicons } from '@expo/vector-icons';
 import { type Href, useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -34,10 +33,10 @@ import {
 } from '@/components/publicaciones/CamposPublicacion';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { SelectField } from '@/components/ui/SelectField';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { estiloDeEstado } from '@/constants/EstadosMascota';
 import { tomarMascotaParaPublicar } from '@/lib/mascotaParaPublicar';
 import { pedirUbicacion } from '@/lib/ubicacion';
-import { PALETA } from '@/constants/theme';
 import { crearPublicacion, listarPublicables, type Mascota } from '@/services/mascotas';
 
 /**
@@ -210,23 +209,9 @@ export default function CrearPublicacionScreen() {
     // pantalla en vez de que "todo cambió de golpe".
     <Animated.View entering={FadeInDown.duration(220)} className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-5 py-[13px]">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-            // Vuelve al alta de la mascota cuando se llegó desde ahí (con la mascota ya
-            // elegida). Si se entra suelto y no hay historial, cae al listado de origen.
-            onPress={salir}
-            hitSlop={8}
-            className="h-11 w-11 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100 active:opacity-80"
-          >
-            <Ionicons name="chevron-back" size={22} color={PALETA.neutral[700]} />
-          </Pressable>
-
-          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
-            Poner en adopción
-          </Text>
-        </View>
+        {/* Vuelve al alta de la mascota cuando se llegó desde ahí (con la mascota ya elegida).
+            Si se entra suelto y no hay historial, cae al listado de origen. */}
+        <EncabezadoPantalla barra titulo="Poner en adopción" onVolver={salir} />
 
         {cargandoMascotas ? (
           <EstadoCargando />

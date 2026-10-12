@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton, FORMA_BOTON_ORGANIC_PRINCIPAL } from '@/components/CustomButton';
 import { CustomInput } from '@/components/CustomInput';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { PALETA } from '@/constants/theme';
 import { validarEmail } from '@/lib/validacionRegistro';
@@ -55,17 +55,7 @@ export default function RecuperarScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-[19px] py-[13px]">
-          <BotonCircular
-            icono="chevron-back"
-            etiqueta="Volver"
-            variante="neutro"
-            onPress={() => router.back()}
-          />
-          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
-            Recuperar contraseña
-          </Text>
-        </View>
+        <EncabezadoPantalla barra titulo="Recuperar acceso" onVolver={() => router.back()} />
 
         <FormularioConTeclado
           showsVerticalScrollIndicator={false}

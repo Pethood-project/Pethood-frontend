@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TarjetaCampania } from '@/components/campanias/TarjetaCampania';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { usePaginacionCursor } from '@/hooks/usePaginacionCursor';
 import { listarCampanias, type Campania } from '@/services/campanias';
@@ -97,17 +97,12 @@ export default function CampaniasAdoptanteScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-surface px-[22px] pb-4 pt-2">
-          <BotonCircular icono="arrow-back" etiqueta="Volver" onPress={volver} grande />
-          <View>
-            <Text className="font-titulo text-[28px] leading-[32px] text-organic-accent-600">
-              Campañas Solidarias
-            </Text>
-            <Text className="font-cuerpo text-[13px] text-organic-neutral-600">
-              Ayudá a los refugios
-            </Text>
-          </View>
-        </View>
+        <EncabezadoPantalla
+          barra
+          titulo="Campañas"
+          subtitulo="Ayudá a los refugios"
+          onVolver={volver}
+        />
 
         {lista.cargando ? (
           <EstadoCargando />

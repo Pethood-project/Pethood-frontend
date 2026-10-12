@@ -14,7 +14,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Redirect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FiltrosAdopcionModal } from '@/components/adoptar/FiltrosAdopcionModal';
@@ -28,6 +28,7 @@ import {
 import { useToast } from '@/components/feedback/Toast';
 import { BarraBusqueda } from '@/components/ui/BarraBusqueda';
 import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSesion } from '@/hooks/useSesion';
@@ -176,19 +177,23 @@ function MazoAdopcion() {
 
       const nombre = publicacion.mascota.nombre ?? 'la mascota';
 
-      void agregarFavorito(publicacion.mascota.id)
-        .then(() => {
-          toast.mostrarExito(`Guardamos a ${nombre} en favoritos.`);
-        })
-        .catch((err: unknown) => {
-          reponer(publicacion);
-          setTotal((actual) => actual + 1);
-          toast.mostrarError(
-            err instanceof Error ? err.message : 'No pudimos guardar la mascota en favoritos.',
-          );
-        });
+      // Se avisa en el momento del swipe y no cuando vuelve el servidor: si no, el aviso
+      // llegaba con la carta ya en la siguiente. Si el guardado falla, el error lo pisa.
+      toast.mostrarExito(`Guardamos a ${nombre} en favoritos.`, {
+        etiqueta: 'Ver',
+        atajo: true,
+        onPress: () => router.push('/favoritos'),
+      });
+
+      void agregarFavorito(publicacion.mascota.id).catch((err: unknown) => {
+        reponer(publicacion);
+        setTotal((actual) => actual + 1);
+        toast.mostrarError(
+          err instanceof Error ? err.message : 'No pudimos guardar la mascota en favoritos.',
+        );
+      });
     },
-    [reponer, toast],
+    [reponer, router, toast],
   );
 
   const abrirFicha = useCallback(
@@ -204,25 +209,24 @@ function MazoAdopcion() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center justify-between gap-3 px-[22px] pb-3.5 pt-2">
-          <Text className="font-titulo text-[27px] leading-[27px] text-organic-accent-600">
-            Adoptar
-          </Text>
-
-          <View className="flex-row items-center gap-2">
-            <BotonCircular
-              icono="heart-outline"
-              etiqueta="Favoritos"
-              onPress={() => router.push('/favoritos')}
-            />
-            <BotonCircular
-              icono="options-outline"
-              etiqueta="Filtros de búsqueda"
-              onPress={() => setModalFiltros(true)}
-              contador={filtrosActivos}
-            />
-          </View>
-        </View>
+        <EncabezadoPantalla
+          titulo="Adoptar"
+          derecha={
+            <View className="flex-row items-center gap-2">
+              <BotonCircular
+                icono="heart-outline"
+                etiqueta="Favoritos"
+                onPress={() => router.push('/favoritos')}
+              />
+              <BotonCircular
+                icono="options-outline"
+                etiqueta="Filtros de búsqueda"
+                onPress={() => setModalFiltros(true)}
+                contador={filtrosActivos}
+              />
+            </View>
+          }
+        />
 
         {/* Barra de búsqueda por texto libre (HU-11.4). Visible también en el estado vacío,
             para que se pueda corregir la búsqueda sin salir de la pantalla. */}
@@ -244,7 +248,7 @@ function MazoAdopcion() {
           <EstadoError mensaje={error} onAccion={() => void cargarPrimeraPagina(filtros)} />
         ) : mazoVacio ? (
           <EstadoVacio
-            icono="paw-outline"
+            icono="search-outline"
             titulo="Por ahora no hay más mascotas"
             descripcion={
               filtrosActivos > 0

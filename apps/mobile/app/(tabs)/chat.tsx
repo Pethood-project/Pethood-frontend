@@ -28,6 +28,7 @@ import { ReporteModal, type ObjetoReportado } from '@/components/reportes/Report
 import { FilaConversacion } from '@/components/chat/FilaConversacion';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { BarraBusqueda } from '@/components/ui/BarraBusqueda';
+import { TituloPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useListaChats } from '@/hooks/useListaChats';
@@ -190,9 +191,7 @@ export default function ChatScreen() {
         <View className="border-b border-organic-neutral-300 bg-organic-neutral-100 px-[21px] py-[13px]">
           {vistaRefugio ? (
             <>
-              <Text className="font-titulo text-[27px] leading-[33px] text-organic-accent-600">
-                Mensajes del Refugio
-              </Text>
+              <TituloPantalla>Mensajes</TituloPantalla>
               <Text
                 numberOfLines={1}
                 className="mt-[4px] font-cuerpo text-[14px] text-organic-neutral-600"
@@ -201,9 +200,7 @@ export default function ChatScreen() {
               </Text>
             </>
           ) : (
-            <Text className="font-titulo text-[28px] leading-[34px] text-organic-accent-600">
-              Mensajes
-            </Text>
+            <TituloPantalla>Mensajes</TituloPantalla>
           )}
 
           {/* Criterio 1: sin conversaciones el buscador SE MUESTRA, deshabilitado. El

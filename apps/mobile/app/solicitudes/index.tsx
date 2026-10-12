@@ -25,6 +25,7 @@ import { FiltrosSolicitudesModal } from '@/components/solicitudes/FiltrosSolicit
 import { ProgresoSolicitud } from '@/components/solicitudes/ProgresoSolicitud';
 import { ResolverSolicitudModal } from '@/components/solicitudes/ResolverSolicitudModal';
 import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { EstadoSolicitudBadge } from '@/components/ui/EstadoSolicitudBadge';
 import { Nota } from '@/components/ui/Nota';
 import { Segmentado } from '@/components/ui/Segmentado';
@@ -261,41 +262,25 @@ export default function SolicitudesScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="px-[22px] pb-3.5 pt-2">
-          <View className="flex-row items-center justify-between gap-3">
-            <View className="flex-row items-center gap-3">
-              <BotonCircular
-                icono="arrow-back"
-                etiqueta="Volver"
-                onPress={() =>
-                  router.canGoBack() ? router.back() : router.replace('/(tabs)/perfil')
-                }
-              />
-
-              <View>
-                <Text className="font-titulo text-[22px] leading-[22px] text-organic-accent-600">
-                  Solicitudes
-                </Text>
-                <Text className="mt-1 font-cuerpo text-[13px] text-organic-neutral-700">
-                  {cargando ? 'Cargando…' : subtitulo(total, filtros.estados)}
-                </Text>
-              </View>
-            </View>
-
+        <EncabezadoPantalla
+          titulo="Solicitudes"
+          subtitulo={cargando ? 'Cargando…' : subtitulo(total, filtros.estados)}
+          onVolver={() =>
+            router.canGoBack() ? router.back() : router.replace('/(tabs)/perfil')
+          }
+          derecha={
             <BotonCircular
               icono="options-outline"
               etiqueta="Filtros"
               contador={filtrosActivos}
               onPress={() => setModalFiltros(true)}
             />
-          </View>
-
+          }
+        >
           {vistaRefugio ? null : (
-            <View className="mt-3.5">
-              <Segmentado opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
-            </View>
+            <Segmentado opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
           )}
-        </View>
+        </EncabezadoPantalla>
 
         {cargando ? (
           <EstadoCargando />

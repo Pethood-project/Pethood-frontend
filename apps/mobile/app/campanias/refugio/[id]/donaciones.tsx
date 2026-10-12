@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { Chip } from '@/components/ui/Chip';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { Segmentado, type OpcionSegmento } from '@/components/ui/Segmentado';
@@ -208,17 +208,7 @@ export default function RevisarDonacionesScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-surface px-[22px] pb-4 pt-2">
-          <BotonCircular
-            icono="arrow-back"
-            etiqueta="Volver"
-            onPress={() => router.back()}
-            grande
-          />
-          <Text className="font-titulo text-[28px] leading-[32px] text-organic-accent-600">
-            Donaciones
-          </Text>
-        </View>
+        <EncabezadoPantalla barra titulo="Donaciones" onVolver={() => router.back()} />
 
         <View className="px-4 pt-3">
           <Segmentado opciones={VISTAS} valor={vista} onChange={setVista} variante="organica" />

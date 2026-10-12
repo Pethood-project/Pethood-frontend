@@ -15,6 +15,7 @@ import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantal
 import { useToast } from '@/components/feedback/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { PressableAnimado } from '@/components/ui/PressableAnimado';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { estiloDeVacuna } from '@/constants/Vacunas';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
@@ -148,26 +149,12 @@ export default function DetalleHistoriaClinicaScreen() {
   return (
     <View className="flex-1 bg-organic-neutral-100">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="bg-organic-accent-600 px-4 pb-5 pt-3">
-          <View className="flex-row items-center gap-3">
-            <PressableAnimado
-              accessibilityRole="button"
-              accessibilityLabel="Volver"
-              onPress={() => router.back()}
-              hitSlop={8}
-              className="h-11 w-11 items-center justify-center rounded-full bg-white/20"
-            >
-              <Ionicons name="arrow-back" size={22} color={PALETA.blanco} />
-            </PressableAnimado>
-
-            <View className="flex-1">
-              <Text className="font-titulo text-2xl text-white" numberOfLines={1}>
-                {registro.titulo}
-              </Text>
-              <Text className="font-cuerpo text-sm text-white/80">Registro #{registro.id}</Text>
-            </View>
-          </View>
-        </View>
+        <EncabezadoPantalla
+          claro
+          titulo={registro.titulo}
+          subtitulo={`Registro #${registro.id}`}
+          onVolver={() => router.back()}
+        />
 
         <ScrollView className="flex-1" contentContainerClassName="p-4 pb-8">
           <View className="overflow-hidden rounded-[22px] border border-organic-neutral-200 bg-organic-neutral-100">

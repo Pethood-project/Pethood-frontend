@@ -12,6 +12,10 @@
  * 10 → 13, padding 11/16 → 15/21, avatar 42 → 56, nombre 12 → 16, hora 8.5 → 11, preview
  * 10 → 13. El separador entre filas lo pone la lista (`ItemSeparatorComponent`), no la fila:
  * en el diseño la última no lleva línea debajo.
+ *
+ * Además de abrir la conversación: tocar la foto la amplía, mantener apretada la fila abre las
+ * opciones del contacto y deslizarla a la izquierda deja el botón de reportar. Los tres los
+ * resuelve la pantalla; la fila sólo avisa.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useRef } from 'react';
@@ -47,6 +51,13 @@ interface FilaConversacionProps {
    * esto la fila no se desliza.
    */
   onReportar?: () => void;
+  /**
+   * Tocar la foto del contacto: verla en grande. Sólo con foto cargada; sobre las iniciales
+   * el toque sigue abriendo la conversación, como el resto de la fila.
+   */
+  onVerFoto?: () => void;
+  /** Mantener apretada la fila: las opciones del contacto (ver perfil, reportar). */
+  onMantener?: () => void;
 }
 
 export function FilaConversacion({
@@ -54,17 +65,24 @@ export function FilaConversacion({
   ahora,
   onPress,
   onReportar,
+  onVerFoto,
+  onMantener,
 }: FilaConversacionProps) {
   const swipeable = useRef<SwipeableMethods>(null);
   const { contacto, ultimoMensaje, noLeidos } = conversacion;
 
   const sinLeer = noLeidos > 0;
+  // `=== true`: un backend anterior a la eliminación de mensajes no manda el campo.
+  const eliminado = ultimoMensaje?.eliminado === true;
   const esSolicitud = ultimoMensaje?.tipo === 'SOLICITUD';
   const esAviso = ultimoMensaje?.tipo === 'ANIMAL_PERDIDO';
   // Las dos tarjetas vienen sin texto propio, así que ninguna cuenta como adjunto suelto.
   const esTarjeta = esSolicitud || esAviso;
   const soloAdjunto =
-    !esTarjeta && ultimoMensaje?.tieneImagen && ultimoMensaje.contenido.trim() === '';
+    !esTarjeta &&
+    !eliminado &&
+    ultimoMensaje?.tieneImagen &&
+    ultimoMensaje.contenido.trim() === '';
 
   // `tieneVideo` viaja aparte de `tieneImagen`, que sigue en `true` con un video: así un
   // cliente que no conociera el campo nuevo mostraría "Foto" y no una línea vacía.
@@ -72,15 +90,37 @@ export function FilaConversacion({
 
   // Lo que va en la línea de abajo. Las tarjetas y el adjunto suelto no tienen texto propio:
   // se nombra el hecho, con un ícono adelante para que se lea de un vistazo.
-  const preview = esSolicitud
-    ? 'Solicitud'
-    : esAviso
-      ? 'Mascota perdida'
-      : soloVideo
-        ? 'Video'
-        : soloAdjunto
-          ? 'Foto'
-          : (ultimoMensaje?.contenido ?? 'Todavía no hay mensajes');
+  // Un eliminado propio lo dice en primera persona, como la burbuja; por eso tampoco lleva
+  // el "Vos:" adelante.
+  const preview = eliminado
+    ? ultimoMensaje?.esMio
+      ? 'Eliminaste este mensaje'
+      : 'Se eliminó este mensaje'
+    : esSolicitud
+      ? 'Solicitud'
+      : esAviso
+        ? 'Mascota perdida'
+        : soloVideo
+          ? 'Video'
+          : soloAdjunto
+            ? 'Foto'
+            : (ultimoMensaje?.contenido ?? 'Todavía no hay mensajes');
+
+  const foto = urlAbsoluta(contacto.imagenUrl);
+
+  const avatar = (
+    <Avatar
+      uri={foto}
+      nombre={contacto.nombre}
+      tamanio={AVATAR}
+      tamanioTexto={AVATAR_TEXTO}
+      variante="organic"
+      // El diseño pinta el fondo de las iniciales según quién es el contacto: el
+      // acento para un refugio, el neutro para una persona.
+      tono={contacto.tipo === 'REFUGIO' ? 'acento' : 'neutro'}
+      accessibilityLabel={`Foto de ${contacto.nombre}`}
+    />
+  );
 
   const fila = (
     <Pressable
@@ -88,25 +128,34 @@ export function FilaConversacion({
       accessibilityLabel={`Conversación con ${contacto.nombre}${
         sinLeer ? `, ${noLeidos} sin leer` : ''
       }`}
+      accessibilityHint={onMantener ? 'Mantené apretado para ver más opciones' : undefined}
       onPress={onPress}
-      disabled={!onPress}
+      onLongPress={onMantener}
+      delayLongPress={400}
+      disabled={!onPress && !onMantener}
       className={`flex-row items-center gap-[13px] px-[21px] py-[15px] ${
         onPress ? 'active:bg-black/5' : ''
       }`}
     >
       {/* `flex-none`: el avatar nunca se achica, por largo que sea el nombre. */}
       <View className="flex-none">
-        <Avatar
-          uri={urlAbsoluta(contacto.imagenUrl)}
-          nombre={contacto.nombre}
-          tamanio={AVATAR}
-          tamanioTexto={AVATAR_TEXTO}
-          variante="organic"
-          // El diseño pinta el fondo de las iniciales según quién es el contacto: el
-          // acento para un refugio, el neutro para una persona.
-          tono={contacto.tipo === 'REFUGIO' ? 'acento' : 'neutro'}
-          accessibilityLabel={`Foto de ${contacto.nombre}`}
-        />
+        {/* La foto tiene su propio toque —verla en grande— y le gana a la fila por estar
+            adentro. Sin foto no hay nada que ampliar: el toque sigue de largo a la fila. */}
+        {foto && onVerFoto ? (
+          <Pressable
+            accessibilityRole="imagebutton"
+            accessibilityLabel={`Ver la foto de ${contacto.nombre}`}
+            onPress={onVerFoto}
+            onLongPress={onMantener}
+            delayLongPress={400}
+            hitSlop={4}
+            className="active:opacity-80"
+          >
+            {avatar}
+          </Pressable>
+        ) : (
+          avatar
+        )}
         <BadgeContador
           cantidad={noLeidos}
           accessibilityLabel={`${noLeidos} mensajes sin leer`}
@@ -134,7 +183,7 @@ export function FilaConversacion({
 
         <View className="mt-[3px] flex-row items-center gap-1">
           {/* "Vos:" sale de `esMio`, que ya manda el backend: el cliente no compara ids. */}
-          {ultimoMensaje?.esMio ? (
+          {ultimoMensaje?.esMio && !eliminado ? (
             <Text className="flex-none font-cuerpo text-[15px] text-organic-neutral-500">
               Vos:
             </Text>
@@ -156,6 +205,10 @@ export function FilaConversacion({
             <Ionicons name="paw-outline" size={16} color={PALETA.neutral[500]} />
           ) : null}
 
+          {eliminado ? (
+            <Ionicons name="ban-outline" size={15} color={PALETA.neutral[500]} />
+          ) : null}
+
           <Text
             numberOfLines={1}
             ellipsizeMode="tail"
@@ -163,7 +216,7 @@ export function FilaConversacion({
             // ya se leyó: es lo que hace que un chat con novedades pese más en la lista.
             className={`min-w-0 flex-1 font-cuerpo text-[15px] ${
               sinLeer ? 'text-organic-neutral-900' : 'text-organic-neutral-500'
-            }`}
+            } ${eliminado ? 'italic' : ''}`}
           >
             {preview}
           </Text>

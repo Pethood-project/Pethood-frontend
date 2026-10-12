@@ -5,14 +5,16 @@
  *
  * OJO: desde el SDK 53 de Expo, Expo Go no entrega push remoto — hace falta una
  * development build (`eas build --profile development` o `expo run:android`/`run:ios`). En
- * Expo Go esta función devuelve `null` sin romper nada.
+ * Expo Go esta función devuelve `null` sin romper nada. En Expo Go para Android el paquete
+ * directamente no se carga: ver `lib/expoNotificaciones.ts`.
  */
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-Notifications.setNotificationHandler({
+import { Notificaciones } from '@/lib/expoNotificaciones';
+
+Notificaciones?.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
     shouldShowList: true,
@@ -32,13 +34,13 @@ export interface DispositivoPush {
  * development build).
  */
 export async function pedirPermisoYObtenerDispositivo(): Promise<DispositivoPush | null> {
-  if (Platform.OS === 'web' || !Device.isDevice) return null;
+  if (!Notificaciones || Platform.OS === 'web' || !Device.isDevice) return null;
 
-  const actual = await Notifications.getPermissionsAsync();
+  const actual = await Notificaciones.getPermissionsAsync();
   let estado = actual.status;
 
   if (estado !== 'granted') {
-    const pedido = await Notifications.requestPermissionsAsync();
+    const pedido = await Notificaciones.requestPermissionsAsync();
     estado = pedido.status;
   }
 
@@ -48,7 +50,7 @@ export async function pedirPermisoYObtenerDispositivo(): Promise<DispositivoPush
   if (!projectId) return null;
 
   try {
-    const { data: expoPushToken } = await Notifications.getExpoPushTokenAsync({ projectId });
+    const { data: expoPushToken } = await Notificaciones.getExpoPushTokenAsync({ projectId });
     return { expoPushToken, plataforma: Platform.OS === 'ios' ? 'ios' : 'android' };
   } catch (err) {
     console.warn('No se pudo generar el token de push', err);

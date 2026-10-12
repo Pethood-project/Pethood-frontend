@@ -34,9 +34,11 @@ interface VideoMensajeProps {
   subiendo: boolean;
   /** Abre el video a pantalla completa. El visor lo monta la pantalla, no cada miniatura. */
   onAbrir?: () => void;
+  /** Mantener apretado el video: eliminar el mensaje propio o reportar el ajeno. */
+  onMantener?: () => void;
 }
 
-export function VideoMensaje({ uri, ancho, alto, subiendo, onAbrir }: VideoMensajeProps) {
+export function VideoMensaje({ uri, ancho, alto, subiendo, onAbrir, onMantener }: VideoMensajeProps) {
   // Sin `play()`: el reproductor existe sólo para tener el primer fotograma a la vista.
   const player = useVideoPlayer(uri, (instancia) => {
     instancia.muted = true;
@@ -72,7 +74,9 @@ export function VideoMensaje({ uri, ancho, alto, subiendo, onAbrir }: VideoMensa
         accessibilityRole="imagebutton"
         accessibilityLabel="Reproducir el video"
         onPress={subiendo ? undefined : onAbrir}
-        disabled={subiendo || !onAbrir}
+        onLongPress={subiendo ? undefined : onMantener}
+        delayLongPress={400}
+        disabled={subiendo || (!onAbrir && !onMantener)}
         className="absolute inset-0 items-center justify-center active:opacity-90"
       >
         {/* Mientras sube manda el velo con el spinner, igual que la foto: mostrar el play

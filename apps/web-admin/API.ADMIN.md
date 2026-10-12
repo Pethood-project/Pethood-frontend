@@ -264,6 +264,53 @@ Marca un usuario como verificado (validacion de DNI y telefono por parte del adm
 | `USUARIO_YA_VERIFICADO` | El usuario ya esta verificado | 409 |
 | `ESTADO_INVALIDO` | El usuario no esta en Pendiente_Verificacion | 409 |
 | `DATOS_INCOMPLETOS` | Falta el DNI y/o el telefono del usuario | 409 |
+| `FALTA_DOCUMENTACION` | El usuario todavia no subio la foto del DNI y la selfie (spec 002.1) | 409 |
+
+---
+
+## `GET /api/v1/admin/usuarios/:id`
+
+Detalle de un usuario, con su DNI y selfie (spec 002.1). **Cada llamada con documentos queda auditada** (`VER_DOCUMENTOS_USUARIO`). Las URLs de `documentos` vencen a los 5-10 minutos: si el modal queda abierto mas tiempo hay que volver a pedir el detalle.
+
+**Respuesta:** `200 OK`
+
+```json
+{
+  "usuario": {
+    "id": 5,
+    "nombre": "Ana",
+    "verificado": false,
+    "estado": "Pendiente_Verificacion",
+    "documentos": {
+      "dniImagenUrl": "/api/v1/archivos/documentos-identidad/3f2a.jpg?exp=1760300000000&sig=9c1d...",
+      "selfieUrl": "/api/v1/archivos/documentos-identidad/b71e.jpg?exp=1760300000000&sig=44ab..."
+    }
+  },
+  "resumen": { "mascotas": 0, "solicitudes": 0, "donaciones": 0 },
+  "resenas": { "promedio": null, "cantidad": 0, "distribucion": [], "resenas": [] }
+}
+```
+
+`documentos.*` es `null` si el usuario todavia no subio ese archivo.
+
+---
+
+## `PATCH /api/v1/admin/usuarios/:id/documentos/baja`
+
+Baja logica de la documentacion de un usuario **verificado** (spec 002.1): queda `verificado: false`, vuelve a `Pendiente_Verificacion` y se anulan `dniImagenUrl`/`selfieUrl`. Los archivos **no se borran** del storage y las rutas quedan en auditoria. El usuario recibe un push `VERIFICACION_REVOCADA` y tiene que subir de nuevo.
+
+**Body:** `{ "motivo": "DNI vencido" }` (requerido, se registra en auditoria).
+
+**Respuesta:** `200 OK` — `{ "mensaje": "Verificacion revocada.", "usuario": { ... } }`
+
+**Errores:**
+
+| Codigo | Mensaje | HTTP |
+|---|---|---|
+| `USUARIO_NO_ENCONTRADO` | No se encontro el usuario | 404 |
+| `NO_SE_PUEDE_REVOCAR_ADMIN` | No se puede revocar la verificacion de un administrador | 403 |
+| `USUARIO_NO_VERIFICADO` | Este usuario no esta verificado | 409 |
+| `ESTADO_INVALIDO` | Solo se puede revocar a un usuario activo, o cambio de estado mientras se revisaba | 409 |
 
 ---
 

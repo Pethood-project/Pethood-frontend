@@ -22,15 +22,19 @@ interface FotoMensajeProps {
   subiendo: boolean;
   /** Abre la foto a pantalla completa. El visor lo monta la pantalla, no cada foto. */
   onAbrir?: () => void;
+  /** Mantener apretada la foto: eliminar el mensaje propio o reportar el ajeno. */
+  onMantener?: () => void;
 }
 
-export function FotoMensaje({ uri, ancho, alto, subiendo, onAbrir }: FotoMensajeProps) {
+export function FotoMensaje({ uri, ancho, alto, subiendo, onAbrir, onMantener }: FotoMensajeProps) {
   return (
     <Pressable
       accessibilityRole="imagebutton"
       accessibilityLabel="Ver la foto en grande"
       onPress={subiendo ? undefined : onAbrir}
-      disabled={subiendo || !onAbrir}
+      onLongPress={subiendo ? undefined : onMantener}
+      delayLongPress={400}
+      disabled={subiendo || (!onAbrir && !onMantener)}
       style={{ width: ancho, height: alto, borderRadius: RADIO }}
       className="overflow-hidden bg-organic-neutral-200 active:opacity-90"
     >

@@ -17,9 +17,28 @@
  */
 import type { ArchivoAdjunto } from '@/services/api';
 import { urlAbsoluta } from '@/services/api';
-import type { AvisoEnChat, Mensaje, SolicitudEnChat } from '@/services/chats';
-import { tipoDeMime, type Adjunto } from '@/lib/adjuntos';
+import type { AvisoEnChat, Mensaje, MensajeCitado, SolicitudEnChat } from '@/services/chats';
+import { tipoDeMime, type Adjunto, type TipoAdjunto } from '@/lib/adjuntos';
 import { etiquetaDia, inicioDelDia } from '@/shared/validation/dates';
+
+/**
+ * La cita de un mensaje respondido, lista para pintar: la que va dentro de la burbuja que
+ * responde y la que se ve arriba de la barra mientras se escribe la respuesta.
+ *
+ * Es la misma forma para las dos y para los dos orígenes (la que manda el servidor y la que
+ * arma el cliente al deslizar una burbuja), así el componente no sabe de dónde salió.
+ */
+export interface CitaChat {
+  /** Id del mensaje citado: con él se viaja a ese mensaje dentro de la lista. */
+  id: number;
+  /** El citado es propio: la cita dice "Vos" en vez del nombre del contacto. */
+  esMia: boolean;
+  contenido: string;
+  /** Qué adjuntos llevaba, para el "Foto" / "Video" de la cita. `miniatura` es una uri absoluta. */
+  adjunto: { tipo: TipoAdjunto; cantidad: number; miniatura: string | null } | null;
+  /** El citado se eliminó: la cita lo dice y no muestra nada de lo que decía. */
+  eliminado: boolean;
+}
 
 /** Un mensaje que el usuario mandó y todavía no confirmó el servidor. */
 export interface MensajePendiente {
@@ -28,6 +47,11 @@ export interface MensajePendiente {
   contenido: string;
   /** Se conservan para poder reintentar sin que el usuario vuelva a elegirlos. */
   fotos: ArchivoAdjunto[];
+  /**
+   * El mensaje que se está respondiendo, ya armado como cita: la burbuja en vuelo la muestra
+   * igual que la va a mostrar el servidor, y su `id` es lo que viaja en el POST.
+   */
+  respondeA: CitaChat | null;
   /** `true` si el envío falló y la burbuja ofrece reintentar. */
   fallo: boolean;
 }
@@ -38,6 +62,8 @@ export interface MensajePendiente {
  */
 export interface ItemChat {
   clave: string;
+  /** Id del servidor, o `null` en un pendiente: todavía no se puede citar ni eliminar. */
+  mensajeId: number | null;
   contenido: string;
   /**
    * Los adjuntos con su tipo ya resuelto: uri absoluta del servidor, o local mientras sube.
@@ -61,7 +87,55 @@ export interface ItemChat {
   solicitud: SolicitudEnChat | null;
   /** Sólo en los de tipo `ANIMAL_PERDIDO` (HU-13.2). */
   aviso: AvisoEnChat | null;
+  /** El autor lo eliminó: en lugar de la burbuja va el aviso, sin contenido ni adjuntos. */
+  eliminado: boolean;
+  /** El mensaje al que responde, o `null`. */
+  respondeA: CitaChat | null;
   estado: 'enviado' | 'enviando' | 'error';
+}
+
+/** La cita que manda el servidor, en la forma que pinta la burbuja. */
+function aCita(citado: MensajeCitado, miUsuarioId: number): CitaChat {
+  return {
+    id: citado.id,
+    esMia: citado.usuarioId === miUsuarioId,
+    contenido: citado.contenido,
+    adjunto: citado.adjunto
+      ? {
+          tipo: citado.adjunto.tipo,
+          cantidad: citado.adjunto.cantidad,
+          miniatura: urlAbsoluta(citado.adjunto.miniaturaUrl),
+        }
+      : null,
+    eliminado: citado.eliminado,
+  };
+}
+
+/**
+ * La cita de una burbuja que se acaba de deslizar para responderla. Sale de lo que la lista ya
+ * tiene, sin pedirle nada al servidor: es la que se ve arriba de la barra y la que lleva la
+ * burbuja en vuelo hasta que el servidor confirme la suya.
+ *
+ * Sólo tiene sentido para un mensaje confirmado (con `mensajeId`): un pendiente no se responde.
+ */
+export function citaDe(item: ItemChat): CitaChat | null {
+  if (item.mensajeId === null) return null;
+
+  const primero = item.adjuntos[0];
+
+  return {
+    id: item.mensajeId,
+    esMia: item.esMio,
+    contenido: item.contenido,
+    adjunto: primero
+      ? {
+          tipo: primero.tipo,
+          cantidad: item.adjuntos.length,
+          miniatura: primero.tipo === 'IMAGEN' ? primero.uri : null,
+        }
+      : null,
+    eliminado: item.eliminado,
+  };
 }
 
 /**
@@ -88,13 +162,77 @@ export function insertarMensaje(lista: Mensaje[], mensaje: Mensaje): Mensaje[] {
   return [...lista, mensaje].sort(porMasReciente);
 }
 
-/** Mezcla una página del historial (o un refetch entero) descartando lo repetido. */
+/** `true` si el servidor eliminó el mensaje, o el que cita, después de que lo cargamos. */
+function seEliminoDespues(conocido: Mensaje, fresco: Mensaje): boolean {
+  return (
+    fresco.eliminado !== conocido.eliminado ||
+    (fresco.respondeA?.eliminado ?? false) !== (conocido.respondeA?.eliminado ?? false)
+  );
+}
+
+/**
+ * Mezcla una página del historial (o un refetch entero) descartando lo repetido.
+ *
+ * De un mensaje que ya estaba sólo se toma la versión nueva si se eliminó (él o el que cita):
+ * es lo único que le puede pasar a un mensaje ya enviado, y si pasó con el socket caído el
+ * evento se perdió y este refetch es la única forma de enterarse.
+ */
 export function mezclarPagina(lista: Mensaje[], pagina: Mensaje[]): Mensaje[] {
+  const frescos = new Map(pagina.map((mensaje) => [mensaje.id, mensaje]));
+
+  let huboCambios = false;
+  const actualizada = lista.map((conocido) => {
+    const fresco = frescos.get(conocido.id);
+    if (!fresco || !seEliminoDespues(conocido, fresco)) return conocido;
+
+    huboCambios = true;
+    return fresco;
+  });
+
   const conocidos = new Set(lista.map((mensaje) => mensaje.id));
   const nuevos = pagina.filter((mensaje) => !conocidos.has(mensaje.id));
 
-  if (nuevos.length === 0) return lista;
-  return [...lista, ...nuevos].sort(porMasReciente);
+  if (nuevos.length === 0) return huboCambios ? actualizada : lista;
+  return [...actualizada, ...nuevos].sort(porMasReciente);
+}
+
+/**
+ * Aplica la eliminación de un mensaje (`chat:mensaje-eliminado`, o la respuesta del DELETE):
+ * la burbuja pasa a ser el aviso y pierde todo lo que decía, y las respuestas que lo citaban
+ * pasan a decir que el citado se eliminó.
+ *
+ * Es lo mismo que mandaría el servidor si se volviera a pedir el historial, así que un
+ * refetch posterior no cambia nada. Si el mensaje no está cargado, devuelve la lista intacta.
+ */
+export function marcarEliminado(lista: Mensaje[], mensajeId: number): Mensaje[] {
+  const afectado = (mensaje: Mensaje): boolean =>
+    (mensaje.id === mensajeId && !mensaje.eliminado) ||
+    (mensaje.respondeA?.id === mensajeId && !mensaje.respondeA.eliminado);
+
+  if (!lista.some(afectado)) return lista;
+
+  return lista.map((mensaje) => {
+    if (mensaje.id === mensajeId) {
+      return {
+        ...mensaje,
+        eliminado: true,
+        contenido: '',
+        imagenUrl: null,
+        imagenes: [],
+        adjuntos: [],
+        respondeA: null,
+      };
+    }
+
+    if (mensaje.respondeA?.id === mensajeId) {
+      return {
+        ...mensaje,
+        respondeA: { ...mensaje.respondeA, contenido: '', adjunto: null, eliminado: true },
+      };
+    }
+
+    return mensaje;
+  });
 }
 
 /**
@@ -136,7 +274,7 @@ export function marcarMisMensajesAcusados(
  *
  * Hace falta porque el broadcast puede ganarle a la respuesta del POST: sin esto, entre un
  * evento y el otro la burbuja se vería DUPLICADA. Como el evento no trae la clave local, se
- * lo empareja por contenido y por si lleva foto.
+ * lo empareja por contenido, por cuántos adjuntos lleva y por a qué mensaje responde.
  *
  * Con dos mensajes idénticos seguidos ("ok", "ok") se saca el primero de la cola, que es el
  * que se mandó primero: son intercambiables, y cuando llegue el segundo evento se sacará el
@@ -150,7 +288,8 @@ export function quitarPendienteConfirmado(
     (pendiente) =>
       !pendiente.fallo &&
       pendiente.contenido === mensaje.contenido &&
-      pendiente.fotos.length === mensaje.imagenes.length,
+      pendiente.fotos.length === mensaje.imagenes.length &&
+      (pendiente.respondeA?.id ?? null) === (mensaje.respondeA?.id ?? null),
   );
 
   if (indice === -1) return pendientes;
@@ -172,6 +311,7 @@ export function aItems(
   const enVuelo: ItemChat[] = pendientes
     .map((pendiente) => ({
       clave: pendiente.claveLocal,
+      mensajeId: null,
       contenido: pendiente.contenido,
       // Las miniaturas salen de las uris locales: las del servidor todavía no existen. El
       // `tipo` de `ArchivoAdjunto` es el mimetype, que es de donde sale si es foto o video.
@@ -186,6 +326,8 @@ export function aItems(
       tipo: 'TEXTO' as const,
       solicitud: null,
       aviso: null,
+      eliminado: false,
+      respondeA: pendiente.respondeA,
       estado: pendiente.fallo ? ('error' as const) : ('enviando' as const),
     }))
     // Los pendientes se guardan en orden de envío y la lista va al revés.
@@ -193,6 +335,7 @@ export function aItems(
 
   const enviados: ItemChat[] = confirmados.map((mensaje) => ({
     clave: String(mensaje.id),
+    mensajeId: mensaje.id,
     contenido: mensaje.contenido,
     // `urlAbsoluta` devuelve null sólo con entrada vacía; acá nunca lo es. El tipo lo
     // manda el backend en `adjuntos`, el cliente no lo deduce.
@@ -208,6 +351,9 @@ export function aItems(
     tipo: mensaje.tipo,
     solicitud: mensaje.solicitud,
     aviso: mensaje.aviso,
+    // `?? false` / `?? null`: un backend anterior a esta versión no manda los campos.
+    eliminado: mensaje.eliminado ?? false,
+    respondeA: mensaje.respondeA ? aCita(mensaje.respondeA, miUsuarioId) : null,
     estado: 'enviado' as const,
   }));
 

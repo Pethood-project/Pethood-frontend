@@ -12,9 +12,11 @@ import { AppState } from 'react-native';
 import {
   aItems,
   insertarMensaje,
+  marcarEliminado,
   marcarMisMensajesAcusados,
   mezclarPagina,
   quitarPendienteConfirmado,
+  type CitaChat,
   type ItemChat,
   type MensajePendiente,
 } from '@/lib/mensajesChat';
@@ -24,11 +26,13 @@ import {
   type Ack,
   type EventoAcuse,
   type EventoError,
+  type EventoMensajeEliminado,
   type EventoPresencia,
 } from '@/lib/socketChat';
 import type { ArchivoAdjunto } from '@/services/api';
 import { ApiError } from '@/services/api';
 import {
+  eliminarMensaje,
   enviarMensaje,
   listarMensajes,
   marcarChatEntregado,
@@ -65,9 +69,11 @@ export interface EstadoSalaChat {
   puedeEscribir: boolean;
   recargar: () => void;
   cargarMasViejos: () => void;
-  enviar: (contenido: string, fotos: ArchivoAdjunto[]) => void;
+  enviar: (contenido: string, fotos: ArchivoAdjunto[], respondeA?: CitaChat | null) => void;
   reintentar: (claveLocal: string) => void;
   descartar: (claveLocal: string) => void;
+  /** Elimina un mensaje propio. Rechaza con el `ApiError` del servidor si no se pudo. */
+  eliminar: (mensajeId: number) => Promise<void>;
 }
 
 export function useSalaChat(chatId: number, miUsuarioId: number, token: string | null) {
@@ -206,7 +212,12 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
   /** Manda un pendiente al servidor. Lo comparten el envío y el reintento. */
   const despachar = useCallback(
     (pendiente: MensajePendiente): void => {
-      void enviarMensaje(chatId, pendiente.contenido, pendiente.fotos)
+      void enviarMensaje(
+        chatId,
+        pendiente.contenido,
+        pendiente.fotos,
+        pendiente.respondeA?.id ?? null,
+      )
         .then((mensaje) => {
           if (!montado.current) return;
           // Puede que el broadcast ya lo haya insertado: `insertarMensaje` deduplica.
@@ -229,11 +240,12 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
   );
 
   const enviar = useCallback(
-    (contenido: string, fotos: ArchivoAdjunto[]): void => {
+    (contenido: string, fotos: ArchivoAdjunto[], respondeA: CitaChat | null = null): void => {
       const pendiente: MensajePendiente = {
         claveLocal: nuevaClaveLocal(),
         contenido,
         fotos,
+        respondeA,
         fallo: false,
       };
 
@@ -266,6 +278,24 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
   const descartar = useCallback((claveLocal: string): void => {
     setPendientes((actuales) => actuales.filter((otro) => otro.claveLocal !== claveLocal));
   }, []);
+
+  /**
+   * Elimina un mensaje propio. NO es optimista: la pantalla lo confirma con un diálogo que
+   * queda cargando hasta la respuesta, así que la burbuja cambia recién cuando el servidor ya
+   * la dio de baja. Deshacer un optimista fallido obligaría a restaurar también las citas que
+   * lo nombraban.
+   *
+   * El broadcast `chat:mensaje-eliminado` también llega acá: aplicarlo dos veces no cambia
+   * nada, porque `marcarEliminado` deja la lista intacta si ya estaba eliminado.
+   */
+  const eliminar = useCallback(
+    async (mensajeId: number): Promise<void> => {
+      await eliminarMensaje(chatId, mensajeId);
+      if (!montado.current) return;
+      setConfirmados((actuales) => marcarEliminado(actuales, mensajeId));
+    },
+    [chatId],
+  );
 
   // ─── Tiempo real ───
   useEffect(() => {
@@ -320,6 +350,12 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
       if (AppState.currentState === 'active') marcarLeido();
     };
 
+    /** El autor eliminó un mensaje: puede ser el otro, o yo desde otro dispositivo. */
+    const alMensajeEliminado = ({ chatId: sala, mensajeId }: EventoMensajeEliminado): void => {
+      if (!montado.current || sala !== chatId) return;
+      setConfirmados((actuales) => marcarEliminado(actuales, mensajeId));
+    };
+
     /** `chat:leido` y `chat:entregado` son el mismo hecho en dos momentos. */
     const alAcusar =
       (acuse: 'entregado' | 'leido') =>
@@ -350,6 +386,7 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
     socket.on('disconnect', alDesconectar);
     socket.on('connect_error', alDesconectar);
     socket.on(EVENTOS.MENSAJE_NUEVO, alMensajeNuevo);
+    socket.on(EVENTOS.MENSAJE_ELIMINADO, alMensajeEliminado);
     socket.on(EVENTOS.LEIDO, alLeido);
     socket.on(EVENTOS.ENTREGADO, alEntregado);
     socket.on(EVENTOS.PRESENCIA, alPresencia);
@@ -367,6 +404,7 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
       socket.off('disconnect', alDesconectar);
       socket.off('connect_error', alDesconectar);
       socket.off(EVENTOS.MENSAJE_NUEVO, alMensajeNuevo);
+      socket.off(EVENTOS.MENSAJE_ELIMINADO, alMensajeEliminado);
       socket.off(EVENTOS.LEIDO, alLeido);
       socket.off(EVENTOS.ENTREGADO, alEntregado);
       socket.off(EVENTOS.PRESENCIA, alPresencia);
@@ -403,5 +441,6 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
     enviar,
     reintentar,
     descartar,
+    eliminar,
   } satisfies EstadoSalaChat;
 }

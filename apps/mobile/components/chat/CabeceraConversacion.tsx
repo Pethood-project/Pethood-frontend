@@ -39,7 +39,7 @@ interface CabeceraConversacionProps {
   onVolver: () => void;
   /** Reporta al contacto (spec 008). Sin esto no se muestra la bandera. */
   onReportar?: () => void;
-  /** Abre el perfil público del contacto (spec 023). Se toca la foto. */
+  /** Abre el perfil público del contacto (spec 023). Se toca la foto o el nombre. */
   onVerPerfil?: () => void;
 }
 
@@ -131,12 +131,14 @@ export function CabeceraConversacion({
           <Ionicons name="arrow-back" size={24} color={PALETA.neutral[700]} />
         </Pressable>
 
+        {/* La foto y el nombre son UNA sola zona tocable que lleva al perfil, como en
+            WhatsApp: tocar el nombre y que no pase nada se lee como un bug. */}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={contacto ? `Ver el perfil de ${contacto.nombre}` : 'Ver el perfil'}
           disabled={!contacto || !onVerPerfil}
           onPress={onVerPerfil}
-          className="active:opacity-70"
+          className="min-w-0 flex-1 flex-row items-center gap-3 active:opacity-70"
         >
           <Avatar
             uri={urlAbsoluta(contacto?.imagenUrl)}
@@ -147,25 +149,25 @@ export function CabeceraConversacion({
             tono={contacto?.tipo === 'REFUGIO' ? 'acento' : 'neutro'}
             accessibilityLabel={contacto ? `Foto de ${contacto.nombre}` : 'Foto del contacto'}
           />
-        </Pressable>
 
-        <View className="min-w-0 flex-1">
-          <Text
-            numberOfLines={1}
-            ellipsizeMode="tail"
-            className="font-cuerpo-semi text-[16px] text-organic-neutral-900"
-          >
-            {/* Mientras carga la cabecera no se pone un placeholder con guiones: el hueco
-                vacío es menos ruidoso que un texto falso que dura medio segundo. */}
-            {contacto?.nombre ?? ''}
-          </Text>
-
-          {contacto ? (
-            <Text numberOfLines={1} className="font-cuerpo text-[11px] text-organic-neutral-600">
-              {subtitulo(contacto, enLinea, minutosRespuesta, solicitud, aviso, contexto)}
+          <View className="min-w-0 flex-1">
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              className="font-cuerpo-semi text-[16px] text-organic-neutral-900"
+            >
+              {/* Mientras carga la cabecera no se pone un placeholder con guiones: el hueco
+                  vacío es menos ruidoso que un texto falso que dura medio segundo. */}
+              {contacto?.nombre ?? ''}
             </Text>
-          ) : null}
-        </View>
+
+            {contacto ? (
+              <Text numberOfLines={1} className="font-cuerpo text-[11px] text-organic-neutral-600">
+                {subtitulo(contacto, enLinea, minutosRespuesta, solicitud, aviso, contexto)}
+              </Text>
+            ) : null}
+          </View>
+        </Pressable>
 
         {contacto && onReportar ? (
           <Pressable

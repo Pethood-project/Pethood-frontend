@@ -2,7 +2,7 @@
  * Chat: listado de conversaciones (HU-5.1) y sala (HU-5.2). Contratos en
  * `pethood-backend/docs/api-chats.md` y `api-chat-sala.md`.
  */
-import { adjuntarArchivo, get, post, postFormData, type ArchivoAdjunto } from './api';
+import { adjuntarArchivo, del, get, post, postFormData, type ArchivoAdjunto } from './api';
 import type { TipoAdjunto } from '@/lib/adjuntos';
 
 /**
@@ -43,6 +43,8 @@ export interface UltimoMensaje {
    * (HU-13.2): en los dos el `contenido` va vacío y el texto lo pone la fila.
    */
   tipo: 'TEXTO' | 'SOLICITUD' | 'ANIMAL_PERDIDO';
+  /** El autor lo eliminó: viene sin contenido y la fila dice "Se eliminó este mensaje". */
+  eliminado: boolean;
 }
 
 export interface Conversacion {
@@ -168,8 +170,37 @@ export interface Mensaje {
   solicitud: SolicitudEnChat | null;
   /** Sólo en los de `tipo: 'ANIMAL_PERDIDO'` (HU-13.2). */
   aviso: AvisoEnChat | null;
+  /**
+   * El autor lo eliminó. Sigue en el historial pero viene vacío —sin texto, adjuntos ni cita—:
+   * en su lugar se pinta "Se eliminó este mensaje".
+   */
+  eliminado: boolean;
+  /** El mensaje al que éste responde, resumido para la cita, o `null`. */
+  respondeA: MensajeCitado | null;
   /** ISO 8601 crudo. La hora la arma `horaVisible`. */
   fechaAlta: string;
+}
+
+/** Lo que la burbuja que responde muestra del mensaje citado. */
+export interface MensajeCitado {
+  id: number;
+  /** Autor del citado: se compara con la sesión para decir "Vos" o el nombre del contacto. */
+  usuarioId: number;
+  /** Sin truncar. Vacío si era sólo adjuntos o si se eliminó. */
+  contenido: string;
+  /**
+   * Qué adjuntos llevaba, o `null`. `miniaturaUrl` es la primera foto (ruta relativa: pasarla
+   * por `urlAbsoluta`); un video no tiene miniatura.
+   */
+  adjunto: { tipo: TipoAdjunto; cantidad: number; miniaturaUrl: string | null } | null;
+  /** El citado se eliminó después: la cita lo dice y no muestra lo que decía. */
+  eliminado: boolean;
+}
+
+/** Respuesta de eliminar un mensaje, igual al payload de `chat:mensaje-eliminado`. */
+export interface MensajeEliminado {
+  chatId: number;
+  mensajeId: number;
 }
 
 export interface HistorialMensajes {
@@ -251,24 +282,40 @@ export function listarMensajes(chatId: number, antesDe?: number): Promise<Histor
  * lista y lo que el backend espera. El campo se sigue llamando `foto` aunque también acepte
  * un video: es el nombre del contrato, y renombrarlo obligaría a versionar el endpoint. El
  * orden en que se agregan es el que se ve en la grilla.
+ *
+ * `respondeAId` es el mensaje que se cita al deslizar para responder. Que sea de esta sala lo
+ * valida el backend.
  */
 export async function enviarMensaje(
   chatId: number,
   contenido: string,
   adjuntos: ArchivoAdjunto[] = [],
+  respondeAId: number | null = null,
 ): Promise<Mensaje> {
   if (adjuntos.length === 0) {
-    return post(`/chats/${chatId}/mensajes`, { contenido });
+    return post(`/chats/${chatId}/mensajes`, {
+      contenido,
+      ...(respondeAId === null ? {} : { respondeAId }),
+    });
   }
 
   const formData = new FormData();
   formData.append('contenido', contenido);
+  if (respondeAId !== null) formData.append('respondeAId', String(respondeAId));
 
   for (const adjunto of adjuntos) {
     await adjuntarArchivo(formData, 'foto', adjunto);
   }
 
   return postFormData(`/chats/${chatId}/mensajes`, formData);
+}
+
+/**
+ * Elimina un mensaje propio, para los dos: en la conversación queda el aviso "Se eliminó este
+ * mensaje". Es una baja lógica del lado del servidor, sin límite de tiempo.
+ */
+export function eliminarMensaje(chatId: number, mensajeId: number): Promise<MensajeEliminado> {
+  return del(`/chats/${chatId}/mensajes/${mensajeId}`);
 }
 
 /** Marca leída la conversación entera. Se llama al abrir la sala, no por mensaje visto. */

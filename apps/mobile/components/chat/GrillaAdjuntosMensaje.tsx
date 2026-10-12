@@ -34,6 +34,8 @@ interface GrillaAdjuntosMensajeProps {
   subiendo: boolean;
   /** Abre el visor en esa posición de la lista. */
   onAbrir?: (indice: number) => void;
+  /** Mantener apretado cualquiera de los adjuntos: eliminar el mensaje propio o reportar el ajeno. */
+  onMantener?: () => void;
 }
 
 export function GrillaAdjuntosMensaje({
@@ -43,6 +45,7 @@ export function GrillaAdjuntosMensaje({
   altoUnica,
   subiendo,
   onAbrir,
+  onMantener,
 }: GrillaAdjuntosMensajeProps) {
   if (adjuntos.length === 0) return null;
 
@@ -62,6 +65,7 @@ export function GrillaAdjuntosMensaje({
           alto={alto}
           subiendo={subiendo}
           onAbrir={onAbrir ? () => onAbrir(indice) : undefined}
+          onMantener={onMantener}
         />
 
         {/* El velo va ENCIMA y sin capturar el toque: la miniatura de abajo sigue abriendo

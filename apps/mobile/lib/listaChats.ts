@@ -67,6 +67,8 @@ export function aplicarMensajeNuevo(
       // mensaje entero — el mismo criterio con el que el backend arma este preview.
       tieneVideo: mensaje.adjuntos[0]?.tipo === 'VIDEO',
       tipo: mensaje.tipo,
+      // Un mensaje recién llegado nunca viene eliminado: eso llega aparte, por su evento.
+      eliminado: false,
     },
     noLeidos: esMio ? actual.noLeidos : actual.noLeidos + 1,
     fechaUltimaActividad: mensaje.fechaAlta,

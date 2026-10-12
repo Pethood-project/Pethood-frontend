@@ -200,6 +200,12 @@ export const LIMITES = {
     pagina: { porDefecto: 20, maximo: 50 },
   },
 
+  /** Bandeja de notificaciones (spec 004). */
+  notificacion: {
+    /** Tamaño de página de la bandeja (paginación por cursor). El backend acepta hasta 50. */
+    pagina: { porDefecto: 20, maximo: 50 },
+  },
+
   /** Campaña de donación (spec 026, HU-12.1). Espejo del backend. */
   campania: {
     titulo: { min: 3, max: 50 },

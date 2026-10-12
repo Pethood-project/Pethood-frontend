@@ -108,6 +108,7 @@ function TarjetaFavorita({
   const puedeSolicitarse =
     publicacionId !== null &&
     (mascota.estado.nombre === ESTADO_SOLICITABLE || mascota.solicitudAbiertaId !== null);
+  const adoptadaPorMi = mascota.estado.nombre === 'Adoptado' && mascota.adoptadaPorMi;
 
   return (
     // La tarjeta y el botón son hermanos y no uno dentro del otro: un Pressable anidado en
@@ -179,16 +180,21 @@ function TarjetaFavorita({
         ) : (
           // Adoptada, en tránsito, en tratamiento o sin publicación: no hay nada que pedir,
           // pero se mantiene el alto para que el carrusel no quede escalonado.
+          // La adoptó quien mira: verde suave. Si la adoptó otra persona dice "No disponible".
           <View
-            className="h-[38px] items-center justify-center rounded-full px-2"
-            style={{ backgroundColor: PALETA.neutral[200] }}
+            className={`h-[38px] items-center justify-center rounded-full px-2 ${
+              adoptadaPorMi ? 'bg-emerald-50' : ''
+            }`}
+            style={adoptadaPorMi ? undefined : { backgroundColor: PALETA.neutral[200] }}
           >
             <Text
               numberOfLines={1}
-              className="font-cuerpo-bold text-[13px]"
-              style={{ color: PALETA.neutral[700] }}
+              className={`font-cuerpo-bold text-[13px] ${adoptadaPorMi ? 'text-emerald-700' : ''}`}
+              style={adoptadaPorMi ? undefined : { color: PALETA.neutral[700] }}
             >
-              {publicacionId === null ? 'Sin publicar' : estiloDeEstado(mascota.estado.nombre).etiqueta}
+              {publicacionId === null
+                ? 'Sin publicar'
+                : estiloDeEstado(mascota.estado.nombre, mascota.adoptadaPorMi).etiqueta}
             </Text>
           </View>
         )}

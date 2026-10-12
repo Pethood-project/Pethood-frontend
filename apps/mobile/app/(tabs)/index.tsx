@@ -29,6 +29,7 @@ import { TarjetasRefugio } from '@/components/home/TarjetasRefugio';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { PALETA } from '@/constants/theme';
 import { useDatosInicio } from '@/hooks/useDatosInicio';
+import { useNotificaciones } from '@/hooks/useNotificaciones';
 import { useSesion } from '@/hooks/useSesion';
 import { saludoPara } from '@/lib/saludo';
 import { listarFavoritos } from '@/services/favoritos';
@@ -212,6 +213,9 @@ function PantallaInicio({
  * grande y en semi: identifica la cuenta en vez de saludar.
  */
 function Encabezado({ subtitulo, destacado = false }: { subtitulo: string; destacado?: boolean }) {
+  const router = useRouter();
+  const { noLeidas } = useNotificaciones();
+
   return (
     <View className="flex-row items-start justify-between gap-3 px-[22px] pb-2 pt-2">
       <View className="min-w-0 flex-1">
@@ -228,11 +232,12 @@ function Encabezado({ subtitulo, destacado = false }: { subtitulo: string; desta
         </Text>
       </View>
 
-      {/* Todavía no hay pantalla de notificaciones: se ve, pero no navega. Es del
-          Módulo 4, y de ahí cuelga el pendiente de HU-9.3 (entrar a una actualización
-          de seguimiento desde su notificación): ver "Pendientes por dependencias de
-          otros módulos" en el README. */}
-      <BotonCircular icono="notifications-outline" etiqueta="Notificaciones" />
+      <BotonCircular
+        icono="notifications-outline"
+        etiqueta="Notificaciones"
+        contador={noLeidas}
+        onPress={() => router.push('/notificaciones')}
+      />
     </View>
   );
 }

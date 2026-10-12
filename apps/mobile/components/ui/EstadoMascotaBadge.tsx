@@ -9,13 +9,19 @@ interface EstadoMascotaBadgeProps {
    * acompaña al nombre grande de la ficha de la publicación.
    */
   tamanio?: 'sm' | 'md' | 'lg';
+  /** Solo para "Adoptado": distingue la que adoptó quien mira de la que adoptó otra persona. */
+  adoptadaPorMi?: boolean;
 }
 
 const RELLENOS = { sm: 'px-2.5 py-1', md: 'px-3 py-1.5', lg: 'px-3.5 py-1.5' };
 const LETRAS = { sm: 'text-xs', md: 'text-sm', lg: 'text-[15px]' };
 
-export function EstadoMascotaBadge({ estado, tamanio = 'sm' }: EstadoMascotaBadgeProps) {
-  const { fondo, texto, etiqueta } = estiloDeEstado(estado);
+export function EstadoMascotaBadge({
+  estado,
+  tamanio = 'sm',
+  adoptadaPorMi,
+}: EstadoMascotaBadgeProps) {
+  const { fondo, texto, etiqueta } = estiloDeEstado(estado, adoptadaPorMi);
   const relleno = RELLENOS[tamanio];
   const letra = LETRAS[tamanio];
 

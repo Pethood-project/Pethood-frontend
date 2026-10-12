@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1058588616259",
+    "project_id": "pethood-c9fe2",
+    "storage_bucket": "pethood-c9fe2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1058588616259:android:953731ab516bc16c7bd6f6",
+        "android_client_info": {
+          "package_name": "com.pethood.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbzr7Z_VjU4_wr1GGkhQDnRn4V8cRGYl8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

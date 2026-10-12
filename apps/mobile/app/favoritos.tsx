@@ -144,7 +144,11 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
           ) : null}
 
           <View className="mt-2">
-            <EstadoMascotaBadge estado={mascota.estado.nombre} tamanio="md" />
+            <EstadoMascotaBadge
+              estado={mascota.estado.nombre}
+              tamanio="md"
+              adoptadaPorMi={mascota.adoptadaPorMi}
+            />
           </View>
         </Pressable>
 

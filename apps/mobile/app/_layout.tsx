@@ -17,6 +17,7 @@ import 'react-native-reanimated';
 
 import { BarraNavegacionSistema } from '@/components/BarraNavegacionSistema';
 import { ToastProvider } from '@/components/feedback/Toast';
+import { AbrirNotificacionPush } from '@/components/notificaciones/AbrirNotificacionPush';
 import { SesionProvider, useSesion } from '@/hooks/useSesion';
 
 export { ErrorBoundary } from 'expo-router';
@@ -47,6 +48,7 @@ export default function RootLayout() {
                 web BarraNavegacionSistema no importa expo-navigation-bar. */}
             <BarraNavegacionSistema />
             <RootNavigator />
+            <AbrirNotificacionPush />
           </ToastProvider>
         </SesionProvider>
       </KeyboardProvider>

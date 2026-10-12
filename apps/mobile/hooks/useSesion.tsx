@@ -3,7 +3,9 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import type { ReactNode } from 'react';
 
 import { cerrarSocket } from '@/lib/socketChat';
+import { pedirPermisoYObtenerDispositivo } from '@/lib/notificacionesPush';
 import * as authService from '@/services/auth';
+import { eliminarDispositivo, registrarDispositivo } from '@/services/notificaciones';
 import {
   borrarSesion,
   esMiembroDeRefugio,
@@ -111,6 +113,14 @@ export function SesionProvider({ children }: { children: ReactNode }) {
     setToken(nuevoToken);
     setUsuario(nuevoUsuario);
     await guardarSesion(nuevoToken, nuevoUsuario);
+
+    // Best-effort (regla 11: sin permiso, o en Expo Go sin dev build, la bandeja sigue
+    // funcionando igual) — nunca bloquea ni hace fallar el login.
+    void pedirPermisoYObtenerDispositivo()
+      .then((dispositivo) => {
+        if (dispositivo) return registrarDispositivo(dispositivo.expoPushToken, dispositivo.plataforma);
+      })
+      .catch(() => undefined);
   }, []);
 
   const actualizarUsuario = useCallback(async (nuevoUsuario: Usuario) => {
@@ -128,6 +138,13 @@ export function SesionProvider({ children }: { children: ReactNode }) {
 
   const cerrarSesion = useCallback(async () => {
     const tokenActual = token;
+
+    // Antes de borrar la sesión guardada (regla 10): el dispositivo deja de recibir push de
+    // esta cuenta. Best-effort — sin permiso otorgado no hay token que dar de baja.
+    await pedirPermisoYObtenerDispositivo()
+      .then((dispositivo) => (dispositivo ? eliminarDispositivo(dispositivo.expoPushToken) : undefined))
+      .catch(() => undefined);
+
     setToken(null);
     setUsuario(null);
     setVistaRefugioElegida(true);

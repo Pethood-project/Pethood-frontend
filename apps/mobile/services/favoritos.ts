@@ -27,6 +27,8 @@ export interface MascotaFavorita {
   publicacionId: number | null;
   /** Solicitud viva propia sobre esa publicación: la tarjeta pasa a "Solicitud enviada". */
   solicitudAbiertaId: number | null;
+  /** La adoptó este usuario (y no otra persona): con "Adoptado" solo, no se distinguen. */
+  adoptadaPorMi: boolean;
   fechaAgregado: string;
 }
 

@@ -42,7 +42,30 @@ const ESTILOS: Record<string, EstiloEstado> = {
   },
 };
 
-export function estiloDeEstado(nombre: string): EstiloEstado {
+/** "Adoptado" cuando la adoptó el usuario que mira: verde suave. */
+const ESTILO_ADOPTADA_POR_MI: EstiloEstado = {
+  fondo: 'bg-emerald-50 border-emerald-200',
+  texto: 'text-emerald-700',
+  etiqueta: 'Adoptado',
+};
+
+/** El estado sigue siendo "Adoptado", pero para quien mira la adoptó otra persona. */
+const ESTILO_ADOPTADA_POR_OTRO: EstiloEstado = {
+  fondo: 'bg-gray-100 border-gray-300',
+  texto: 'text-gray-600',
+  etiqueta: 'No disponible',
+};
+
+/**
+ * `adoptadaPorMi` solo se pasa donde el backend lo informa (hoy, favoritos): con el estado
+ * "Adoptado" no alcanza para saber si la adoptó quien mira o alguien más. Sin el dato, se
+ * muestra el estilo de siempre.
+ */
+export function estiloDeEstado(nombre: string, adoptadaPorMi?: boolean): EstiloEstado {
+  if (nombre === 'Adoptado' && adoptadaPorMi !== undefined) {
+    return adoptadaPorMi ? ESTILO_ADOPTADA_POR_MI : ESTILO_ADOPTADA_POR_OTRO;
+  }
+
   return (
     ESTILOS[nombre] ?? {
       fondo: 'bg-gray-100 border-gray-200',

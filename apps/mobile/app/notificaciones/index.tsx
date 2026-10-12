@@ -14,6 +14,7 @@ import { useToast } from '@/components/feedback/Toast';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { PALETA } from '@/constants/theme';
 import { usePaginacionCursor } from '@/hooks/usePaginacionCursor';
+import { rutaDeNotificacion } from '@/lib/rutaDeNotificacion';
 import { tiempoRelativo } from '@/shared/validation/dates';
 import {
   eliminarNotificacion,
@@ -24,29 +25,6 @@ import {
 } from '@/services/notificaciones';
 
 const MENSAJE_SIN_CONEXION = 'No pudimos cargar tus notificaciones. Revisá tu conexión.';
-
-/** A qué pantalla ir según el tipo de entidad referenciada. `null` = no navega, solo marca leída. */
-function rutaDe(item: NotificacionItem): { pathname: string; params?: Record<string, unknown> } | null {
-  if (item.entidadId === null) return null;
-
-  switch (item.entidadTipo) {
-    case 'SOLICITUD':
-      return { pathname: '/solicitudes/[id]', params: { id: item.entidadId } };
-    case 'CHAT':
-      return { pathname: '/chats/[chatId]', params: { chatId: item.entidadId } };
-    case 'SEGUIMIENTO':
-      return {
-        pathname: '/seguimientos/actualizaciones/[seguimientoId]',
-        params: { seguimientoId: item.entidadId },
-      };
-    case 'MASCOTA':
-      return { pathname: '/mascotas/[id]', params: { id: item.entidadId } };
-    case 'REFUGIO':
-      return { pathname: '/perfil/refugio' };
-    default:
-      return null;
-  }
-}
 
 interface FilaNotificacionProps {
   item: NotificacionItem;
@@ -126,7 +104,7 @@ export default function NotificacionesScreen() {
         marcarLeida(item.id).catch(() => undefined);
       }
 
-      const ruta = rutaDe(item);
+      const ruta = rutaDeNotificacion(item.entidadTipo, item.entidadId);
       if (ruta) router.push(ruta as never);
     },
     [router],
@@ -168,7 +146,11 @@ export default function NotificacionesScreen() {
           </View>
 
           {hayNoLeidas ? (
-            <Pressable accessibilityRole="button" onPress={() => void marcarTodas()} className="px-1 py-2">
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => void marcarTodas()}
+              className="px-1 py-2"
+            >
               <Text className="font-cuerpo-semi text-[13px] text-organic-accent-600">
                 Marcar todas
               </Text>
@@ -201,7 +183,9 @@ export default function NotificacionesScreen() {
               />
             }
             ListFooterComponent={
-              lista.cargandoMas ? <EstadoCargando /> : lista.errorMas ? (
+              lista.cargandoMas ? (
+                <EstadoCargando />
+              ) : lista.errorMas ? (
                 <Pressable onPress={lista.reintentarMas} className="items-center py-4">
                   <Text className="font-cuerpo-semi text-sm text-organic-accent-600">
                     No se pudo cargar más — reintentar

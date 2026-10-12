@@ -37,15 +37,12 @@ export function validarEmail(valor: string): string | undefined {
   return undefined;
 }
 
-/** Sólo para ingresar. Una contraseña que se crea o cambia usa `validarPasswordNueva`. */
-export function validarPassword(valor: string): string | undefined {
-  if (!valor) {
-    return 'La contraseña es obligatoria';
-  }
-  if (valor.length < 8) {
-    return 'La contraseña debe tener al menos 8 caracteres';
-  }
-  return undefined;
+/**
+ * Al ingresar sólo se pide que no esté vacía: la complejidad y el largo se exigen al crearla
+ * (`validarPasswordNueva`), no acá, para no tratar como inválidas a las cuentas existentes.
+ */
+export function validarPasswordIngreso(valor: string): string | undefined {
+  return valor ? undefined : 'La contraseña es obligatoria';
 }
 
 export function validarTelefono(valor: string): string | undefined {

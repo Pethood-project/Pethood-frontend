@@ -23,7 +23,9 @@ export type VarianteChip =
    * Opción de selección única con la paleta Organic de la pantalla 33 (Filtros avanzados):
    * activa, rellena en acento con texto blanco; inactiva, crema con borde.
    */
-  | 'filtro';
+  | 'filtro'
+  /** Dato corto de una tarjeta ("Macho", "Mediano"): beige liso, sin borde, con ícono opcional. */
+  | 'dato';
 
 interface EstiloChip {
   contenedor: string;
@@ -70,6 +72,13 @@ const ESTILOS: Record<VarianteChip, { activa: EstiloChip; inactiva: EstiloChip }
       texto: 'text-organic-neutral-700 font-cuerpo',
     },
   },
+  dato: {
+    activa: { contenedor: 'bg-organic-neutral-200', texto: 'text-organic-neutral-700 font-cuerpo-semi' },
+    inactiva: {
+      contenedor: 'bg-organic-neutral-200',
+      texto: 'text-organic-neutral-700 font-cuerpo-semi',
+    },
+  },
 };
 
 /** Las etiquetas sobre foto son más chicas para no tapar la imagen. */
@@ -79,6 +88,7 @@ const TAMANIOS: Record<VarianteChip, string> = {
   seleccion: 'px-4 py-2',
   multiple: 'px-3 py-1.5',
   filtro: 'px-4 py-2',
+  dato: 'px-2.5 py-1',
 };
 
 const TAMANIOS_TEXTO: Record<VarianteChip, string> = {
@@ -87,6 +97,7 @@ const TAMANIOS_TEXTO: Record<VarianteChip, string> = {
   seleccion: 'text-sm',
   multiple: 'text-sm',
   filtro: 'text-sm',
+  dato: 'text-[12px]',
 };
 
 /** Un escalón más grande, para el alta y la publicación de mascota. */
@@ -96,11 +107,14 @@ const TAMANIOS_TEXTO_GRANDE: Record<VarianteChip, string> = {
   seleccion: 'text-base',
   multiple: 'text-base',
   filtro: 'text-base',
+  dato: 'text-[13.5px]',
 };
 
 export interface ChipProps {
   etiqueta: string;
   variante?: VarianteChip;
+  /** Ícono delante de la etiqueta (ej. el símbolo de género). */
+  icono?: keyof typeof Ionicons.glyphMap;
   /** Solo lo miran las variantes interactivas. */
   activa?: boolean;
   deshabilitada?: boolean;
@@ -119,6 +133,7 @@ export interface ChipProps {
 export function Chip({
   etiqueta,
   variante = 'suave',
+  icono,
   activa = false,
   deshabilitada = false,
   onPress,
@@ -140,6 +155,7 @@ export function Chip({
   // El tilde solo tiene sentido en la selección múltiple: en la única ya lo dice el relleno.
   const contenido = (
     <>
+      {icono ? <Ionicons name={icono} size={tamanioTilde} color={PALETA.neutral[600]} /> : null}
       {variante === 'multiple' && activa ? (
         <Ionicons name="checkmark" size={tamanioTilde} color={PALETA.pethood.naranjaIntensa} />
       ) : null}

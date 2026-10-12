@@ -17,7 +17,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useSesion } from '@/hooks/useSesion';
 import { aplicarMensajeNuevo, aplicarNoLeidos, conoceChat } from '@/lib/listaChats';
-import { EVENTOS, adquirirSocket, type EventoNoLeidos } from '@/lib/socketChat';
+import {
+  EVENTOS,
+  adquirirSocket,
+  type EventoMensajeEliminado,
+  type EventoNoLeidos,
+} from '@/lib/socketChat';
 import {
   listarChats,
   marcarChatEntregado,
@@ -137,14 +142,24 @@ export function useListaChats(): EstadoListaChats {
       setChats((actuales) => aplicarNoLeidos(actuales, evento));
     };
 
+    // Si lo eliminado era el último mensaje, el preview tiene que pasar a "Se eliminó este
+    // mensaje". El evento trae sólo el id y la fila no sabe cuál es su último mensaje, así que
+    // se vuelve a pedir el listado: son pocas queries fijas y eliminar es raro.
+    const alMensajeEliminado = (evento: EventoMensajeEliminado): void => {
+      if (!montado.current || !conoceChat(chatsRef.current, evento.chatId)) return;
+      void cargar({ silencioso: true });
+    };
+
     socket.on('connect', alConectar);
     socket.on(EVENTOS.MENSAJE_NUEVO, alMensajeNuevo);
     socket.on(EVENTOS.NO_LEIDOS, alNoLeidos);
+    socket.on(EVENTOS.MENSAJE_ELIMINADO, alMensajeEliminado);
 
     return () => {
       socket.off('connect', alConectar);
       socket.off(EVENTOS.MENSAJE_NUEVO, alMensajeNuevo);
       socket.off(EVENTOS.NO_LEIDOS, alNoLeidos);
+      socket.off(EVENTOS.MENSAJE_ELIMINADO, alMensajeEliminado);
       liberar();
     };
   }, [token, miUsuarioId, cargar]);

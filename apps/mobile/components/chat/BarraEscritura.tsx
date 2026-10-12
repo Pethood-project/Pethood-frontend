@@ -8,17 +8,22 @@
  * enviar 32 → 43, `accent-600` sólido, con el avión 15 → 20 en blanco.
  *
  * El "+" abre la hoja "Enviar en el chat" (`HojaAdjuntos`), que la monta la pantalla: de las
- * cinco opciones del artboard 38 sólo la foto tiene comportamiento, el resto espera su HU.
+ * opciones del artboard 38 sólo la foto tiene comportamiento, el resto espera su HU.
  *
  * El campo crece con el texto hasta un tope y después scrollea: un mensaje largo no puede
  * comerse la conversación entera.
+ *
+ * Mientras se responde un mensaje (se deslizó una burbuja), arriba de todo va su cita con una
+ * cruz para cancelar, como en WhatsApp, y el campo toma el foco para escribir de una.
  */
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, TextInput, View } from 'react-native';
 
+import { CitaMensaje } from '@/components/chat/CitaMensaje';
 import { PALETA } from '@/constants/theme';
 import { esMimeDeVideo } from '@/lib/adjuntos';
+import type { CitaChat } from '@/lib/mensajesChat';
 import type { ArchivoAdjunto } from '@/services/api';
 import { LIMITES } from '@/shared/validation/limits';
 
@@ -42,6 +47,9 @@ interface BarraEscrituraProps {
   onEnviar: (contenido: string) => void;
   /** `false` con el contacto dado de baja: se puede leer, no escribir. */
   habilitada: boolean;
+  /** El mensaje que se está respondiendo, con el autor ya resuelto, o `null`. */
+  respondiendoA?: { cita: CitaChat; autor: string } | null;
+  onCancelarRespuesta?: () => void;
 }
 
 export function BarraEscritura({
@@ -50,9 +58,18 @@ export function BarraEscritura({
   onQuitarFoto,
   onEnviar,
   habilitada,
+  respondiendoA = null,
+  onCancelarRespuesta,
 }: BarraEscrituraProps) {
   const [texto, setTexto] = useState('');
   const [alto, setAlto] = useState(ALTO_MINIMO);
+  const campo = useRef<TextInput>(null);
+
+  // Deslizar para responder deja el teclado listo: el gesto ya dice "quiero contestar esto".
+  const citaId = respondiendoA?.cita.id ?? null;
+  useEffect(() => {
+    if (citaId !== null) campo.current?.focus();
+  }, [citaId]);
 
   // Un mensaje puede ser sólo adjuntos, pero no puede estar vacío: con el campo en blanco
   // (o sólo espacios) y sin adjuntos, el botón no hace nada.
@@ -73,6 +90,24 @@ export function BarraEscritura({
 
   return (
     <View className="border-t border-organic-neutral-300 bg-organic-neutral-100 px-[15px] py-3">
+      {respondiendoA ? (
+        <View className="mb-2.5 flex-row items-start gap-2">
+          <View className="min-w-0 flex-1">
+            <CitaMensaje cita={respondiendoA.cita} autor={respondiendoA.autor} fondo="neutra" />
+          </View>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Cancelar la respuesta"
+            onPress={onCancelarRespuesta}
+            hitSlop={10}
+            className="mt-1 h-7 w-7 items-center justify-center rounded-full active:bg-black/5"
+          >
+            <Ionicons name="close" size={20} color={PALETA.neutral[600]} />
+          </Pressable>
+        </View>
+      ) : null}
+
       {/* Vista previa de lo adjuntado: sin esto no habría forma de saber qué se eligió ni
           de arrepentirse antes de mandarlo. Cada uno se quita por separado. */}
       {fotos.length > 0 ? (
@@ -130,6 +165,7 @@ export function BarraEscritura({
 
         <View className="min-w-0 flex-1 justify-center rounded-full border border-organic-neutral-300 bg-organic-bg px-4 py-[11px]">
           <TextInput
+            ref={campo}
             value={texto}
             onChangeText={setTexto}
             editable={habilitada}

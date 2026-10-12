@@ -21,18 +21,23 @@
  */
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, RefreshControl, Text, View } from 'react-native';
+import { FlatList, Platform, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ReporteModal, type ObjetoReportado } from '@/components/reportes/ReporteModal';
 import { FilaConversacion } from '@/components/chat/FilaConversacion';
+import { VisorAdjuntos } from '@/components/chat/VisorAdjuntos';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { BarraBusqueda } from '@/components/ui/BarraBusqueda';
+import { HojaOpciones } from '@/components/ui/HojaOpciones';
 import { PALETA } from '@/constants/theme';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useListaChats } from '@/hooks/useListaChats';
 import { useSesion } from '@/hooks/useSesion';
+import { fotoParaAmpliar } from '@/lib/fotoPerfil';
 import { filtrarPorContacto } from '@/lib/listaChats';
+import { urlAbsoluta } from '@/services/api';
+import type { ContactoChat } from '@/services/chats';
 import { LIMITES } from '@/shared/validation/limits';
 
 /** Separador entre filas: 1px `neutral-300`, a todo el ancho, como en el diseño. */
@@ -60,6 +65,13 @@ const REFRESCO_TEXTOS_MS = 60_000;
  * un número.
  */
 const RETRASO_FILTRO_MS = 300;
+
+/**
+ * Espera entre cerrar la hoja de opciones y abrir el reporte. iOS no presenta un `Modal`
+ * mientras otro todavía se está yendo (el fade dura ~300 ms) y el segundo no aparece; Android
+ * no tiene ese problema, así que ahí va de una.
+ */
+const ESPERA_ENTRE_MODALES_MS = Platform.OS === 'ios' ? 350 : 0;
 
 /**
  * Subtítulo de GUI-31: "Refugio Esperanza · 4 sin leer".
@@ -121,6 +133,30 @@ export default function ChatScreen() {
   const [busqueda, setBusqueda] = useState('');
   /** Contacto que se está reportando (deslizando su fila), o `null` con el modal cerrado. */
   const [reportado, setReportado] = useState<ObjetoReportado | null>(null);
+  /** Foto de perfil que se está viendo en grande (se tocó el avatar de una fila). */
+  const [fotoAmpliada, setFotoAmpliada] = useState<{ uri: string; nombre: string } | null>(
+    null,
+  );
+  /** Contacto cuyas opciones están abiertas (se mantuvo apretada su fila). */
+  const [conOpciones, setConOpciones] = useState<ContactoChat | null>(null);
+
+  /** El mismo perfil público (spec 023) al que lleva tocar la cabecera de la conversación. */
+  const verPerfil = (contacto: ContactoChat): void => {
+    setConOpciones(null);
+    if (contacto.tipo === 'REFUGIO') {
+      router.push({ pathname: '/perfiles/refugio/[id]', params: { id: contacto.id } });
+    } else {
+      router.push({ pathname: '/perfiles/usuario/[id]', params: { id: contacto.id } });
+    }
+  };
+
+  const reportar = (contacto: ContactoChat): void => {
+    setConOpciones(null);
+    setTimeout(
+      () => setReportado({ tipo: contacto.tipo, objetoId: contacto.id }),
+      ESPERA_ENTRE_MODALES_MS,
+    );
+  };
 
   /**
    * El término que efectivamente filtra. Se estabiliza 300 ms después de la última tecla,
@@ -243,6 +279,11 @@ export default function ChatScreen() {
                 onReportar={() =>
                   setReportado({ tipo: item.contacto.tipo, objetoId: item.contacto.id })
                 }
+                onVerFoto={() => {
+                  const uri = urlAbsoluta(item.contacto.imagenUrl);
+                  if (uri) setFotoAmpliada({ uri: fotoParaAmpliar(uri), nombre: item.contacto.nombre });
+                }}
+                onMantener={() => setConOpciones(item.contacto)}
               />
             )}
             ItemSeparatorComponent={SeparadorFilas}
@@ -262,6 +303,36 @@ export default function ChatScreen() {
       </SafeAreaView>
 
       <ReporteModal objeto={reportado} onCerrar={() => setReportado(null)} />
+
+      {/* El mismo visor de las fotos de la conversación: pellizco, doble toque y arrastre. */}
+      <VisorAdjuntos
+        adjuntos={fotoAmpliada ? [{ uri: fotoAmpliada.uri, tipo: 'IMAGEN' }] : []}
+        indiceInicial={fotoAmpliada ? 0 : null}
+        titulo={fotoAmpliada?.nombre}
+        onCerrar={() => setFotoAmpliada(null)}
+      />
+
+      <HojaOpciones
+        visible={conOpciones !== null}
+        titulo={conOpciones?.nombre ?? ''}
+        opciones={
+          conOpciones
+            ? [
+                {
+                  icono: 'person-circle-outline',
+                  etiqueta: 'Ver perfil',
+                  onPress: () => verPerfil(conOpciones),
+                },
+                {
+                  icono: 'flag-outline',
+                  etiqueta: conOpciones.tipo === 'REFUGIO' ? 'Reportar refugio' : 'Reportar usuario',
+                  onPress: () => reportar(conOpciones),
+                },
+              ]
+            : []
+        }
+        onCerrar={() => setConOpciones(null)}
+      />
     </View>
   );
 }

@@ -181,15 +181,13 @@ export function DetalleModal<T>({
 }
 
 export interface FotosVerificacionUsuario {
-  dniFrente?: string | null;
-  dniDorso?: string | null;
+  dni?: string | null;
   selfie?: string | null;
 }
 
 const TILES: { clave: keyof FotosVerificacionUsuario; etiqueta: string; icono: LucideIcon }[] = [
-  { clave: "dniFrente", etiqueta: "DNI (frente)", icono: CreditCard },
-  { clave: "dniDorso", etiqueta: "DNI (dorso)", icono: CreditCard },
-  { clave: "selfie", etiqueta: "Foto del usuario", icono: UserRound },
+  { clave: "dni", etiqueta: "DNI", icono: CreditCard },
+  { clave: "selfie", etiqueta: "Selfie (cámara en el momento)", icono: UserRound },
 ];
 
 /** Foto ampliada sobre el modal. Cierra con click/toque, ✕ o Escape (sin cerrar el modal de abajo). */
@@ -246,8 +244,8 @@ function Ampliada({
 }
 
 /**
- * Las tres fotos para verificar a un usuario (DNI frente, DNI dorso y él mismo), una al lado de la
- * otra; al tocar una se amplía. Placeholders hasta que el backend exponga las URLs.
+ * Las dos fotos para verificar a un usuario (DNI y selfie), una al lado de la otra; al tocar una
+ * se amplía. El backend audita cada vez que se piden (`VER_DOCUMENTOS_USUARIO`).
  */
 export function FotosVerificacion({ fotos = {} }: { fotos?: FotosVerificacionUsuario }) {
   const [abierta, setAbierta] = useState<(typeof TILES)[number] | null>(null);
@@ -255,7 +253,7 @@ export function FotosVerificacion({ fotos = {} }: { fotos?: FotosVerificacionUsu
 
   return (
     <Seccion titulo="Fotos de verificación">
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3">
         {TILES.map((t) => {
           const url = fotos[t.clave] ?? null;
           const Icono = t.icono;
@@ -281,7 +279,9 @@ export function FotosVerificacion({ fotos = {} }: { fotos?: FotosVerificacionUsu
         })}
       </div>
       <p className="mt-1 text-xs text-neutral-400">
-        Tocá una foto para verla en grande.{Object.keys(fotos).length === 0 && " Todavía no disponibles."}
+        {fotos.dni || fotos.selfie
+          ? "Tocá una foto para verla en grande. Los enlaces vencen en pocos minutos: si no cargan, cerrá y volvé a abrir el detalle."
+          : "El usuario todavía no subió su documentación."}
       </p>
       {abierta && (
         <Ampliada
@@ -296,7 +296,16 @@ export function FotosVerificacion({ fotos = {} }: { fotos?: FotosVerificacionUsu
 }
 
 /** Pie del modal en modo verificación: confirma con la API y muestra el error ahí mismo. */
-export function PieVerificar({ onConfirmar, onCerrar }: { onConfirmar: () => Promise<unknown>; onCerrar: () => void }) {
+export function PieVerificar({
+  onConfirmar,
+  onCerrar,
+  bloqueo,
+}: {
+  onConfirmar: () => Promise<unknown>;
+  onCerrar: () => void;
+  /** Por qué no se puede verificar todavía; con valor, el botón queda deshabilitado y lo explica. */
+  bloqueo?: string | null;
+}) {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -314,11 +323,12 @@ export function PieVerificar({ onConfirmar, onCerrar }: { onConfirmar: () => Pro
   return (
     <div className="space-y-2">
       {error && <Feedback tipo="error" mensaje={error} />}
+      {bloqueo && <p className="text-right text-xs text-neutral-500">{bloqueo}</p>}
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <Button tamano="chico" variant="secondary" onClick={onCerrar} disabled={enviando}>
           Cancelar
         </Button>
-        <Button tamano="chico" onClick={confirmar} disabled={enviando}>
+        <Button tamano="chico" onClick={confirmar} disabled={enviando || Boolean(bloqueo)} title={bloqueo ?? undefined}>
           <span className="inline-flex items-center gap-1.5">
             <BadgeCheck size={16} />
             {enviando ? "Verificando…" : "Verificar"}

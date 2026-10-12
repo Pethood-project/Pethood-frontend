@@ -14,6 +14,16 @@ import {
 import { EstadoBadge } from "@/components/ui/EstadoBadge";
 import { RolBadge } from "@/components/ui/RolBadge";
 import { obtenerUsuario, verificarUsuario } from "@/services/admin-usuarios";
+import type { DetalleUsuario } from "@/types/admin-usuarios";
+
+/** Lo que le falta al usuario para poder verificarlo (mismas reglas que el 409 del backend). */
+function motivoBloqueo(u: DetalleUsuario["usuario"]): string | null {
+  if (!u.dni || !u.telefono) return "Falta el DNI y/o el teléfono: no se puede verificar.";
+  if (!u.documentos.dniImagenUrl || !u.documentos.selfieUrl) {
+    return "Todavía no subió la foto del DNI y la selfie: no se puede verificar.";
+  }
+  return null;
+}
 
 /** Con `onVerificado` el modal pasa a ser el de verificación: suma el material a revisar y el botón. */
 export function DetalleUsuarioModal({
@@ -33,8 +43,9 @@ export function DetalleUsuarioModal({
       ancho={onVerificado ? "max-w-3xl" : "max-w-2xl"}
       pie={
         onVerificado
-          ? () => (
+          ? (datos) => (
               <PieVerificar
+                bloqueo={motivoBloqueo(datos.usuario)}
                 onCerrar={onCerrar}
                 onConfirmar={async () => {
                   await verificarUsuario(id, token);
@@ -75,7 +86,11 @@ export function DetalleUsuarioModal({
               <Dato k="Alta" v={dia(u.fechaAlta)} />
               <Dato k="Refugio" v={u.refugio?.nombre} />
             </dl>
-            {onVerificado && <FotosVerificacion />}
+            {(onVerificado || u.documentos.dniImagenUrl || u.documentos.selfieUrl) && (
+              <FotosVerificacion
+                fotos={{ dni: u.documentos.dniImagenUrl, selfie: u.documentos.selfieUrl }}
+              />
+            )}
             {/* Actividad y reseñas solo existen para usuarios ya verificados. */}
             {!onVerificado && (
               <>

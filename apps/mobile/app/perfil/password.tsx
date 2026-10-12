@@ -15,9 +15,10 @@ import { useToast } from '@/components/feedback/Toast';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
-import { validarConfirmacionPassword, validarPassword } from '@/lib/validacionRegistro';
+import { validarConfirmacionPassword } from '@/lib/validacionRegistro';
 import { ApiError } from '@/services/api';
 import { cambiarPassword, obtenerPerfil } from '@/services/usuarios';
+import { validarPasswordNueva } from '@/shared/validation/password';
 
 export default function CambiarPasswordScreen() {
   const router = useRouter();
@@ -54,7 +55,7 @@ export default function CambiarPasswordScreen() {
         tienePassword && !actual
           ? 'Ingresá tu contraseña actual'
           : undefined,
-      nueva: validarPassword(nueva),
+      nueva: validarPasswordNueva(nueva) ?? undefined,
       confirmacion: validarConfirmacionPassword(nueva, confirmacion),
     };
     setErrors(next);

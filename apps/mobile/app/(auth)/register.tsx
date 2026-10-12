@@ -2,13 +2,14 @@ import { Ionicons } from '@expo/vector-icons';
 import type { ImagePickerAsset } from 'expo-image-picker';
 import { Link, router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Image, Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton, FORMA_BOTON_ORGANIC_PRINCIPAL } from '@/components/CustomButton';
 import { CustomInput } from '@/components/CustomInput';
 import { FechaNacimientoPicker } from '@/components/FechaNacimientoPicker';
 import { useToast } from '@/components/feedback/Toast';
+import { Avatar } from '@/components/ui/Avatar';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { SelectField } from '@/components/ui/SelectField';
@@ -35,13 +36,13 @@ import {
   validarConfirmacionPassword,
   validarEmail,
   validarNombrePersona,
-  validarPassword,
   validarTelefono,
 } from '@/lib/validacionRegistro';
 import { ApiError } from '@/services/api';
 import { registro } from '@/services/auth';
 import { validarDni } from '@/shared/validation/documento';
 import { LIMITES } from '@/shared/validation/limits';
+import { validarPasswordNueva } from '@/shared/validation/password';
 
 interface RegisterForm {
   firstName: string;
@@ -109,7 +110,7 @@ export default function RegisterScreen() {
       !validarTelefono(form.phone) &&
       !validarDni(form.dni) &&
       !validarFechaNacimiento(form.birthDate) &&
-      !validarPassword(form.password) &&
+      !validarPasswordNueva(form.password) &&
       !validarConfirmacionPassword(form.password, form.confirmPassword),
     [form],
   );
@@ -175,7 +176,7 @@ export default function RegisterScreen() {
     setForm((prev) => ({ ...prev, password: value }));
     setErrors((prev) => ({
       ...prev,
-      password: value ? validarPassword(value) : undefined,
+      password: value ? (validarPasswordNueva(value) ?? undefined) : undefined,
       confirmPassword: form.confirmPassword
         ? validarConfirmacionPassword(value, form.confirmPassword)
         : prev.confirmPassword,
@@ -241,7 +242,7 @@ export default function RegisterScreen() {
       phone: validarTelefono(form.phone),
       dni: validarDni(form.dni) ?? undefined,
       birthDate: validarFechaNacimiento(form.birthDate),
-      password: validarPassword(form.password),
+      password: validarPasswordNueva(form.password) ?? undefined,
       confirmPassword: validarConfirmacionPassword(form.password, form.confirmPassword),
       calleAltura: validarCalleAltura(form.calleAltura),
     };
@@ -323,9 +324,7 @@ export default function RegisterScreen() {
               className="relative"
             >
               {foto ? (
-                <View className="h-28 w-28 overflow-hidden rounded-full">
-                  <Image source={{ uri: foto.uri }} className="h-28 w-28" />
-                </View>
+                <Avatar uri={foto.uri} tamanio={112} variante="organic" tono="neutro" />
               ) : (
                 <View className="h-28 w-28 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100">
                   <Ionicons name="camera-outline" size={36} color={PALETA.accent[600]} />
@@ -506,7 +505,9 @@ export default function RegisterScreen() {
             placeholder="Mínimo 8 caracteres"
             value={form.password}
             onChangeText={handlePasswordChange}
-            onBlur={() => setFieldError('password', validarPassword(form.password))}
+            onBlur={() =>
+              setFieldError('password', validarPasswordNueva(form.password) ?? undefined)
+            }
             error={errors.password}
             secureTextEntry={!showPassword}
             autoCapitalize="none"

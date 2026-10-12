@@ -37,6 +37,7 @@ export function validarEmail(valor: string): string | undefined {
   return undefined;
 }
 
+/** Sólo para ingresar. Una contraseña que se crea o cambia usa `validarPasswordNueva`. */
 export function validarPassword(valor: string): string | undefined {
   if (!valor) {
     return 'La contraseña es obligatoria';

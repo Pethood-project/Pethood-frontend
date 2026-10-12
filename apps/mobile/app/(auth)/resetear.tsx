@@ -13,10 +13,10 @@ import { PALETA } from '@/constants/theme';
 import {
   validarCodigoRecuperacion,
   validarConfirmacionPassword,
-  validarPassword,
 } from '@/lib/validacionRegistro';
 import { ApiError } from '@/services/api';
 import { resetearPassword } from '@/services/auth';
+import { validarPasswordNueva } from '@/shared/validation/password';
 
 /**
  * Recuperar contraseña, paso 2: código de 6 dígitos + contraseña nueva. Mismo estilo que
@@ -45,7 +45,7 @@ export default function ResetearScreen() {
   const handleGuardar = async (): Promise<void> => {
     const nextErrors = {
       codigo: validarCodigoRecuperacion(codigo),
-      password: validarPassword(password),
+      password: validarPasswordNueva(password) ?? undefined,
       confirmacion: validarConfirmacionPassword(password, confirmacion),
     };
     setErrors(nextErrors);

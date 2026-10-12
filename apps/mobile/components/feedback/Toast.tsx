@@ -4,6 +4,10 @@
  *
  * Se usan vía el hook `useToast()`; el provider vive en el layout raíz para que un toast
  * disparado antes de navegar siga visible en la pantalla siguiente.
+ *
+ * Los avisos comunes comparten un solo lugar: uno nuevo pisa al anterior y late ahí mismo, en
+ * vez de apilarse, así un swipe rápido no arma una pila de rectángulos. Los que traen un
+ * "Deshacer" sí se apilan, para que pedir otro no deje sin salida al anterior.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -16,6 +20,7 @@ import Animated, {
   interpolate,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
@@ -41,6 +46,11 @@ export type TipoToast = 'exito' | 'advertencia' | 'error';
 export interface AccionToast {
   etiqueta: string;
   onPress: () => void;
+  /**
+   * Es un atajo para ir a ver lo que se acaba de hacer, no un deshacer: tocar cualquier parte
+   * del aviso la dispara (no sólo el botón) y el aviso dura lo de un éxito común.
+   */
+  atajo?: boolean;
 }
 
 interface Toast {
@@ -56,15 +66,63 @@ interface ContextoToast {
   mostrarError: (mensaje: string, accion?: AccionToast) => void;
 }
 
+/** Advertencias y errores hay que leerlos: duran un tope fijo. */
 const DURACION_MS = 4000;
 
-/** Un toast con acción dura más: hay que notarlo y llegar a tocarlo antes de que se vaya. */
+/** Un toast con acción de deshacer dura más: hay que notarlo y llegar a tocarlo antes de que se vaya. */
 const DURACION_CON_ACCION_MS = 7000;
 
-const ESTILOS: Record<TipoToast, { fondo: string; icono: keyof typeof Ionicons.glyphMap }> = {
-  exito: { fondo: 'bg-emerald-600', icono: 'checkmark-circle' },
-  advertencia: { fondo: 'bg-amber-500', icono: 'alert-circle' },
-  error: { fondo: 'bg-red-600', icono: 'close-circle' },
+/** Un "Deshacer": el usuario todavía puede necesitarlo, así que no lo pisa ningún otro aviso. */
+function tieneDeshacer(toast: Toast): boolean {
+  return Boolean(toast.accion && !toast.accion.atajo);
+}
+
+/** Un éxito sólo confirma: dura según lo largo del mensaje, sin pasar de `DURACION_MS`. */
+function duracionDe(toast: Toast): number {
+  if (tieneDeshacer(toast)) return DURACION_CON_ACCION_MS;
+  if (toast.tipo === 'exito') return Math.min(DURACION_MS, 1600 + toast.mensaje.length * 30);
+  return DURACION_MS;
+}
+
+/** Entrada y latido: corto y con un rebote chico, para que se sienta ágil y no un cartel. */
+const RESORTE = { damping: 15, stiffness: 320, mass: 0.7 } as const;
+const DURACION_SALIDA_MS = 160;
+
+interface EstiloToast {
+  tarjeta: string;
+  icono: keyof typeof Ionicons.glyphMap;
+  colorIcono: string;
+  texto: string;
+  boton: string;
+}
+
+/**
+ * El éxito va en una tarjeta clara de la paleta Organic, con el borde marcado para que no
+ * se pierda sobre el fondo crema y el tick en el verde de éxito; la advertencia y el error
+ * siguen en colores sólidos porque tienen que llamar la atención.
+ */
+const ESTILOS: Record<TipoToast, EstiloToast> = {
+  exito: {
+    tarjeta: 'border-2 border-organic-accent-300 bg-organic-surface',
+    icono: 'checkmark-circle',
+    colorIcono: PALETA.estado.exito,
+    texto: 'text-organic-neutral-900',
+    boton: 'bg-organic-accent-600',
+  },
+  advertencia: {
+    tarjeta: 'bg-amber-500',
+    icono: 'alert-circle',
+    colorIcono: PALETA.blanco,
+    texto: 'text-white',
+    boton: 'bg-white/25',
+  },
+  error: {
+    tarjeta: 'bg-red-600',
+    icono: 'close-circle',
+    colorIcono: PALETA.blanco,
+    texto: 'text-white',
+    boton: 'bg-white/25',
+  },
 };
 
 const Contexto = createContext<ContextoToast | null>(null);
@@ -79,18 +137,48 @@ export function useToast(): ContextoToast {
   return contexto;
 }
 
-function ToastVisible({ toast, onCerrar }: { toast: Toast; onCerrar: () => void }) {
+function ToastVisible({ toast, onCerrar }: { toast: Toast; onCerrar: (id: number) => void }) {
   const estilo = ESTILOS[toast.tipo];
   const { accion } = toast;
 
-  const opacidadEntrada = useSharedValue(0);
+  const entrada = useSharedValue(0);
+  const pulso = useSharedValue(1);
   const x = useSharedValue(0);
   // Evita que el gesto dispare el cierre dos veces (ej. soltar ya en pleno vuelo de salida).
   const cerrando = useSharedValue(false);
+  const primeraVez = useRef(true);
+
+  const cerrarEste = useCallback(() => onCerrar(toast.id), [onCerrar, toast.id]);
+
+  // Corre con cada aviso: el primero entra, y uno que pisa a otro visible sólo late. Tambien
+  // cancela una salida a medio hacer, para que el aviso nuevo no se vaya con la del anterior.
+  useEffect(() => {
+    cerrando.value = false;
+    x.value = 0;
+    entrada.value = withSpring(1, RESORTE);
+
+    if (primeraVez.current) {
+      primeraVez.current = false;
+      return;
+    }
+
+    pulso.value = withSequence(withTiming(1.05, { duration: 70 }), withSpring(1, RESORTE));
+  }, [toast.id, cerrando, entrada, pulso, x]);
+
+  /** Sale hacia arriba, de donde vino, y recién ahí saca el toast de la pantalla. */
+  const salir = useCallback(() => {
+    if (cerrando.value) return;
+    cerrando.value = true;
+
+    entrada.value = withTiming(0, { duration: DURACION_SALIDA_MS }, (terminada) => {
+      if (terminada) scheduleOnRN(cerrarEste);
+    });
+  }, [cerrando, cerrarEste, entrada]);
 
   useEffect(() => {
-    opacidadEntrada.value = withTiming(1, { duration: 200 });
-  }, [opacidadEntrada]);
+    const temporizador = setTimeout(salir, duracionDe(toast));
+    return () => clearTimeout(temporizador);
+  }, [toast, salir]);
 
   /** Anima la salida hacia el costado del arrastre y recién ahí saca el toast de la lista. */
   const descartar = useCallback(
@@ -100,10 +188,10 @@ function ToastVisible({ toast, onCerrar }: { toast: Toast; onCerrar: () => void 
       cerrando.value = true;
 
       x.value = withTiming(haciaLaDerecha ? ANCHO_PANTALLA : -ANCHO_PANTALLA, { duration: 200 }, (terminada) => {
-        if (terminada) scheduleOnRN(onCerrar);
+        if (terminada) scheduleOnRN(cerrarEste);
       });
     },
-    [cerrando, onCerrar, x],
+    [cerrando, cerrarEste, x],
   );
 
   const arrastre = Gesture.Pan()
@@ -128,26 +216,34 @@ function ToastVisible({ toast, onCerrar }: { toast: Toast; onCerrar: () => void 
       descartar(superaVelocidad ? evento.velocityX > 0 : evento.translationX > 0);
     });
 
-  const estiloArrastre = useAnimatedStyle(() => ({
-    opacity: opacidadEntrada.value * interpolate(
-      Math.abs(x.value),
-      [0, ANCHO_PANTALLA],
-      [1, 0],
-      Extrapolation.CLAMP,
-    ),
-    transform: [{ translateX: x.value }],
+  const estiloAnimado = useAnimatedStyle(() => ({
+    opacity:
+      interpolate(entrada.value, [0, 0.6], [0, 1], Extrapolation.CLAMP) *
+      interpolate(Math.abs(x.value), [0, ANCHO_PANTALLA], [1, 0], Extrapolation.CLAMP),
+    transform: [
+      { translateX: x.value },
+      { translateY: interpolate(entrada.value, [0, 1], [-18, 0]) },
+      { scale: pulso.value },
+    ],
   }));
+
+  const tocarAviso = (): void => {
+    if (accion?.atajo) accion.onPress();
+    salir();
+  };
 
   return (
     <GestureDetector gesture={arrastre}>
-      <Animated.View style={estiloArrastre} className="mb-2">
+      <Animated.View style={estiloAnimado} className="mb-2">
         <Pressable
-          onPress={onCerrar}
+          onPress={tocarAviso}
           accessibilityRole="alert"
-          className={`flex-row items-center rounded-2xl px-4 py-3.5 shadow-lg ${estilo.fondo}`}
+          className={`flex-row items-center rounded-2xl px-4 py-3 shadow-lg ${estilo.tarjeta}`}
         >
-          <Ionicons name={estilo.icono} size={22} color={PALETA.blanco} />
-          <Text className="ml-3 flex-1 text-base font-medium text-white">{toast.mensaje}</Text>
+          <Ionicons name={estilo.icono} size={24} color={estilo.colorIcono} />
+          <Text className={`ml-3 flex-1 font-cuerpo-semi text-[15px] ${estilo.texto}`}>
+            {toast.mensaje}
+          </Text>
 
           {/* Pressable anidado: en RN el hijo captura el toque y no burbujea al padre, así
               que tocar la acción no dispara el cierre por tap del toast entero. */}
@@ -156,10 +252,10 @@ function ToastVisible({ toast, onCerrar }: { toast: Toast; onCerrar: () => void 
               accessibilityRole="button"
               onPress={() => {
                 accion.onPress();
-                onCerrar();
+                salir();
               }}
               hitSlop={8}
-              className="ml-3 rounded-full bg-white/25 px-3 py-1.5 active:opacity-70"
+              className={`ml-3 rounded-full px-3 py-1.5 active:opacity-70 ${estilo.boton}`}
             >
               <Text className="text-sm font-bold text-white">{accion.etiqueta}</Text>
             </Pressable>
@@ -175,18 +271,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const siguienteId = useRef(0);
 
   const cerrar = useCallback((id: number) => {
+    // Por id: si ya lo pisó otro aviso, el cierre del anterior no se lleva al nuevo.
     setToasts((actuales) => actuales.filter((toast) => toast.id !== id));
   }, []);
 
-  const mostrar = useCallback(
-    (tipo: TipoToast, mensaje: string, accion?: AccionToast) => {
-      const id = siguienteId.current++;
-
-      setToasts((actuales) => [...actuales, { id, tipo, mensaje, accion }]);
-      setTimeout(() => cerrar(id), accion ? DURACION_CON_ACCION_MS : DURACION_MS);
-    },
-    [cerrar],
-  );
+  const mostrar = useCallback((tipo: TipoToast, mensaje: string, accion?: AccionToast) => {
+    const nuevo: Toast = { id: siguienteId.current++, tipo, mensaje, accion };
+    setToasts((actuales) => [...actuales.filter(tieneDeshacer), nuevo]);
+  }, []);
 
   const valor = useMemo<ContextoToast>(
     () => ({
@@ -208,7 +300,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           style={{ pointerEvents: 'box-none' }}
         >
           {toasts.map((toast) => (
-            <ToastVisible key={toast.id} toast={toast} onCerrar={() => cerrar(toast.id)} />
+            // Los comunes comparten `key`: uno nuevo actualiza al que está en vez de montar otro.
+            <ToastVisible
+              key={tieneDeshacer(toast) ? toast.id : 'aviso'}
+              toast={toast}
+              onCerrar={cerrar}
+            />
           ))}
         </SafeAreaView>
       ) : null}

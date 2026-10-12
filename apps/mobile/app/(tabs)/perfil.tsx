@@ -69,6 +69,8 @@ const MENU_ADOPTANTE: ItemMenu[] = [
   { icono: 'heart-outline', label: 'Favoritos', ruta: '/favoritos' },
   { icono: 'star-outline', label: 'Reseñas', ruta: '/resenas' as Href },
   { icono: 'heart-circle-outline', label: 'Campañas', ruta: '/campanias' as Href },
+  // Spec 002.1: DNI + selfie para verificar la identidad (HU-2.3).
+  { icono: 'shield-checkmark-outline', label: 'Verificación de identidad', ruta: '/perfil/verificacion' as Href },
 ];
 
 /**

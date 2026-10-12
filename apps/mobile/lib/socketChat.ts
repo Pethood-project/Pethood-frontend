@@ -23,6 +23,8 @@ export const EVENTOS = {
   UNIRSE: 'chat:unirse',
   SALIR: 'chat:salir',
   MENSAJE_NUEVO: 'chat:mensaje-nuevo',
+  /** server → sala personal. El autor eliminó un mensaje: la burbuja pasa a ser el aviso. */
+  MENSAJE_ELIMINADO: 'chat:mensaje-eliminado',
   LEIDO: 'chat:leido',
   ENTREGADO: 'chat:entregado',
   NO_LEIDOS: 'chat:no-leidos',
@@ -52,6 +54,12 @@ export interface EventoAcuse {
   usuarioId: number;
   /** ISO crudo: hasta qué mensaje llegó el acuse. */
   hasta: string;
+}
+
+/** `chat:mensaje-eliminado`: con el id alcanza para cambiar la burbuja, sin refetch. */
+export interface EventoMensajeEliminado {
+  chatId: number;
+  mensajeId: number;
 }
 
 export interface EventoNoLeidos {

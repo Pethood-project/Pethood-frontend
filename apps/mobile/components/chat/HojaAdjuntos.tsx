@@ -2,10 +2,13 @@
  * "Enviar en el chat" (GUI-14, artboard 38): la hoja que sale del botón `+` de la barra de
  * escritura, con las cinco cosas que se pueden mandar en una conversación.
  *
- * **Sólo "Foto o video" está implementada.** Las otras cuatro se pintan idénticas pero no
- * responden: dejar el hueco o esconderlas sería peor, porque la lista del diseño se lee como
- * un conjunto. Ninguna tiene HU en REQUISITOS.md todavía (ver `docs/api-chat-sala.md`), así
- * que no se inventa su comportamiento.
+ * **Sólo "Foto o video" está implementada.** "Compartir una mascota" y "Ubicación del
+ * refugio" se pintan idénticas pero no responden: ninguna tiene HU en REQUISITOS.md todavía
+ * (ver `docs/api-chat-sala.md`), así que no se inventa su comportamiento.
+ *
+ * "Enviar solicitud" y "Coordinar visita", que estaban en el artboard, **se sacaron** por
+ * decisión del equipo (2026-10-12): la solicitud ya se manda desde la ficha de la mascota y
+ * deja su tarjeta en la conversación, y la visita se coordina escribiendo.
  *
  * Tocarla no cierra la hoja: la misma tarjeta pasa a preguntar de dónde sale el adjunto, con
  * el mismo estilo, en vez del diálogo del sistema. En web no hay cámara y el selector de
@@ -51,12 +54,10 @@ export function HojaAdjuntos({ visible, onCerrar, onElegirAdjunto }: HojaAdjunto
     setPaso('origen');
   };
 
-  /** En el orden del artboard, y con su texto literal. */
+  /** En el orden del artboard, y con su texto literal (menos las dos que se sacaron). */
   const queMandar: OpcionHoja[] = [
     { icono: 'camera-outline', etiqueta: 'Foto o video', onPress: elegirAdjunto },
     { icono: 'paw-outline', etiqueta: 'Compartir una mascota' },
-    { icono: 'document-text-outline', etiqueta: 'Enviar solicitud' },
-    { icono: 'calendar-outline', etiqueta: 'Coordinar visita' },
     { icono: 'location-outline', etiqueta: 'Ubicación del refugio' },
   ];
 

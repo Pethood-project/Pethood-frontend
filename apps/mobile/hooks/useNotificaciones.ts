@@ -4,11 +4,11 @@
  * vez que cambia (nueva notificación, marcada como leída, todas leídas). Con el socket caído
  * (o mientras conecta) el número mostrado es el de la última carga por HTTP.
  */
-import * as Notifications from 'expo-notifications';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { useSesion } from '@/hooks/useSesion';
+import { Notificaciones } from '@/lib/expoNotificaciones';
 import { adquirirSocket, EVENTOS, type EventoNotificacionContador } from '@/lib/socketChat';
 import { contarNoLeidas } from '@/services/notificaciones';
 
@@ -33,10 +33,11 @@ export function useNotificaciones(): { noLeidas: number } {
     }
   }, []);
 
-  // El número del ícono de la app es el de la campana. En web no hay ícono.
+  // El número del ícono de la app es el de la campana. En web no hay ícono, y en Expo Go
+  // para Android no hay paquete de notificaciones (ver `lib/expoNotificaciones.ts`).
   useEffect(() => {
-    if (Platform.OS === 'web') return;
-    Notifications.setBadgeCountAsync(autenticado ? noLeidas : 0).catch(() => undefined);
+    if (Platform.OS === 'web' || !Notificaciones) return;
+    Notificaciones.setBadgeCountAsync(autenticado ? noLeidas : 0).catch(() => undefined);
   }, [autenticado, noLeidas]);
 
   useEffect(() => {

@@ -126,6 +126,8 @@ export interface DetalleUsuario {
     fechaAlta: string;
     ubicacion: string | null;
     refugio: { id: number; nombre: string } | null;
+    /** Spec 002.1. Rutas con firma de 5-10 min: si el modal queda abierto mucho, hay que reabrirlo. */
+    documentos: { dniImagenUrl: string | null; selfieUrl: string | null };
   };
   resumen: { mascotas: number; solicitudes: number; donaciones: number };
   resenas: ResumenResenas;

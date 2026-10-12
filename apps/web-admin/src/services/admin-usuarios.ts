@@ -30,6 +30,18 @@ export function suspenderUsuario(
   return apiFetch(`/admin/usuarios/${id}/suspender`, { method: "PATCH", body: { motivo }, token });
 }
 
+/**
+ * Baja lógica de DNI y selfie de un usuario verificado (spec 002.1): queda no verificado y
+ * vuelve a Pendiente_Verificacion para que suba los documentos de nuevo.
+ */
+export function revocarVerificacionUsuario(
+  id: number,
+  motivo: string,
+  token: string,
+): Promise<{ usuario: Partial<UsuarioAdmin> }> {
+  return apiFetch(`/admin/usuarios/${id}/documentos/baja`, { method: "PATCH", body: { motivo }, token });
+}
+
 export function reactivarUsuario(id: number, token: string): Promise<{ usuario: Partial<UsuarioAdmin> }> {
   return apiFetch(`/admin/usuarios/${id}/reactivar`, { method: "PATCH", token });
 }

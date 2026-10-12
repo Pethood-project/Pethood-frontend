@@ -2,9 +2,26 @@ import { appendArchivoImagen, type ArchivoImagenLocal } from '@/lib/formDataImag
 import { apiFetch } from '@/services/api';
 import type {
   ActualizarPerfilPayload,
+  DocumentosIdentidad,
   RespuestaPerfil,
   UbicacionPreview,
 } from '@/types/auth';
+
+/**
+ * Sube o reemplaza el DNI y/o la selfie para la verificación de identidad (spec 002.1).
+ * Con la cuenta ya verificada el backend responde USUARIO_YA_VERIFICADO: solo un admin los
+ * puede dar de baja.
+ */
+export async function subirDocumentos(
+  token: string,
+  archivos: { dni?: ArchivoImagenLocal; selfie?: ArchivoImagenLocal },
+): Promise<{ mensaje: string; documentos: DocumentosIdentidad }> {
+  const form = new FormData();
+  if (archivos.dni) await appendArchivoImagen(form, 'dni_imagen', archivos.dni);
+  if (archivos.selfie) await appendArchivoImagen(form, 'selfie', archivos.selfie);
+
+  return apiFetch('/usuarios/me/documentos', { method: 'POST', token, body: form });
+}
 
 export function obtenerPerfil(token: string): Promise<RespuestaPerfil> {
   return apiFetch<RespuestaPerfil>('/usuarios/me', {

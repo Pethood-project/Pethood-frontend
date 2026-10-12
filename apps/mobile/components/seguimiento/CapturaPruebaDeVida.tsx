@@ -34,6 +34,18 @@ interface CapturaPruebaDeVidaProps {
   /** Error de validación del formulario, ej. "Adjuntar imagen de prueba". */
   error?: string;
   deshabilitado?: boolean;
+  /**
+   * Para reusarla en otra captura que también exige cámara (la selfie de la verificación de
+   * identidad, spec 002.1). Los valores por defecto son los de la prueba de vida.
+   */
+  etiqueta?: string;
+  ayuda?: string;
+  textoBoton?: string;
+  prefijoArchivo?: string;
+  /** Qué se está sacando, para los mensajes de permiso: "la foto de prueba", "tu selfie". */
+  objeto?: string;
+  mensajeWeb?: string;
+  camaraFrontal?: boolean;
 }
 
 const EXTENSION_POR_TIPO: Record<string, string> = {
@@ -56,6 +68,13 @@ export function CapturaPruebaDeVida({
   onChange,
   error,
   deshabilitado = false,
+  etiqueta = 'Foto de prueba',
+  ayuda = 'Tiene que ser una foto sacada en el momento con la cámara. No se puede elegir una de la galería.',
+  textoBoton = 'Sacar foto ahora',
+  prefijoArchivo = 'seguimiento',
+  objeto = 'la foto de prueba',
+  mensajeWeb = CAMARA_NO_DISPONIBLE_EN_WEB,
+  camaraFrontal = false,
 }: CapturaPruebaDeVidaProps) {
   /** Aviso propio del componente (permisos, archivo rechazado), distinto del error del form. */
   const [aviso, setAviso] = useState<string | null>(null);
@@ -67,7 +86,7 @@ export function CapturaPruebaDeVida({
     setAviso(null);
 
     if (enWeb) {
-      setAviso(CAMARA_NO_DISPONIBLE_EN_WEB);
+      setAviso(mensajeWeb);
       return;
     }
 
@@ -76,8 +95,8 @@ export function CapturaPruebaDeVida({
     if (!permiso.granted) {
       setAviso(
         permiso.canAskAgain
-          ? 'Necesitamos la cámara para sacar la foto de prueba. Dale permiso a PetHood e intentalo de nuevo.'
-          : 'Le negaste la cámara a PetHood. Habilitala desde los ajustes del teléfono para poder subir la actualización.',
+          ? `Necesitamos la cámara para sacar ${objeto}. Dale permiso a PetHood e intentalo de nuevo.`
+          : 'Le negaste la cámara a PetHood. Habilitala desde los ajustes del teléfono para poder continuar.',
       );
       return;
     }
@@ -89,6 +108,7 @@ export function CapturaPruebaDeVida({
     const resultado = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
       quality: 0.8,
+      ...(camaraFrontal ? { cameraType: ImagePicker.CameraType.front } : {}),
     });
 
     if (resultado.canceled || !resultado.assets[0]) return;
@@ -105,7 +125,7 @@ export function CapturaPruebaDeVida({
     // No se confirma todavía: primero pasa por la vista previa, donde se puede girar.
     setPendiente({
       uri: asset.uri,
-      nombre: `seguimiento.${EXTENSION_POR_TIPO[tipo] ?? 'jpg'}`,
+      nombre: `${prefijoArchivo}.${EXTENSION_POR_TIPO[tipo] ?? 'jpg'}`,
       tipo,
     });
   };
@@ -118,10 +138,10 @@ export function CapturaPruebaDeVida({
     // El aviso propio (permiso denegado, archivo rechazado) pisa al error del formulario:
     // es lo que acaba de pasar y lo que hay que resolver primero.
     <FormField
-      label="Foto de prueba"
+      label={etiqueta}
       obligatorio
       error={aviso ?? error}
-      ayuda="Tiene que ser una foto sacada en el momento con la cámara. No se puede elegir una de la galería."
+      ayuda={ayuda}
     >
       <>
       {foto ? (
@@ -129,7 +149,7 @@ export function CapturaPruebaDeVida({
           <Image
             source={{ uri: foto.uri }}
             className="h-60 w-full rounded-3xl"
-            accessibilityLabel="Foto de prueba que acabás de sacar"
+            accessibilityLabel="Foto que acabás de sacar"
           />
 
           <Pressable
@@ -146,7 +166,7 @@ export function CapturaPruebaDeVida({
       ) : (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Sacar la foto de prueba con la cámara"
+          accessibilityLabel={`Sacar ${objeto} con la cámara`}
           accessibilityState={{ disabled: bloqueado }}
           disabled={deshabilitado}
           onPress={() => void capturar()}
@@ -155,7 +175,7 @@ export function CapturaPruebaDeVida({
           } ${bloqueado ? 'opacity-60' : 'active:opacity-80'}`}
         >
           <Ionicons name="camera" size={24} color={PALETA.accent[600]} />
-          <Text className="text-base font-medium text-organic-neutral-700">Sacar foto ahora</Text>
+          <Text className="text-base font-medium text-organic-neutral-700">{textoBoton}</Text>
         </Pressable>
       )}
 
@@ -166,7 +186,7 @@ export function CapturaPruebaDeVida({
         onConfirmar={(resultado) => {
           onChange({
             uri: resultado.uri,
-            nombre: resultado.seReescribioComoJpeg ? 'seguimiento.jpg' : pendiente!.nombre,
+            nombre: resultado.seReescribioComoJpeg ? `${prefijoArchivo}.jpg` : pendiente!.nombre,
             tipo: resultado.seReescribioComoJpeg ? 'image/jpeg' : pendiente!.tipo,
           });
           setPendiente(null);

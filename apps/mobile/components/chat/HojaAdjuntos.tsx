@@ -1,10 +1,16 @@
 /**
  * "Enviar en el chat" (GUI-14, artboard 38): la hoja que sale del botón `+` de la barra de
- * escritura, con las cinco cosas que se pueden mandar en una conversación.
+ * escritura, con lo que se puede mandar en una conversación.
  *
- * **Sólo "Foto o video" está implementada.** "Compartir una mascota" y "Ubicación del
- * refugio" se pintan idénticas pero no responden: ninguna tiene HU en REQUISITOS.md todavía
- * (ver `docs/api-chat-sala.md`), así que no se inventa su comportamiento.
+ * - **Foto o video**: abre la cámara o la galería (ver más abajo).
+ * - **Compartir una mascota**: abre la lista de lo que se puede compartir; la monta la
+ *   pantalla. Como persona, las favoritas que son del contacto; como refugio, las mascotas
+ *   publicadas del refugio.
+ * - **Ubicación del refugio**: sólo en la vista de refugio. La pantalla pregunta antes de
+ *   mandarla.
+ *
+ * Las dos últimas las pidió el equipo el 2026-10-12, sin HU en REQUISITOS.md (ver la nota del
+ * Módulo 5 y `docs/api-chat-sala.md`).
  *
  * "Enviar solicitud" y "Coordinar visita", que estaban en el artboard, **se sacaron** por
  * decisión del equipo (2026-10-12): la solicitud ya se manda desde la ficha de la mascota y
@@ -31,11 +37,24 @@ export type OrigenAdjunto = 'camara-foto' | 'camara-video' | 'galeria';
 interface HojaAdjuntosProps {
   visible: boolean;
   onCerrar: () => void;
-  /** Abre el selector del origen elegido. Es la única opción con acción. */
+  /** Abre el selector del origen elegido. */
   onElegirAdjunto: (origen: OrigenAdjunto) => void;
+  /** El perfil activo es el del refugio: cambia qué opciones aparecen. */
+  vistaRefugio: boolean;
+  /** "Compartir una mascota". */
+  onCompartirMascota: () => void;
+  /** "Ubicación del refugio" (sólo vista de refugio). */
+  onUbicacionRefugio: () => void;
 }
 
-export function HojaAdjuntos({ visible, onCerrar, onElegirAdjunto }: HojaAdjuntosProps) {
+export function HojaAdjuntos({
+  visible,
+  onCerrar,
+  onElegirAdjunto,
+  vistaRefugio,
+  onCompartirMascota,
+  onUbicacionRefugio,
+}: HojaAdjuntosProps) {
   /** Primero qué mandar; si es un adjunto, de dónde sale. */
   const [paso, setPaso] = useState<'que' | 'origen'>('que');
 
@@ -57,8 +76,17 @@ export function HojaAdjuntos({ visible, onCerrar, onElegirAdjunto }: HojaAdjunto
   /** En el orden del artboard, y con su texto literal (menos las dos que se sacaron). */
   const queMandar: OpcionHoja[] = [
     { icono: 'camera-outline', etiqueta: 'Foto o video', onPress: elegirAdjunto },
-    { icono: 'paw-outline', etiqueta: 'Compartir una mascota' },
-    { icono: 'location-outline', etiqueta: 'Ubicación del refugio' },
+    { icono: 'paw-outline', etiqueta: 'Compartir una mascota', onPress: onCompartirMascota },
+    // La ubicación es la del refugio: sólo la manda alguien que esté hablando como refugio.
+    ...(vistaRefugio
+      ? [
+          {
+            icono: 'location-outline' as const,
+            etiqueta: 'Ubicación del refugio',
+            onPress: onUbicacionRefugio,
+          },
+        ]
+      : []),
   ];
 
   /**

@@ -28,7 +28,9 @@ import {
   Alert,
   FlatList,
   Keyboard,
+  Linking,
   Platform,
+  Pressable,
   Text,
   View,
   type NativeScrollEvent,
@@ -42,6 +44,7 @@ import { BotonIrAlFinal } from '@/components/chat/BotonIrAlFinal';
 import { BurbujaMensaje } from '@/components/chat/BurbujaMensaje';
 import { CabeceraConversacion } from '@/components/chat/CabeceraConversacion';
 import { HojaAdjuntos, type OrigenAdjunto } from '@/components/chat/HojaAdjuntos';
+import { HojaMascotasCompartibles } from '@/components/chat/HojaMascotasCompartibles';
 import { DetalleAvisoModal } from '@/components/perdidos/DetalleAvisoModal';
 import { VisorAdjuntos } from '@/components/chat/VisorAdjuntos';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
@@ -50,6 +53,7 @@ import { ReporteModal, type ObjetoReportado } from '@/components/reportes/Report
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EditorFotoModal } from '@/components/ui/EditorFotoModal';
 import { SeparadorFecha } from '@/components/ui/SeparadorFecha';
+import { ESPERA_ENTRE_MODALES_MS } from '@/constants/modales';
 import { PALETA } from '@/constants/theme';
 import { useGestionAviso } from '@/hooks/useGestionAviso';
 import { useSalaChat } from '@/hooks/useSalaChat';
@@ -66,6 +70,11 @@ import { citaDe, intercalarSeparadores, type CitaChat, type FilaSala } from '@/l
 import { coordenadasRecordadas } from '@/lib/ubicacion';
 import { obtenerAviso, type AvisoPerdido } from '@/services/animalesPerdidos';
 import { ApiError, type ArchivoAdjunto } from '@/services/api';
+import {
+  obtenerUbicacionRefugio,
+  type MascotaEnChat,
+  type UbicacionRefugioEnChat,
+} from '@/services/chats';
 import { LIMITES } from '@/shared/validation/limits';
 
 const EXTENSION_POR_TIPO: Record<string, string> = {
@@ -92,7 +101,7 @@ function normalizarTipo(tipo?: string | null): string {
 export default function ConversacionScreen() {
   const router = useRouter();
   const toast = useToast();
-  const { usuario, token } = useSesion();
+  const { usuario, token, vistaRefugio } = useSesion();
   /** Lo que se está reportando (un mensaje o el contacto), o `null` con el modal cerrado. */
   const [reportado, setReportado] = useState<ObjetoReportado | null>(null);
   const { chatId: parametro } = useLocalSearchParams<{ chatId: string }>();
@@ -458,6 +467,75 @@ export default function ConversacionScreen() {
     }
   }, [aEliminar, sala, toast]);
 
+  // ─── Tarjetas de la hoja "Enviar en el chat": mascota y ubicación ───
+
+  /** La hoja con las mascotas compartibles está abierta. */
+  const [eligiendoMascota, setEligiendoMascota] = useState(false);
+  /** La mascota elegida, a la espera de que se confirme compartirla. */
+  const [mascotaAConfirmar, setMascotaAConfirmar] = useState<MascotaEnChat | null>(null);
+  /** La ubicación del refugio, a la espera de que se confirme mandarla. */
+  const [ubicacionAConfirmar, setUbicacionAConfirmar] = useState<UbicacionRefugioEnChat | null>(
+    null,
+  );
+  const [enviandoTarjeta, setEnviandoTarjeta] = useState(false);
+
+  /** Cierra la hoja de adjuntos y abre la lista de lo que se puede compartir. */
+  const abrirCompartirMascota = useCallback((): void => {
+    setHojaAbierta(false);
+    setTimeout(() => setEligiendoMascota(true), ESPERA_ENTRE_MODALES_MS);
+  }, []);
+
+  const elegirMascota = useCallback((mascota: MascotaEnChat): void => {
+    setEligiendoMascota(false);
+    setTimeout(() => setMascotaAConfirmar(mascota), ESPERA_ENTRE_MODALES_MS);
+  }, []);
+
+  /**
+   * Trae del perfil del refugio lo que se va a mandar y recién ahí pregunta: el diálogo muestra
+   * la dirección y el link reales, no un texto genérico. Sin ubicación cargada no hay nada que
+   * confirmar: se explica dónde cargarla.
+   */
+  const abrirUbicacion = useCallback(async (): Promise<void> => {
+    setHojaAbierta(false);
+
+    try {
+      const ubicacion = await obtenerUbicacionRefugio(chatId);
+      setTimeout(() => setUbicacionAConfirmar(ubicacion), ESPERA_ENTRE_MODALES_MS);
+    } catch (err) {
+      if (err instanceof ApiError && err.codigo === 'REFUGIO_SIN_UBICACION') {
+        setTimeout(
+          () =>
+            setAviso({ titulo: 'Tu refugio no tiene ubicación cargada', mensaje: err.message }),
+          ESPERA_ENTRE_MODALES_MS,
+        );
+        return;
+      }
+
+      toast.mostrarError(
+        err instanceof ApiError ? err.message : 'No pudimos traer la ubicación del refugio.',
+      );
+    }
+  }, [chatId, toast]);
+
+  /** Manda la tarjeta confirmada y lleva al final, donde va a aparecer. */
+  const confirmarTarjeta = useCallback(
+    async (enviar: () => Promise<void>, cerrar: () => void): Promise<void> => {
+      setEnviandoTarjeta(true);
+      try {
+        await enviar();
+        cerrar();
+        irAlFinal();
+      } catch (err) {
+        toast.mostrarError(
+          err instanceof ApiError ? err.message : 'No pudimos enviarlo. Intentalo de nuevo.',
+        );
+      } finally {
+        setEnviandoTarjeta(false);
+      }
+    },
+    [irAlFinal, toast],
+  );
+
   const quitarFoto = useCallback((indice: number): void => {
     setFotos((actuales) => actuales.filter((_, posicion) => posicion !== indice));
   }, []);
@@ -534,6 +612,16 @@ export default function ConversacionScreen() {
             }
             // El popup del aviso se abre acá mismo, sin pasar por el portal.
             onVerAviso={fila.item.aviso ? () => void verAviso(fila.item.aviso!.id) : undefined}
+            // "Ver mascota" lleva a la publicación, igual que una tarjeta de Favoritos.
+            onVerMascota={
+              fila.item.mascota?.publicacionId
+                ? () =>
+                    router.push({
+                      pathname: '/publicaciones/[id]',
+                      params: { id: fila.item.mascota!.publicacionId! },
+                    })
+                : undefined
+            }
           />
         )}
       </View>
@@ -700,7 +788,79 @@ export default function ConversacionScreen() {
         visible={hojaAbierta}
         onCerrar={() => setHojaAbierta(false)}
         onElegirAdjunto={elegirAdjuntos}
+        vistaRefugio={vistaRefugio}
+        onCompartirMascota={abrirCompartirMascota}
+        onUbicacionRefugio={() => void abrirUbicacion()}
       />
+
+      <HojaMascotasCompartibles
+        visible={eligiendoMascota}
+        chatId={chatId}
+        nombreContacto={nombreContacto}
+        vistaRefugio={vistaRefugio}
+        onCerrar={() => setEligiendoMascota(false)}
+        onElegir={elegirMascota}
+      />
+
+      {/* Antes de compartir, se pregunta: le va a llegar una tarjeta al otro. */}
+      <ConfirmDialog
+        visible={mascotaAConfirmar !== null}
+        tono="bloqueo"
+        icono="paw-outline"
+        titulo={`¿Querés compartir a ${
+          mascotaAConfirmar?.nombre ?? 'esta mascota'
+        } con ${nombreContacto}?`}
+        mensaje="Le va a llegar una tarjeta con sus datos y un botón para ver la publicación."
+        textoConfirmar="Enviar"
+        cargando={enviandoTarjeta}
+        onConfirmar={() => {
+          const mascota = mascotaAConfirmar;
+          if (!mascota) return;
+          void confirmarTarjeta(
+            () => sala.compartirMascota(mascota.id),
+            () => setMascotaAConfirmar(null),
+          );
+        }}
+        onCerrar={() => setMascotaAConfirmar(null)}
+      />
+
+      {/* La ubicación sale del perfil del refugio: se muestra lo que se va a mandar, con el
+          link para chequearlo antes. */}
+      <ConfirmDialog
+        visible={ubicacionAConfirmar !== null}
+        tono="bloqueo"
+        icono="location-outline"
+        titulo={`¿Querés mandar la ubicación del refugio a ${nombreContacto}?`}
+        mensaje={
+          ubicacionAConfirmar?.ubicacion ??
+          'El perfil del refugio tiene cargado sólo el link de Google Maps.'
+        }
+        textoConfirmar="Enviar"
+        cargando={enviandoTarjeta}
+        onConfirmar={() =>
+          void confirmarTarjeta(
+            () => sala.enviarUbicacion(),
+            () => setUbicacionAConfirmar(null),
+          )
+        }
+        onCerrar={() => setUbicacionAConfirmar(null)}
+      >
+        {ubicacionAConfirmar?.mapaUrl ? (
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel="Ver la ubicación en Google Maps"
+            onPress={() =>
+              void Linking.openURL(ubicacionAConfirmar.mapaUrl!).catch(() => undefined)
+            }
+            className="flex-row items-center justify-center gap-2 rounded-2xl border border-organic-accent-600 py-[10px] active:opacity-70"
+          >
+            <Ionicons name="map-outline" size={17} color={PALETA.accent[600]} />
+            <Text className="font-cuerpo-semi text-[13px] text-organic-accent-600">
+              Ver en Google Maps
+            </Text>
+          </Pressable>
+        ) : null}
+      </ConfirmDialog>
 
       {/* Eliminar un mensaje propio es para los dos y no se deshace: acción crítica, con
           confirmación (regla transversal 6). Queda cargando hasta que el servidor responde. */}

@@ -4,6 +4,52 @@
  */
 import { adjuntarArchivo, del, get, post, postFormData, type ArchivoAdjunto } from './api';
 import type { TipoAdjunto } from '@/lib/adjuntos';
+import type { Genero, Tamanio } from '@/services/mascotas';
+
+/**
+ * Qué es un mensaje. Todo lo que no es `TEXTO` es una tarjeta: `SOLICITUD` y `ANIMAL_PERDIDO`
+ * las emite PetHood; `MASCOTA` y `UBICACION_REFUGIO` las manda una persona de la sala.
+ */
+export type TipoMensaje = 'TEXTO' | 'SOLICITUD' | 'ANIMAL_PERDIDO' | 'MASCOTA' | 'UBICACION_REFUGIO';
+
+/** Las tarjetas que emite PetHood: no son de nadie de la sala, así que no tienen lado. */
+export function esTarjetaDeSistema(tipo: TipoMensaje): boolean {
+  return tipo === 'SOLICITUD' || tipo === 'ANIMAL_PERDIDO';
+}
+
+/**
+ * Una mascota compartida en la sala, para su tarjeta y para la lista que la elige. Se resuelve
+ * en cada pedido: si la adoptaron o se despublicó, la tarjeta lo muestra.
+ */
+export interface MascotaEnChat {
+  id: number;
+  /** `null` si no tiene nombre cargado. */
+  nombre: string | null;
+  especie: string;
+  raza: string;
+  genero: Genero;
+  tamanio: Tamanio | null;
+  /** Sólo el día (`AAAA-MM-DD`), o `null`. La edad la calcula `etiquetaEdad`. */
+  fechaNacimiento: string | null;
+  /** Ruta relativa: pasarla por `urlAbsoluta`. */
+  imagenUrl: string | null;
+  /** Estado vigente ("Disponible", "Adoptado"…), o `null`. */
+  estado: string | null;
+  /** A dónde lleva "Ver mascota". `null` si ya no está publicada: no hay botón. */
+  publicacionId: number | null;
+}
+
+/** La ubicación del refugio de la sala, sacada de su perfil en cada pedido. */
+export interface UbicacionRefugioEnChat {
+  refugioId: number;
+  nombre: string;
+  /** Ruta relativa: pasarla por `urlAbsoluta`. */
+  imagenUrl: string | null;
+  /** «calle y altura, localidad - provincia», o `null`. */
+  ubicacion: string | null;
+  /** Link de Google Maps, o `null`. Nunca vienen los dos en `null`. */
+  mapaUrl: string | null;
+}
 
 /**
  * El otro lado de la conversación, ya resuelto por el backend: el cliente no tiene que
@@ -39,10 +85,10 @@ export interface UltimoMensaje {
   /** Ese adjunto es un video: el preview dice "Video" en vez de "Foto". */
   tieneVideo: boolean;
   /**
-   * `SOLICITUD` es la tarjeta de un pedido y `ANIMAL_PERDIDO` la de un aviso reclamado
-   * (HU-13.2): en los dos el `contenido` va vacío y el texto lo pone la fila.
+   * Todo lo que no es `TEXTO` es una tarjeta (una solicitud, un aviso reclamado, una mascota
+   * compartida o la ubicación del refugio): el `contenido` va vacío y el texto lo pone la fila.
    */
-  tipo: 'TEXTO' | 'SOLICITUD' | 'ANIMAL_PERDIDO';
+  tipo: TipoMensaje;
   /** El autor lo eliminó: viene sin contenido y la fila dice "Se eliminó este mensaje". */
   eliminado: boolean;
 }
@@ -150,10 +196,11 @@ export interface Mensaje {
   usuarioId: number;
   /**
    * `SOLICITUD` es la tarjeta que deja PetHood al enviarse una solicitud y
-   * `ANIMAL_PERDIDO` la del aviso reclamado (HU-13.2): ninguna de las dos es una burbuja, y
-   * su emisor es el usuario SISTEMA, que no participa de la sala.
+   * `ANIMAL_PERDIDO` la del aviso reclamado (HU-13.2): su emisor es el usuario SISTEMA, que no
+   * participa de la sala. `MASCOTA` y `UBICACION_REFUGIO` también son tarjetas, pero las manda
+   * una persona: van de su lado y las puede eliminar. Ninguna es una burbuja.
    */
-  tipo: 'TEXTO' | 'SOLICITUD' | 'ANIMAL_PERDIDO';
+  tipo: TipoMensaje;
   /**
    * Le llegó al destinatario aunque no lo haya abierto: el segundo tilde.
    *
@@ -170,6 +217,10 @@ export interface Mensaje {
   solicitud: SolicitudEnChat | null;
   /** Sólo en los de `tipo: 'ANIMAL_PERDIDO'` (HU-13.2). */
   aviso: AvisoEnChat | null;
+  /** Sólo en los de `tipo: 'MASCOTA'`: la mascota compartida. */
+  mascota: MascotaEnChat | null;
+  /** Sólo en los de `tipo: 'UBICACION_REFUGIO'`: la ubicación del refugio de la sala. */
+  ubicacion: UbicacionRefugioEnChat | null;
   /**
    * El autor lo eliminó. Sigue en el historial pero viene vacío —sin texto, adjuntos ni cita—:
    * en su lugar se pinta "Se eliminó este mensaje".
@@ -316,6 +367,33 @@ export async function enviarMensaje(
  */
 export function eliminarMensaje(chatId: number, mensajeId: number): Promise<MensajeEliminado> {
   return del(`/chats/${chatId}/mensajes/${mensajeId}`);
+}
+
+/**
+ * Las mascotas que se pueden compartir en esta sala. Como persona, las que el usuario tiene en
+ * favoritos y son de su contacto (de ese refugio, o personales de esa persona); como refugio,
+ * las mascotas publicadas del refugio. La regla la decide el backend mirando la sala.
+ */
+export function listarMascotasCompartibles(chatId: number): Promise<{ mascotas: MascotaEnChat[] }> {
+  return get(`/chats/${chatId}/mascotas-compartibles`);
+}
+
+/** Comparte una mascota: devuelve el mensaje de la tarjeta, ya persistido. */
+export function compartirMascota(chatId: number, mascotaId: number): Promise<Mensaje> {
+  return post(`/chats/${chatId}/mascotas`, { mascotaId });
+}
+
+/**
+ * Lo que mandaría el refugio como ubicación, para el diálogo que pregunta antes. Responde
+ * `REFUGIO_SIN_UBICACION` si el perfil del refugio no tiene ni dirección ni link de Maps.
+ */
+export function obtenerUbicacionRefugio(chatId: number): Promise<UbicacionRefugioEnChat> {
+  return get(`/chats/${chatId}/ubicacion-refugio`);
+}
+
+/** Manda la ubicación del refugio: devuelve el mensaje de la tarjeta, ya persistido. */
+export function enviarUbicacionRefugio(chatId: number): Promise<Mensaje> {
+  return post(`/chats/${chatId}/ubicacion-refugio`, {});
 }
 
 /** Marca leída la conversación entera. Se llama al abrir la sala, no por mensaje visto. */

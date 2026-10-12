@@ -52,6 +52,36 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      # Con un tag vX.Y.Z el APK sale con esa versión: expo.version = X.Y.Z y versionCode =
+      # X*10000 + Y*100 + Z (sube siempre que sube el semver; Android no deja instalar encima
+      # un versionCode menor). Sin tag (workflow_dispatch) se queda la versión de app.json.
+      - name: Versionar el APK según el tag
+        id: version
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+            if ! [[ "$VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              echo "::error::El tag '${GITHUB_REF_NAME}' no es vX.Y.Z (ej. v1.2.3): no se puede derivar la versión"
+              exit 1
+            fi
+            if [ "${BASH_REMATCH[2]}" -gt 99 ] || [ "${BASH_REMATCH[3]}" -gt 99 ]; then
+              echo "::error::minor y patch tienen que ser <= 99 para que versionCode sea monótono"
+              exit 1
+            fi
+            VERSION_CODE=$(( BASH_REMATCH[1] * 10000 + BASH_REMATCH[2] * 100 + BASH_REMATCH[3] ))
+            node -e '
+              const fs = require("fs");
+              const app = JSON.parse(fs.readFileSync("app.json", "utf8"));
+              app.expo.version = process.argv[1];
+              app.expo.android = { ...app.expo.android, versionCode: Number(process.argv[2]) };
+              fs.writeFileSync("app.json", JSON.stringify(app, null, 2) + "\n");
+            ' "$VERSION" "$VERSION_CODE"
+            echo "APK ${VERSION} (versionCode ${VERSION_CODE})"
+          else
+            VERSION=$(node -p 'require("./app.json").expo.version')
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
       - name: Generar proyecto nativo Android
         run: npx expo prebuild --platform android --no-install
 
@@ -64,6 +94,6 @@ jobs:
       - name: Subir APK
         uses: actions/upload-artifact@v4
         with:
-          name: pethood-apk
+          name: pethood-apk-${{ steps.version.outputs.version }}
           path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error

@@ -18,7 +18,9 @@ Workflow: `.github/workflows/apk.yml`.
 2. Disparar el workflow:
    - Pestaña **Actions → APK → Run workflow** (el botón aparece recién cuando `apk.yml` está en `main`), o
    - pushear un tag: `git tag v1.0.0 && git push origin v1.0.0`.
-3. Bajar el APK desde el run, sección **Artifacts → pethood-apk** (viene en un zip).
+3. Bajar el APK desde el run, sección **Artifacts → pethood-apk-<versión>** (viene en un zip).
+
+**Versión.** Con un tag `vX.Y.Z` el APK sale con `expo.version = X.Y.Z` y `versionCode = X*10000 + Y*100 + Z` (v1.2.3 → 10203), así Android deja instalarlo encima del anterior. Minor y patch tienen que ser ≤ 99; un tag que no sea `vX.Y.Z` hace fallar el workflow. Lanzado a mano (sin tag) usa la versión de `app.json`.
 
 Tarda ~15–25 min.
 

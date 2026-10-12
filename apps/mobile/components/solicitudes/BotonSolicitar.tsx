@@ -325,7 +325,7 @@ function detalleDe(elegibilidad: Elegibilidad): string | undefined {
 /** Qué hay que tener a mano y qué pasa después, para que el cartel no deje dudas. */
 function PasosVerificacion() {
   const pasos: { icono: keyof typeof Ionicons.glyphMap; texto: string }[] = [
-    { icono: 'card-outline', texto: 'Una foto de tu DNI, donde se lea bien' },
+    { icono: 'card-outline', texto: 'Una foto de tu DNI sacada con la cámara, donde se lea bien' },
     { icono: 'person-circle-outline', texto: 'Una selfie tuya, sacada en el momento, con buena luz y sin anteojos de sol' },
   ];
 

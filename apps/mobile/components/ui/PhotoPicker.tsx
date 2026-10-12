@@ -33,10 +33,6 @@ interface PhotoPickerProps {
   permiteQuitar?: boolean;
   /** Caja e íconos más grandes, para el alta de mascota. */
   grande?: boolean;
-  /** Para reusarlo fuera de mascotas (DNI): título del selector, texto vacío y nombre de archivo. */
-  titulo?: string;
-  etiquetaVacia?: string;
-  prefijoArchivo?: string;
 }
 
 const EXTENSION_POR_TIPO: Record<string, string> = {
@@ -65,9 +61,6 @@ export function PhotoPicker({
   error,
   permiteQuitar = true,
   grande = false,
-  titulo = 'Foto de la mascota',
-  etiquetaVacia = 'Agregar fotos',
-  prefijoArchivo = 'mascota',
 }: PhotoPickerProps) {
   /** Foto recién elegida, en revisión en el modal de vista previa antes de confirmarse. */
   const [pendiente, setPendiente] = useState<FotoElegida | null>(null);
@@ -96,12 +89,12 @@ export function PhotoPicker({
 
     const extension = EXTENSION_POR_TIPO[tipo] ?? 'jpg';
     // No se confirma todavía: primero pasa por la vista previa, donde se puede girar.
-    setPendiente({ uri: asset.uri, nombre: `${prefijoArchivo}.${extension}`, tipo });
+    setPendiente({ uri: asset.uri, nombre: `mascota.${extension}`, tipo });
   };
 
   const elegir = (): void => {
     abrirSelectorImagen({
-      titulo,
+      titulo: 'Foto de la mascota',
       // Recorte nativo del sistema operativo: deja reencuadrar antes de aceptar la foto.
       mensaje: '¿De dónde querés sacar la foto?',
       opciones: { mediaTypes: ['images'], quality: 0.8, allowsEditing: true },
@@ -151,7 +144,7 @@ export function PhotoPicker({
       ) : (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={etiquetaVacia}
+          accessibilityLabel="Agregar fotos"
           onPress={elegir}
           className={`items-center justify-center rounded-3xl border-2 border-dashed ${
             grande ? 'h-40' : 'h-32'
@@ -159,7 +152,7 @@ export function PhotoPicker({
         >
           <Ionicons name="camera-outline" size={grande ? 36 : 28} color={PALETA.pethood.naranja} />
           <Text className={`mt-1.5 font-medium text-gray-500 ${grande ? 'text-base' : 'text-sm'}`}>
-            {etiquetaVacia}
+            Agregar fotos
           </Text>
         </Pressable>
       )}
@@ -173,7 +166,7 @@ export function PhotoPicker({
         onConfirmar={(resultado) => {
           onChange({
             uri: resultado.uri,
-            nombre: resultado.seReescribioComoJpeg ? `${prefijoArchivo}.jpg` : pendiente!.nombre,
+            nombre: resultado.seReescribioComoJpeg ? 'mascota.jpg' : pendiente!.nombre,
             tipo: resultado.seReescribioComoJpeg ? 'image/jpeg' : pendiente!.tipo,
           });
           setPendiente(null);

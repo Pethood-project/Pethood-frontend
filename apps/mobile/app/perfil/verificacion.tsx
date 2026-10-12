@@ -4,10 +4,9 @@
  * La persona sube una foto de su DNI y una selfie; un administrador las revisa a mano y
  * decide. Subir no verifica nada: solo deja la evidencia lista.
  *
- * - El DNI admite cámara o galería.
- * - La selfie va **solo con cámara nativa y frontal** (decisión del equipo, 2026-10-12): es
- *   el mismo criterio anti-fraude que la prueba de vida del seguimiento. El backend no puede
- *   comprobar el origen de la imagen, así que esta pantalla es la única garantía.
+ * - El DNI y la selfie van **solo con cámara nativa** (la selfie, la frontal): sin galería.
+ *   Es el mismo criterio anti-fraude que la prueba de vida del seguimiento. El backend no
+ *   puede comprobar el origen de la imagen, así que esta pantalla es la única garantía.
  * - Ya verificada, no se pueden reemplazar los documentos (409 USUARIO_YA_VERIFICADO): si
  *   hay que cambiarlos, lo hace un administrador.
  */
@@ -19,21 +18,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
 import { useToast } from '@/components/feedback/Toast';
-import { CapturaPruebaDeVida } from '@/components/seguimiento/CapturaPruebaDeVida';
-import { FormField } from '@/components/ui/FormField';
+import {
+  CapturaPruebaDeVida,
+  type FotoCapturada,
+} from '@/components/seguimiento/CapturaPruebaDeVida';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
-import { PhotoPicker, type FotoElegida } from '@/components/ui/PhotoPicker';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
 import { ApiError, urlAbsoluta } from '@/services/api';
 import { obtenerPerfil, subirDocumentos } from '@/services/usuarios';
 import type { Perfil } from '@/types/auth';
 
-const MENSAJE_SELFIE_WEB =
-  'La selfie tiene que sacarse con la cámara en el momento. Abrí PetHood en tu teléfono para completar la verificación.';
+const MENSAJE_WEB =
+  'Las fotos tienen que sacarse con la cámara en el momento. Abrí PetHood en tu teléfono para completar la verificación.';
 
 /** Lo ya subido se muestra como una foto más, para que se vea qué quedó cargado. */
-function fotoExistente(url: string | null): FotoElegida | null {
+function fotoExistente(url: string | null): FotoCapturada | null {
   const uri = urlAbsoluta(url);
   return uri ? { uri, nombre: '', tipo: '' } : null;
 }
@@ -46,8 +46,8 @@ export default function VerificacionIdentidadScreen() {
   const [perfil, setPerfil] = useState<Perfil | null>(null);
   const [cargando, setCargando] = useState(true);
   const [errorCarga, setErrorCarga] = useState(false);
-  const [dni, setDni] = useState<FotoElegida | null>(null);
-  const [selfie, setSelfie] = useState<FotoElegida | null>(null);
+  const [dni, setDni] = useState<FotoCapturada | null>(null);
+  const [selfie, setSelfie] = useState<FotoCapturada | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [formError, setFormError] = useState<string | undefined>();
 
@@ -176,20 +176,17 @@ export default function VerificacionIdentidadScreen() {
               </Text>
             )}
 
-            <FormField
-              label="Foto de tu DNI"
-              obligatorio
-              ayuda="Que se lea bien el número y tu nombre, sin reflejos ni recortes."
-            >
-              <PhotoPicker
-                foto={dni ?? fotoExistente(perfil.documentos.dniImagenUrl)}
-                onChange={setDni}
-                permiteQuitar={dni !== null}
-                titulo="Foto de tu DNI"
-                etiquetaVacia="Agregar foto del DNI"
-                prefijoArchivo="dni"
-              />
-            </FormField>
+            <CapturaPruebaDeVida
+              foto={dni ?? fotoExistente(perfil.documentos.dniImagenUrl)}
+              onChange={setDni}
+              deshabilitado={enviando}
+              etiqueta="Foto de tu DNI"
+              ayuda="Sacala en el momento con la cámara, donde se lea bien el número y tu nombre, sin reflejos. No se puede elegir una de la galería."
+              textoBoton="Sacar foto del DNI"
+              prefijoArchivo="dni"
+              objeto="la foto de tu DNI"
+              mensajeWeb={MENSAJE_WEB}
+            />
 
             <CapturaPruebaDeVida
               foto={selfie ?? fotoExistente(perfil.documentos.selfieUrl)}
@@ -200,7 +197,7 @@ export default function VerificacionIdentidadScreen() {
               textoBoton="Sacarme una selfie"
               prefijoArchivo="selfie"
               objeto="tu selfie"
-              mensajeWeb={MENSAJE_SELFIE_WEB}
+              mensajeWeb={MENSAJE_WEB}
               camaraFrontal
             />
 

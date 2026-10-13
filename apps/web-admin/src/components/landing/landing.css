@@ -621,6 +621,7 @@
   height: 72px;
   margin: 0 auto 12px;
   border-radius: 50%;
+  object-fit: cover;
   font:
     400 24px var(--font-caprasimo),
     Georgia,

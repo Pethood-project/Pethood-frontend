@@ -32,6 +32,7 @@ import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useSesion } from '@/hooks/useSesion';
+import { ApiError } from '@/services/api';
 import { agregarFavorito } from '@/services/favoritos';
 import {
   contarFiltrosActivos,
@@ -102,6 +103,11 @@ function MazoAdopcion() {
 
   /** Evita dos pedidos simultáneos de la misma página cuando llegan dos decisiones seguidas. */
   const pidiendoPagina = useRef(false);
+
+  /** Siempre apunta al `decidir` vigente: lo llama el "Reintentar" de un aviso ya mostrado. */
+  const decidirRef = useRef<(publicacion: PublicacionFeed, decision: Decision) => void>(
+    () => undefined,
+  );
 
   const cargarPrimeraPagina = useCallback(async (filtrosActivos: FiltrosAdopcion): Promise<void> => {
     setCargando(true);
@@ -179,22 +185,33 @@ function MazoAdopcion() {
 
       // Se avisa en el momento del swipe y no cuando vuelve el servidor: si no, el aviso
       // llegaba con la carta ya en la siguiente. Si el guardado falla, el error lo pisa.
-      toast.mostrarExito(`Guardamos a ${nombre} en favoritos.`, {
-        etiqueta: 'Ver',
-        atajo: true,
-        onPress: () => router.push('/favoritos'),
-      });
+      toast.mostrarExito(
+        { titulo: `${nombre} guardado`, icono: 'heart' },
+        { etiqueta: 'Ver', atajo: true, onPress: () => router.push('/favoritos') },
+      );
 
       void agregarFavorito(publicacion.mascota.id).catch((err: unknown) => {
         reponer(publicacion);
         setTotal((actual) => actual + 1);
+
+        // Un rechazo del servidor (4xx) no se arregla reintentando; la red o un 5xx, sí.
+        const reintentable = !(err instanceof ApiError && err.status < 500);
+
+        // Si el servidor dio un motivo concreto, ese es el aviso; si fue la red, alcanza con
+        // decir que no se pudo y ofrecer reintentar.
         toast.mostrarError(
-          err instanceof Error ? err.message : 'No pudimos guardar la mascota en favoritos.',
+          reintentable ? 'No se pudo guardar' : err.message,
+          reintentable
+            ? { etiqueta: 'Reintentar', onPress: () => decidirRef.current(publicacion, 'guardar') }
+            : undefined,
         );
       });
     },
     [reponer, router, toast],
   );
+
+  // "Reintentar" del aviso vuelve a pasar por el mismo camino que el swipe.
+  decidirRef.current = decidir;
 
   const abrirFicha = useCallback(
     (publicacion: PublicacionFeed): void => {

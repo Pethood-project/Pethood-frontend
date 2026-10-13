@@ -230,8 +230,14 @@ export default function FichaPublicacionScreen() {
 
     void operacion
       .then(() => {
+        if (guardada) {
+          toast.mostrarExito({ titulo: `${nombre} quitado`, icono: 'heart-dislike' });
+          return;
+        }
+
         toast.mostrarExito(
-          guardada ? `Quitamos a ${nombre} de favoritos.` : `Guardamos a ${nombre} en favoritos.`,
+          { titulo: `${nombre} guardado`, icono: 'heart' },
+          { etiqueta: 'Ver', atajo: true, onPress: () => router.push('/favoritos') },
         );
       })
       .catch((err: unknown) => {
@@ -241,7 +247,7 @@ export default function FichaPublicacionScreen() {
         );
       })
       .finally(() => setGuardando(false));
-  }, [guardando, publicacion, toast]);
+  }, [guardando, publicacion, router, toast]);
 
   const volver = useCallback((): void => {
     // `dismiss` saca esta ficha del stack. `canGoBack` del history se ensucia con el

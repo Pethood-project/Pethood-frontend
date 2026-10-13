@@ -335,10 +335,10 @@ function GrillaFavoritos() {
 
       void encolar(mascota.id, () => quitarFavorito(mascota.id))
         .then(() => {
-          toast.mostrarExito(`Quitamos a ${nombre} de favoritos.`, {
-            etiqueta: 'Deshacer',
-            onPress: () => deshacer(mascota),
-          });
+          toast.mostrarExito(
+            { titulo: `${nombre} quitado`, icono: 'heart-dislike' },
+            { etiqueta: 'Deshacer', onPress: () => deshacer(mascota) },
+          );
         })
         .catch((err: unknown) => {
           setFavoritos((actuales) => reponerOrdenado(actuales, mascota));

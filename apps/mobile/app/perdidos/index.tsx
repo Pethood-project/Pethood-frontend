@@ -31,7 +31,7 @@ import { useToast } from '@/components/feedback/Toast';
 import { DetalleAvisoModal } from '@/components/perdidos/DetalleAvisoModal';
 import { FiltrosPerdidosModal } from '@/components/perdidos/FiltrosPerdidosModal';
 import { TarjetaAviso } from '@/components/perdidos/TarjetaAviso';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { BotonFlotante } from '@/components/ui/BotonFlotante';
 import { PALETA } from '@/constants/theme';
 import { useGestionAviso } from '@/hooks/useGestionAviso';
@@ -318,16 +318,9 @@ export default function MascotasPerdidasScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="gap-3 border-b border-organic-neutral-300 bg-organic-surface px-[22px] pb-4 pt-2">
-          <View className="flex-row items-center gap-3">
-            <BotonCircular icono="arrow-back" etiqueta="Volver" onPress={volver} grande />
-            <Text className="font-titulo text-[28px] leading-[32px] text-organic-accent-600">
-              Mascotas Perdidas
-            </Text>
-          </View>
-
+        <EncabezadoPantalla barra titulo="Mascotas Perdidas" onVolver={volver}>
           <PastillaFiltros activos={filtrosActivos} onPress={() => setModalFiltros(true)} />
-        </View>
+        </EncabezadoPantalla>
 
         {lista.cargando ? (
           <EstadoCargando />

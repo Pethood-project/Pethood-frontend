@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { TarjetaCampaniaRefugio } from '@/components/campanias/TarjetaCampaniaRefugio';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { BotonFlotante } from '@/components/ui/BotonFlotante';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DateField } from '@/components/ui/DateField';
@@ -199,12 +199,7 @@ export default function MisCampaniasScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-surface px-[22px] pb-4 pt-2">
-          <BotonCircular icono="arrow-back" etiqueta="Volver" onPress={volver} grande />
-          <Text className="font-titulo text-[28px] leading-[32px] text-organic-accent-600">
-            Mis Campañas
-          </Text>
-        </View>
+        <EncabezadoPantalla barra titulo="Mis Campañas" onVolver={volver} />
 
         <View className="gap-2 pt-3">
           <FiltroEstados

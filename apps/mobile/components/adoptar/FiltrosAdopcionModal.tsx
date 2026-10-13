@@ -23,6 +23,8 @@ import { DateField } from '@/components/ui/DateField';
 import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { SelectorChips, type OpcionSelector } from '@/components/ui/SelectorChips';
 import { ToggleField } from '@/components/ui/ToggleField';
+import { BotonVolver } from '@/components/ui/BotonVolver';
+import { TituloPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { pedirUbicacion } from '@/lib/ubicacion';
 import { listarEspecies, type OpcionCatalogo } from '@/services/catalogos';
@@ -206,19 +208,10 @@ export function FiltrosAdopcionModal({
             debajo de la hora y la batería. `statusBarTranslucent` hace que Android también
             dibuje debajo de la barra, así el mismo margen sirve en las dos plataformas. */}
         <View className="flex-1" style={{ paddingTop: insets.top }}>
-          <View className="flex-row items-center justify-between border-b border-gray-200 bg-white/85 px-3.5 py-2.5">
-            <View className="flex-row items-center gap-2.5">
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Cerrar filtros"
-                onPress={onCerrar}
-                hitSlop={10}
-                className="h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white active:opacity-70"
-              >
-                <Ionicons name="arrow-back" size={18} color={PALETA.grisCalido[700]} />
-              </Pressable>
-
-              <Text className="text-xl font-bold text-pethood-orange">Filtros</Text>
+          <View className="flex-row items-center justify-between border-b border-organic-neutral-300 bg-organic-neutral-100 px-[22px] pb-3.5 pt-2.5">
+            <View className="flex-row items-center gap-2">
+              <BotonVolver etiqueta="Cerrar filtros" onPress={onCerrar} />
+              <TituloPantalla>Filtros</TituloPantalla>
             </View>
 
             <Pressable
@@ -236,7 +229,7 @@ export function FiltrosAdopcionModal({
             >
               <Text
                 className={`text-sm font-semibold ${
-                  activos === 0 ? 'text-gray-300' : 'text-pethood-orange-dark'
+                  activos === 0 ? 'text-gray-300' : 'text-organic-accent-700'
                 }`}
               >
                 Limpiar
@@ -248,6 +241,7 @@ export function FiltrosAdopcionModal({
             <Seccion titulo="Ordenar por">
               <SelectorChips
                 prefijo="orden"
+                variante="filtro"
                 opciones={ORDEN}
                 valor={borrador.orden ?? 'recientes'}
                 onChange={(orden) => setBorrador({ ...borrador, orden })}
@@ -311,6 +305,7 @@ export function FiltrosAdopcionModal({
                     ubicación del usuario en el momento si todavía no la tenemos. */}
                 <SelectorChips
                   prefijo="radio"
+                  variante="filtro"
                   etiquetaSinFiltro="Ninguno"
                   opciones={RADIOS}
                   valor={borrador.radioKm}
@@ -336,6 +331,7 @@ export function FiltrosAdopcionModal({
               <Seccion titulo="Especie">
                 <SelectorChips
                   prefijo="especie"
+                  variante="filtro"
                   etiquetaSinFiltro="Todas"
                   opciones={especies.map((especie) => ({
                     valor: especie.id,
@@ -350,6 +346,7 @@ export function FiltrosAdopcionModal({
             <Seccion titulo="Tamaño">
               <SelectorChips
                 prefijo="tamanio"
+                variante="filtro"
                 etiquetaSinFiltro="Todos"
                 opciones={TAMANIOS}
                 valor={borrador.tamanio}
@@ -362,6 +359,7 @@ export function FiltrosAdopcionModal({
                   y se vuelve a resolver acá para escribir `edadMin`/`edadMax`. */}
               <SelectorChips
                 prefijo="edad"
+                variante="filtro"
                 etiquetaSinFiltro="Todas"
                 opciones={RANGOS_DE_EDAD.map((rango) => ({
                   valor: rango.etiqueta,
@@ -378,6 +376,7 @@ export function FiltrosAdopcionModal({
             <Seccion titulo="Sexo">
               <SelectorChips
                 prefijo="genero"
+                variante="filtro"
                 etiquetaSinFiltro="Todos"
                 opciones={GENEROS}
                 valor={borrador.genero}
@@ -388,11 +387,13 @@ export function FiltrosAdopcionModal({
             <Seccion titulo="Compatible con" className="mb-5">
               <View className="gap-3.5 rounded-2xl bg-white p-3.5">
                 <ToggleField
+                  acento
                   label="Chicos"
                   valor={borrador.compatibleNinios ?? false}
                   onChange={(valor) => setBorrador({ ...borrador, compatibleNinios: valor })}
                 />
                 <ToggleField
+                  acento
                   label="Otras mascotas"
                   valor={borrador.compatibleOtrasMascotas ?? false}
                   onChange={(valor) =>
@@ -400,6 +401,7 @@ export function FiltrosAdopcionModal({
                   }
                 />
                 <ToggleField
+                  acento
                   label="Castrado / esterilizado"
                   valor={borrador.castrado ?? false}
                   onChange={(valor) => setBorrador({ ...borrador, castrado: valor })}
@@ -422,7 +424,7 @@ export function FiltrosAdopcionModal({
             <Pressable
               accessibilityRole="button"
               onPress={() => onAplicar(borrador)}
-              className="items-center rounded-2xl bg-pethood-orange py-3.5 active:bg-pethood-orange-dark"
+              className="items-center rounded-2xl bg-organic-accent-600 py-3.5 active:bg-organic-accent-700"
             >
               <Text className="text-base font-semibold text-white">
                 {activos === 0

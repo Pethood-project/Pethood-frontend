@@ -13,10 +13,9 @@
  * quien decide si el usuario tiene permiso para editar (HU-8.3, mensaje "No tenés permisos
  * para editar este registro").
  */
-import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
@@ -32,6 +31,7 @@ import { TextAreaField } from '@/components/ui/TextAreaField';
 import { TextField } from '@/components/ui/TextField';
 import { ToggleField } from '@/components/ui/ToggleField';
 import { MedallaVacuna } from '@/components/vacunas/MedallaVacuna';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { useSesion } from '@/hooks/useSesion';
 import {
   editarHistoriaClinica,
@@ -259,19 +259,7 @@ export default function EditarHistoriaClinicaScreen() {
   return (
     <View className="flex-1 bg-pethood-beige">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-4 py-3">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-            onPress={volver}
-            hitSlop={8}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-80"
-          >
-            <Ionicons name="chevron-back" size={20} color="#4B5563" />
-          </Pressable>
-
-          <Text className="text-2xl font-bold text-pethood-orange">Modificar registro</Text>
-        </View>
+        <EncabezadoPantalla titulo="Modificar registro" onVolver={volver} />
 
         <FormularioConTeclado
           className="flex-1"

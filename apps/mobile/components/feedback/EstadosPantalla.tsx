@@ -13,7 +13,7 @@ type NombreIcono = keyof typeof Ionicons.glyphMap;
 export function EstadoCargando() {
   return (
     <View className="flex-1 items-center justify-center">
-      <ActivityIndicator size="large" color={PALETA.pethood.naranja} />
+      <ActivityIndicator size="large" color={PALETA.accent[600]} />
     </View>
   );
 }
@@ -38,15 +38,17 @@ export function EstadoError({
 }: EstadoErrorProps) {
   return (
     <View className="flex-1 items-center justify-center px-6">
-      <Ionicons name={icono} size={40} color={PALETA.gris[400]} />
-      <Text className="mt-3 text-center text-base text-gray-600">{mensaje}</Text>
+      <Ionicons name={icono} size={40} color={PALETA.neutral[500]} />
+      <Text className="mt-3 text-center font-cuerpo text-base text-organic-neutral-600">
+        {mensaje}
+      </Text>
 
       <Pressable
         accessibilityRole="button"
         onPress={onAccion}
-        className="mt-4 rounded-full bg-pethood-orange px-6 py-2 active:opacity-90"
+        className="mt-4 rounded-full bg-organic-accent-600 px-6 py-2.5 active:opacity-90"
       >
-        <Text className="font-medium text-white">{etiquetaAccion}</Text>
+        <Text className="font-cuerpo-semi text-white">{etiquetaAccion}</Text>
       </Pressable>
     </View>
   );
@@ -63,12 +65,16 @@ interface EstadoVacioProps {
 export function EstadoVacio({ icono, titulo, descripcion, children }: EstadoVacioProps) {
   return (
     <View className="flex-1 items-center justify-center px-8 py-16">
-      <View className="mb-5 h-24 w-24 items-center justify-center rounded-full bg-white">
-        <Ionicons name={icono} size={44} color={PALETA.pethood.naranja} />
+      <View className="mb-5 h-24 w-24 items-center justify-center rounded-full border border-organic-accent-300 bg-organic-accent-100">
+        <Ionicons name={icono} size={44} color={PALETA.accent[600]} />
       </View>
 
-      <Text className="text-center text-lg font-bold text-gray-900">{titulo}</Text>
-      <Text className="mt-2 text-center text-base leading-6 text-gray-500">{descripcion}</Text>
+      <Text className="text-center font-titulo text-[22px] leading-[28px] text-organic-neutral-900">
+        {titulo}
+      </Text>
+      <Text className="mt-2 text-center font-cuerpo text-base leading-6 text-organic-neutral-600">
+        {descripcion}
+      </Text>
 
       {children ? <View className="mt-6 w-full gap-2.5">{children}</View> : null}
     </View>

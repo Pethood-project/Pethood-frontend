@@ -35,6 +35,7 @@ import { Chip } from '@/components/ui/Chip';
 import { HojaOpciones } from '@/components/ui/HojaOpciones';
 import { LogoRefugio } from '@/components/ui/LogoRefugio';
 import { SwitchRefugio } from '@/components/ui/SwitchRefugio';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
 import { ApiError, urlAbsoluta } from '@/services/api';
@@ -319,22 +320,23 @@ export default function PerfilScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center justify-between border-b border-organic-neutral-300 bg-organic-neutral-100 px-[21px] py-[13px]">
-          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
-            {vistaRefugio ? 'Mi Refugio' : 'Mi Perfil'}
-          </Text>
-          {/* El ícono sigue siendo el de perfil (no una ruedita de configuración): entra a
-              "Ver y editar mi perfil", donde viven los datos completos y las acciones sensibles.
-              En la vista de refugio hay dos juegos de datos, así que primero pregunta cuál. */}
-          <BotonCircular
-            icono="person-circle-outline"
-            etiqueta={vistaRefugio ? 'Ver y editar datos' : 'Ver y editar mi perfil'}
-            variante="organic"
-            onPress={() =>
-              vistaRefugio ? setEligiendoDatos(true) : router.push('/perfil/editar' as Href)
-            }
-          />
-        </View>
+        {/* El ícono sigue siendo el de perfil (no una ruedita de configuración): entra a
+            "Ver y editar mi perfil", donde viven los datos completos y las acciones sensibles.
+            En la vista de refugio hay dos juegos de datos, así que primero pregunta cuál. */}
+        <EncabezadoPantalla
+          barra
+          titulo={vistaRefugio ? 'Mi Refugio' : 'Mi Perfil'}
+          derecha={
+            <BotonCircular
+              icono="person-circle-outline"
+              etiqueta={vistaRefugio ? 'Ver y editar datos' : 'Ver y editar mi perfil'}
+              variante="organic"
+              onPress={() =>
+                vistaRefugio ? setEligiendoDatos(true) : router.push('/perfil/editar' as Href)
+              }
+            />
+          }
+        />
 
         {cargando && esperandoDatos ? (
           <View className="flex-1 items-center justify-center">

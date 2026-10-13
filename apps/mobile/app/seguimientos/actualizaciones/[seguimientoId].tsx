@@ -19,12 +19,13 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantalla';
 import { NOMBRE_TIPO } from '@/components/seguimiento/etiquetas';
 import { FotoMascota } from '@/components/ui/FotoMascota';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
 import { obtenerActualizacion, type ActualizacionSeguimiento } from '@/services/seguimiento';
@@ -76,26 +77,13 @@ export default function ActualizacionSeguimientoDetalleScreen() {
   return (
     <View className="flex-1 bg-pethood-beige">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-4 py-3">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-            onPress={() => router.back()}
-            hitSlop={8}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-80"
-          >
-            <Ionicons name="chevron-back" size={20} color={PALETA.gris[600]} />
-          </Pressable>
-
-          <View className="flex-1">
-            <Text className="text-2xl font-bold text-pethood-orange">Actualización</Text>
-            {actualizacion ? (
-              <Text className="text-xs text-gray-500" numberOfLines={1}>
-                {nombreMascota} · {NOMBRE_TIPO[actualizacion.tipo]}
-              </Text>
-            ) : null}
-          </View>
-        </View>
+        <EncabezadoPantalla
+          titulo="Actualización"
+          subtitulo={
+            actualizacion ? `${nombreMascota} · ${NOMBRE_TIPO[actualizacion.tipo]}` : undefined
+          }
+          onVolver={() => router.back()}
+        />
 
         {cargando ? (
           <EstadoCargando />

@@ -11,7 +11,7 @@ import { PetHoodLogo } from '@/components/PetHoodLogo';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
-import { validarEmail, validarPassword } from '@/lib/validacionRegistro';
+import { validarEmail, validarPasswordIngreso } from '@/lib/validacionRegistro';
 import { ApiError } from '@/services/api';
 import { login } from '@/services/auth';
 import type { Usuario } from '@/types/auth';
@@ -58,7 +58,7 @@ export default function LoginScreen() {
   const validateForm = (): boolean => {
     const nextErrors = {
       email: validarEmail(email),
-      password: validarPassword(password),
+      password: validarPasswordIngreso(password),
     };
 
     setErrors(nextErrors);
@@ -132,7 +132,7 @@ export default function LoginScreen() {
             <CustomInput
               organic
               label="Contraseña"
-              placeholder="Mínimo 8 caracteres"
+              placeholder="Tu contraseña"
               value={password}
               onChangeText={setPassword}
               error={errors.password}

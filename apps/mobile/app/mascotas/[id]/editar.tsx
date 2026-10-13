@@ -11,10 +11,9 @@
  *
  * La validación de acá es solo para UX: la fuente de verdad es el backend.
  */
-import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
@@ -29,7 +28,7 @@ import { SelectField, type OpcionSelect } from '@/components/ui/SelectField';
 import { TextAreaField } from '@/components/ui/TextAreaField';
 import { TextField } from '@/components/ui/TextField';
 import { ToggleField } from '@/components/ui/ToggleField';
-import { PALETA } from '@/constants/theme';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { urlAbsoluta } from '@/services/api';
 import { listarEspecies, listarRazas, type OpcionCatalogo } from '@/services/catalogos';
 import {
@@ -307,19 +306,7 @@ export default function EditarMascotaScreen() {
   return (
     <View className="flex-1 bg-pethood-beige">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-4 py-3">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-            onPress={volver}
-            hitSlop={8}
-            className="h-10 w-10 items-center justify-center rounded-full bg-white active:opacity-80"
-          >
-            <Ionicons name="chevron-back" size={20} color={PALETA.gris[600]} />
-          </Pressable>
-
-          <Text className="text-2xl font-bold text-pethood-orange">Editar mascota</Text>
-        </View>
+        <EncabezadoPantalla titulo="Editar mascota" onVolver={volver} />
 
         {cargando ? (
           <EstadoCargando />

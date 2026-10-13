@@ -36,7 +36,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { DetalleAvisoModal } from '@/components/perdidos/DetalleAvisoModal';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { EstadoAnimalPerdidoBadge } from '@/components/ui/EstadoAnimalPerdidoBadge';
 import { EstadoPublicacionBadge } from '@/components/ui/EstadoPublicacionBadge';
 import { FiltroEstados, type OpcionEstado } from '@/components/ui/FiltroEstados';
@@ -319,22 +319,17 @@ export default function MisPublicacionesScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-[22px] pb-4 pt-2">
-          <BotonCircular icono="arrow-back" etiqueta="Volver" onPress={volver} grande />
-
-          <View className="flex-1">
-            <Text className="font-titulo text-[28px] leading-[28px] text-organic-accent-600">
-              {vistaRefugio ? 'Publicaciones del refugio' : 'Mis publicaciones'}
-            </Text>
-            <Text className="mt-1.5 font-cuerpo text-base text-organic-neutral-700">
-              {cargando
-                ? 'Cargando…'
-                : pestania === 'perdidas'
-                  ? subtituloAvisos(items.length)
-                  : subtituloContador(items.length)}
-            </Text>
-          </View>
-        </View>
+        <EncabezadoPantalla
+          titulo={vistaRefugio ? 'Publicaciones' : 'Mis publicaciones'}
+          subtitulo={
+            cargando
+              ? 'Cargando…'
+              : pestania === 'perdidas'
+                ? subtituloAvisos(items.length)
+                : subtituloContador(items.length)
+          }
+          onVolver={volver}
+        />
 
         {vistaRefugio ? null : (
           <View className="px-[22px] pb-1">

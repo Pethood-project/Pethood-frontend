@@ -1,5 +1,6 @@
 /**
- * Botón redondo de ícono para los encabezados de pantalla.
+ * Botón redondo de ícono para los encabezados de pantalla. La flecha de volver NO va acá:
+ * es `BotonVolver`, suelta y siempre igual.
  *
  * Sin `onPress` se ve igual pero no responde: es el estado de las acciones cuya pantalla
  * todavía no existe, para no romper la fila de íconos con un hueco.

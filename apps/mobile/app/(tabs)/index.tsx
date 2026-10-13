@@ -27,6 +27,7 @@ import { TarjetaAdoptar } from '@/components/home/TarjetaAdoptar';
 import { TarjetasAdoptante } from '@/components/home/TarjetasAdoptante';
 import { TarjetasRefugio } from '@/components/home/TarjetasRefugio';
 import { BotonCircular } from '@/components/ui/BotonCircular';
+import { TituloPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { useDatosInicio } from '@/hooks/useDatosInicio';
 import { useNotificaciones } from '@/hooks/useNotificaciones';
@@ -219,9 +220,7 @@ function Encabezado({ subtitulo, destacado = false }: { subtitulo: string; desta
   return (
     <View className="flex-row items-start justify-between gap-3 px-[22px] pb-2 pt-2">
       <View className="min-w-0 flex-1">
-        <Text className="font-titulo text-[27px] leading-[27px] text-organic-accent-600">
-          PetHood
-        </Text>
+        <TituloPantalla>PetHood</TituloPantalla>
         <Text
           numberOfLines={1}
           className={`mt-[5px] text-organic-neutral-700 ${

@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { PressableAnimado } from '@/components/ui/PressableAnimado';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { estiloDeVacuna } from '@/constants/Vacunas';
 import { PALETA } from '@/constants/theme';
 import { obtenerMiMascota, type Mascota } from '@/services/mascotas';
@@ -149,28 +150,16 @@ export default function HistoriaClinicaScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-4 py-4">
-          <PressableAnimado
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-            onPress={() => router.back()}
-            hitSlop={8}
-            className="h-12 w-12 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100"
-          >
-            <Ionicons name="arrow-back" size={22} color={PALETA.neutral[700]} />
-          </PressableAnimado>
-
-          <View className="flex-1">
-            <Text className="font-titulo text-[26px] leading-8 text-organic-accent-600">
-              Historia Clínica
-            </Text>
-            {mascota ? (
-              <Text className="font-cuerpo text-sm text-organic-neutral-600">
-                {[mascota.nombre, mascota.especie.nombre].filter(Boolean).join(' · ')}
-              </Text>
-            ) : null}
-          </View>
-        </View>
+        <EncabezadoPantalla
+          barra
+          titulo="Historia Clínica"
+          subtitulo={
+            mascota
+              ? [mascota.nombre, mascota.especie.nombre].filter(Boolean).join(' · ')
+              : undefined
+          }
+          onVolver={() => router.back()}
+        />
 
         {cargando ? (
           <EstadoCargando />

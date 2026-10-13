@@ -13,7 +13,7 @@ import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useToast } from '@/components/feedback/Toast';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { DateField } from '@/components/ui/DateField';
 import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
@@ -141,17 +141,12 @@ export default function NuevaCampaniaScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-surface px-[22px] pb-4 pt-2">
-          <BotonCircular
-            icono="arrow-back"
-            etiqueta="Cancelar y volver"
-            onPress={() => router.back()}
-            grande
-          />
-          <Text className="font-titulo text-[28px] leading-[32px] text-organic-accent-600">
-            Nueva Campaña
-          </Text>
-        </View>
+        <EncabezadoPantalla
+          barra
+          titulo="Nueva Campaña"
+          etiquetaVolver="Cancelar y volver"
+          onVolver={() => router.back()}
+        />
 
         <FormularioConTeclado className="flex-1" contentContainerClassName="gap-4 px-4 pb-10 pt-4">
           <PhotoPicker foto={imagen} onChange={setImagen} error={errorDe('imagen')} grande />

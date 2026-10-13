@@ -396,7 +396,7 @@ function BotonAbrir({ variante, cargando, onPress }: BotonAbrirProps) {
       accessibilityState={{ busy: cargando }}
       disabled={cargando}
       onPress={onPress}
-      className={`items-center justify-center rounded-xl bg-organic-accent-600 py-2.5 active:opacity-90 ${
+      className={`items-center justify-center rounded-full bg-organic-accent-600 py-3 active:opacity-90 ${
         cargando ? 'opacity-60' : ''
       }`}
     >
@@ -449,12 +449,12 @@ function EstadoEnviada({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Ver mi solicitud"
+      accessibilityLabel="Ya solicitada. Ver mi solicitud"
       onPress={onVer}
-      className="flex-row items-center justify-center gap-1.5 rounded-xl border border-organic-accent-300 bg-organic-accent-100 py-2.5 active:opacity-80"
+      className="flex-row items-center justify-center gap-1.5 rounded-full border border-organic-accent-300 bg-organic-accent-100 py-3 active:opacity-80"
     >
       <Ionicons name="checkmark" size={16} color={PALETA.accent[600]} />
-      <Text className="font-cuerpo-semi text-[15px] text-organic-accent-600">Enviada</Text>
+      <Text className="font-cuerpo-semi text-[15px] text-organic-accent-600">Ya solicitada</Text>
     </Pressable>
   );
 }

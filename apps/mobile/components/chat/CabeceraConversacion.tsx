@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text, View, Pressable } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
+import { BotonVolver } from '@/components/ui/BotonVolver';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
 import type { AvisoEnChat, CabeceraChat, ContactoChat, SolicitudEnChat } from '@/services/chats';
@@ -121,15 +122,7 @@ export function CabeceraConversacion({
   return (
     <View>
       <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-4 py-3">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Volver a Mensajes"
-          onPress={onVolver}
-          hitSlop={12}
-          className="active:opacity-60"
-        >
-          <Ionicons name="arrow-back" size={24} color={PALETA.neutral[700]} />
-        </Pressable>
+        <BotonVolver onPress={onVolver} etiqueta="Volver a Mensajes" />
 
         {/* La foto y el nombre son UNA sola zona tocable que lleva al perfil, como en
             WhatsApp: tocar el nombre y que no pase nada se lee como un bug. */}

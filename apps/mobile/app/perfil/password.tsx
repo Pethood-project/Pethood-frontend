@@ -6,18 +6,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
 import { CustomInput } from '@/components/CustomInput';
 import { useToast } from '@/components/feedback/Toast';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
-import { validarConfirmacionPassword, validarPassword } from '@/lib/validacionRegistro';
+import { validarConfirmacionPassword } from '@/lib/validacionRegistro';
 import { ApiError } from '@/services/api';
 import { cambiarPassword, obtenerPerfil } from '@/services/usuarios';
+import { validarPasswordNueva } from '@/shared/validation/password';
 
 export default function CambiarPasswordScreen() {
   const router = useRouter();
@@ -54,7 +56,7 @@ export default function CambiarPasswordScreen() {
         tienePassword && !actual
           ? 'Ingresá tu contraseña actual'
           : undefined,
-      nueva: validarPassword(nueva),
+      nueva: validarPasswordNueva(nueva) ?? undefined,
       confirmacion: validarConfirmacionPassword(nueva, confirmacion),
     };
     setErrors(next);
@@ -80,17 +82,7 @@ export default function CambiarPasswordScreen() {
   return (
     <View className="flex-1 bg-pethood-beige">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-        <View className="flex-row items-center px-5 pb-2 pt-2">
-          <Pressable
-            onPress={() => router.back()}
-            className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-white"
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-          >
-            <Ionicons name="arrow-back" size={22} color={PALETA.gris[700]} />
-          </Pressable>
-          <Text className="text-2xl font-bold text-pethood-orange">Actualizar contraseña</Text>
-        </View>
+        <EncabezadoPantalla titulo="Contraseña" onVolver={() => router.back()} />
 
         {cargando ? (
           <View className="flex-1 items-center justify-center">

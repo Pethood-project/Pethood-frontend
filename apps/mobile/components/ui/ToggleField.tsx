@@ -16,6 +16,8 @@ interface ToggleFieldProps {
   variante?: VarianteToggle;
   /** Letra más grande, para el alta y la publicación de mascota. */
   grande?: boolean;
+  /** Interruptor en el marrón de la marca aunque la variante sea la compacta. */
+  acento?: boolean;
 }
 
 export function ToggleField({
@@ -24,6 +26,7 @@ export function ToggleField({
   onChange,
   variante = 'compacta',
   grande = false,
+  acento = false,
 }: ToggleFieldProps) {
   const esCaja = variante === 'caja';
 
@@ -51,7 +54,7 @@ export function ToggleField({
         accessibilityLabel={label}
         // La variante de caja es del rediseño Organic; la compacta sigue con el naranja
         // de marca del resto de los formularios, que todavía no se migraron.
-        trackColor={{ false: PALETA.gris[200], true: esCaja ? PALETA.accent[600] : PALETA.pethood.naranja }}
+        trackColor={{ false: PALETA.gris[200], true: esCaja || acento ? PALETA.accent[600] : PALETA.pethood.naranja }}
         thumbColor={PALETA.blanco}
         ios_backgroundColor={PALETA.gris[200]}
         style={grande ? { transform: [{ scale: 1.15 }] } : undefined}

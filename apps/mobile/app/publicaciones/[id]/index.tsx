@@ -43,6 +43,7 @@ import { BotonSolicitar, solicitudEnviadaDe } from '@/components/solicitudes/Bot
 import { ConfirmDialog, type TonoDialogo } from '@/components/ui/ConfirmDialog';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { VacunasMascota } from '@/components/vacunas/VacunasMascota';
+import { BotonVolver } from '@/components/ui/BotonVolver';
 import { ESTADO_SOLICITABLE } from '@/constants/Mascotas';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
@@ -229,8 +230,14 @@ export default function FichaPublicacionScreen() {
 
     void operacion
       .then(() => {
+        if (guardada) {
+          toast.mostrarExito({ titulo: `${nombre} quitado`, icono: 'heart-dislike' });
+          return;
+        }
+
         toast.mostrarExito(
-          guardada ? `Quitamos a ${nombre} de favoritos.` : `Guardamos a ${nombre} en favoritos.`,
+          { titulo: `${nombre} guardado`, icono: 'heart' },
+          { etiqueta: 'Ver', atajo: true, onPress: () => router.push('/favoritos') },
         );
       })
       .catch((err: unknown) => {
@@ -240,7 +247,7 @@ export default function FichaPublicacionScreen() {
         );
       })
       .finally(() => setGuardando(false));
-  }, [guardando, publicacion, toast]);
+  }, [guardando, publicacion, router, toast]);
 
   const volver = useCallback((): void => {
     // `dismiss` saca esta ficha del stack. `canGoBack` del history se ensucia con el
@@ -497,12 +504,9 @@ export default function FichaPublicacionScreen() {
 
       {/* Últimos hijos del root y zIndex alto: en web la galería (transform) pintaba
           encima de un overlay hermano del ScrollView y se comía la flecha. */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Volver"
+      <BotonVolver
+        sobreFoto
         onPress={volver}
-        hitSlop={12}
-        className="h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
         style={{
           position: 'absolute',
           top: insets.top + 8,
@@ -510,9 +514,7 @@ export default function FichaPublicacionScreen() {
           zIndex: 9999,
           elevation: 9999,
         }}
-      >
-        <Ionicons name="arrow-back" size={20} color={PALETA.grisCalido[900]} />
-      </Pressable>
+      />
 
       {/* Sobre la propia mascota (personal o del propio refugio) no hay nada que guardar:
           sería guardarse a uno mismo un aviso que uno mismo publicó. Tampoco desde la vista
@@ -537,7 +539,7 @@ export default function FichaPublicacionScreen() {
           <Ionicons
             name={publicacion.enFavoritos ? 'heart' : 'heart-outline'}
             size={20}
-            color={PALETA.pethood.naranja}
+            color={PALETA.accent[600]}
           />
         </Pressable>
       ) : null}

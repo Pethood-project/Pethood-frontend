@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
 import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { usePaginacionCursor } from '@/hooks/usePaginacionCursor';
 import { rutaDeNotificacion } from '@/lib/rutaDeNotificacion';
@@ -133,30 +134,19 @@ export default function NotificacionesScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center justify-between gap-3 px-[22px] pb-3.5 pt-2">
-          <View className="flex-row items-center gap-3">
-            <BotonCircular
-              icono="arrow-back"
-              etiqueta="Volver"
-              onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
-            />
-            <Text className="font-titulo text-[22px] leading-[22px] text-organic-accent-600">
-              Notificaciones
-            </Text>
-          </View>
-
-          {hayNoLeidas ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => void marcarTodas()}
-              className="px-1 py-2"
-            >
-              <Text className="font-cuerpo-semi text-[13px] text-organic-accent-600">
-                Marcar todas
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
+        <EncabezadoPantalla
+          titulo="Notificaciones"
+          onVolver={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+          derecha={
+            hayNoLeidas ? (
+              <BotonCircular
+                icono="checkmark-done-outline"
+                etiqueta="Marcar todas como leídas"
+                onPress={() => void marcarTodas()}
+              />
+            ) : null
+          }
+        />
 
         {lista.cargando ? (
           <EstadoCargando />

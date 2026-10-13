@@ -9,10 +9,9 @@
  *
  * La validación de acá es solo para UX: la fuente de verdad es el backend.
  */
-import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
@@ -27,6 +26,7 @@ import { TextAreaField } from '@/components/ui/TextAreaField';
 import { TextField } from '@/components/ui/TextField';
 import { ToggleField } from '@/components/ui/ToggleField';
 import { MedallaVacuna } from '@/components/vacunas/MedallaVacuna';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { crearHistoriaClinica } from '@/services/historia-clinica';
 import { obtenerMascota } from '@/services/mascotas';
 import { listarVacunas, type TipoVacuna, type VacunaCatalogo } from '@/services/vacunas';
@@ -257,24 +257,12 @@ export default function NuevaHistoriaClinicaScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 bg-organic-accent-600 px-5 pb-[14px] pt-[9px]">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-            onPress={() => router.back()}
-            hitSlop={8}
-            className="h-11 w-11 items-center justify-center rounded-full bg-white/20 active:opacity-80"
-          >
-            <Ionicons name="chevron-back" size={22} color="#FFFFFF" />
-          </Pressable>
-
-          <View className="flex-1">
-            <Text className="font-titulo text-[22px] leading-[26px] text-white">
-              Nuevo registro
-            </Text>
-            <Text className="mt-0.5 text-[13px] text-white/80">Ficha médica</Text>
-          </View>
-        </View>
+        <EncabezadoPantalla
+          claro
+          titulo="Nuevo registro"
+          subtitulo="Ficha médica"
+          onVolver={() => router.back()}
+        />
 
         <FormularioConTeclado
           className="flex-1"

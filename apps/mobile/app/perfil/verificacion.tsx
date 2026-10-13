@@ -22,6 +22,7 @@ import {
   CapturaPruebaDeVida,
   type FotoCapturada,
 } from '@/components/seguimiento/CapturaPruebaDeVida';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
@@ -113,17 +114,7 @@ export default function VerificacionIdentidadScreen() {
   return (
     <View className="flex-1 bg-pethood-beige">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-        <View className="flex-row items-center px-5 pb-2 pt-2">
-          <Pressable
-            onPress={() => router.back()}
-            className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-white"
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-          >
-            <Ionicons name="arrow-back" size={22} color={PALETA.gris[700]} />
-          </Pressable>
-          <Text className="text-2xl font-bold text-pethood-orange">Verificación</Text>
-        </View>
+        <EncabezadoPantalla titulo="Verificación" onVolver={() => router.back()} />
 
         {cargando ? (
           <View className="flex-1 items-center justify-center">

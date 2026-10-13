@@ -35,6 +35,7 @@ import { Chip } from '@/components/ui/Chip';
 import { HojaOpciones } from '@/components/ui/HojaOpciones';
 import { LogoRefugio } from '@/components/ui/LogoRefugio';
 import { SwitchRefugio } from '@/components/ui/SwitchRefugio';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
 import { ApiError, urlAbsoluta } from '@/services/api';
@@ -67,7 +68,9 @@ const MENU_ADOPTANTE: ItemMenu[] = [
   { icono: 'footsteps-outline', label: 'Seguimientos', ruta: '/seguimientos' },
   { icono: 'heart-outline', label: 'Favoritos', ruta: '/favoritos' },
   { icono: 'star-outline', label: 'Reseñas', ruta: '/resenas' as Href },
-  { icono: 'heart-circle-outline', label: 'Campañas' },
+  { icono: 'heart-circle-outline', label: 'Campañas', ruta: '/campanias' as Href },
+  // Spec 002.1: DNI + selfie para verificar la identidad (HU-2.3).
+  { icono: 'shield-checkmark-outline', label: 'Verificación de identidad', ruta: '/perfil/verificacion' as Href },
 ];
 
 /**
@@ -90,7 +93,11 @@ const MENU_REFUGIO: ItemMenu[] = [
   },
   { icono: 'footsteps-outline', label: 'Seguimientos', ruta: '/seguimientos' },
   { icono: 'star-outline', label: 'Reseñas del refugio', ruta: '/resenas' as Href },
-  { icono: 'heart-circle-outline', label: 'Campañas del refugio' },
+  {
+    icono: 'heart-circle-outline',
+    label: 'Campañas del refugio',
+    ruta: '/campanias/refugio' as Href,
+  },
 ];
 
 /** Solo se muestra en la vista personal: en la de refugio la tarjeta es la del refugio. */
@@ -299,6 +306,8 @@ export default function PerfilScreen() {
         !etiquetaUbicacion(perfilRefugio))
     : !visible?.imagenUrl ||
       !visible?.telefono ||
+      // El DNI es obligatorio desde la spec 027: las cuentas viejas y las de Google no lo tienen.
+      (perfil ? !perfil.dni : false) ||
       !etiquetaUbicacion(visible ?? {});
   const rutaCompletar = (vistaRefugio ? '/perfil/refugio' : '/perfil/editar') as Href;
   const esperandoDatos = vistaRefugio ? !perfilRefugio : !visible;
@@ -311,22 +320,23 @@ export default function PerfilScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center justify-between border-b border-organic-neutral-300 bg-organic-neutral-100 px-[21px] py-[13px]">
-          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
-            {vistaRefugio ? 'Mi Refugio' : 'Mi Perfil'}
-          </Text>
-          {/* El ícono sigue siendo el de perfil (no una ruedita de configuración): entra a
-              "Ver y editar mi perfil", donde viven los datos completos y las acciones sensibles.
-              En la vista de refugio hay dos juegos de datos, así que primero pregunta cuál. */}
-          <BotonCircular
-            icono="person-circle-outline"
-            etiqueta={vistaRefugio ? 'Ver y editar datos' : 'Ver y editar mi perfil'}
-            variante="organic"
-            onPress={() =>
-              vistaRefugio ? setEligiendoDatos(true) : router.push('/perfil/editar' as Href)
-            }
-          />
-        </View>
+        {/* El ícono sigue siendo el de perfil (no una ruedita de configuración): entra a
+            "Ver y editar mi perfil", donde viven los datos completos y las acciones sensibles.
+            En la vista de refugio hay dos juegos de datos, así que primero pregunta cuál. */}
+        <EncabezadoPantalla
+          barra
+          titulo={vistaRefugio ? 'Mi Refugio' : 'Mi Perfil'}
+          derecha={
+            <BotonCircular
+              icono="person-circle-outline"
+              etiqueta={vistaRefugio ? 'Ver y editar datos' : 'Ver y editar mi perfil'}
+              variante="organic"
+              onPress={() =>
+                vistaRefugio ? setEligiendoDatos(true) : router.push('/perfil/editar' as Href)
+              }
+            />
+          }
+        />
 
         {cargando && esperandoDatos ? (
           <View className="flex-1 items-center justify-center">

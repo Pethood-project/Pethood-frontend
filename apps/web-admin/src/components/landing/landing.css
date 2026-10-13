@@ -621,6 +621,7 @@
   height: 72px;
   margin: 0 auto 12px;
   border-radius: 50%;
+  object-fit: cover;
   font:
     400 24px var(--font-caprasimo),
     Georgia,
@@ -948,5 +949,63 @@ html {
   /* Sin costados que mostrar: velo parejo. */
   .lp .banda-foto-fondo::after {
     background: rgb(245 234 216 / 0.9);
+  }
+}
+
+/* /descargar: una foto en cada costado que se funde hacia el centro, donde va el contenido.
+ * En mobile las dos fotos pasan a una franja arriba, una al lado de la otra y sin fundido. */
+.lp .dos-lados .banda-lado {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 36%;
+  overflow: hidden;
+}
+.lp .dos-lados .banda-lado img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lp .dos-lados .banda-lado.izq {
+  left: 0;
+  mask-image: linear-gradient(to right, #000 35%, transparent);
+}
+.lp .dos-lados .banda-lado.der {
+  right: 0;
+  mask-image: linear-gradient(to left, #000 35%, transparent);
+}
+.lp .dos-lados .banda-foto-credito.der {
+  left: auto;
+  right: 14px;
+}
+.lp .dos-lados .banda-foto-contenido {
+  max-width: 600px;
+  padding-block: 96px 120px;
+  text-align: center;
+}
+.lp .dos-lados .banda-foto-contenido > p {
+  max-width: none;
+}
+.lp .dos-lados .cta {
+  justify-content: center;
+}
+.lp .dos-lados ol {
+  display: inline-grid;
+  text-align: left;
+}
+@media (max-width: 900px) {
+  .lp .dos-lados {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .lp .dos-lados .banda-lado {
+    position: relative;
+    width: auto;
+    height: 220px;
+    mask-image: none;
+  }
+  .lp .dos-lados .banda-foto-contenido {
+    grid-column: 1 / -1;
+    padding-block: 40px 56px;
   }
 }

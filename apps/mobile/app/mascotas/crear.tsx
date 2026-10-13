@@ -16,10 +16,9 @@
  *
  * La validación de acá es solo para UX: la fuente de verdad es el backend.
  */
-import { Ionicons } from '@expo/vector-icons';
 import { type Href, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
@@ -37,8 +36,8 @@ import { TextAreaField } from '@/components/ui/TextAreaField';
 import { TextField } from '@/components/ui/TextField';
 import { ToggleField } from '@/components/ui/ToggleField';
 import { SelectorVacunas, type VacunaElegida } from '@/components/vacunas/SelectorVacunas';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { estiloDeEstado } from '@/constants/EstadosMascota';
-import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
 import {
   listarEspecies,
@@ -404,21 +403,7 @@ export default function CrearMascotaScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-5 py-[13px]">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-            onPress={() => router.back()}
-            hitSlop={8}
-            className="h-11 w-11 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100 active:opacity-80"
-          >
-            <Ionicons name="chevron-back" size={22} color={PALETA.neutral[700]} />
-          </Pressable>
-
-          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
-            Nueva Mascota
-          </Text>
-        </View>
+        <EncabezadoPantalla barra titulo="Nueva Mascota" onVolver={() => router.back()} />
 
         {cargandoCatalogos ? (
           <EstadoCargando />

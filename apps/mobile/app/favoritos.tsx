@@ -21,9 +21,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
 import { BotonSolicitar } from '@/components/solicitudes/BotonSolicitar';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
+import { Chip } from '@/components/ui/Chip';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
-import { ESTADO_SOLICITABLE } from '@/constants/Mascotas';
+import { ESTADO_SOLICITABLE, etiquetaGenero, etiquetaTamanio } from '@/constants/Mascotas';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
 import { urlAbsoluta } from '@/services/api';
@@ -71,6 +72,20 @@ function conRellenoDeFila(favoritos: MascotaFavorita[]): ItemGrilla[] {
   return favoritos.length % 2 === 1 ? [...favoritos, RELLENO] : favoritos;
 }
 
+/** Lo que reemplaza al botón cuando la mascota no se puede solicitar (sin publicación o no disponible). */
+function BotonNoDisponible() {
+  return (
+    <View
+      accessibilityRole="button"
+      accessibilityState={{ disabled: true }}
+      accessibilityLabel="No disponible"
+      className="items-center justify-center rounded-full bg-organic-neutral-200 py-3"
+    >
+      <Text className="font-cuerpo-semi text-[15px] text-organic-neutral-500">No disponible</Text>
+    </View>
+  );
+}
+
 interface TarjetaFavoritoProps {
   mascota: MascotaFavorita;
   onQuitar: () => void;
@@ -80,6 +95,8 @@ interface TarjetaFavoritoProps {
 function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoProps) {
   const foto = urlAbsoluta(mascota.imagenUrl);
   const edadTexto = edad(mascota.fechaNacimiento);
+  const tamanio = etiquetaTamanio(mascota.tamanio);
+  const lugar = mascota.refugio?.nombre ?? mascota.raza.nombre;
 
   const router = useRouter();
 
@@ -88,6 +105,14 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
     router.push({ pathname: '/publicaciones/[id]', params: { id: mascota.publicacionId } });
   };
 
+  // Sin publicación no hay nada que solicitar. Con publicación pero en un estado no
+  // solicitable (En_Tratamiento, En_Transito, Adoptado…) tampoco, salvo que ya haya una
+  // solicitud en curso: esa se sigue mostrando aunque la mascota haya cambiado de estado
+  // mientras tanto (`BotonSolicitar` decide ese caso puntual).
+  const puedeSolicitar =
+    mascota.publicacionId !== null &&
+    (mascota.estado.nombre === ESTADO_SOLICITABLE || mascota.solicitudAbiertaId !== null);
+
   return (
     <Animated.View
       entering={FadeIn.duration(180)}
@@ -95,11 +120,11 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
       layout={LinearTransition.duration(220)}
       className="flex-1"
     >
-      {/* La tarjeta, el corazón y el CTA son hermanos: un Pressable dentro de otro en web
-          (React 19) dispara onPress al renderizar y tira el árbol, incluso con la ficha
+      {/* La foto, el corazón, el texto y el CTA son hermanos: un Pressable dentro de otro en
+          web (React 19) dispara onPress al renderizar y tira el árbol, incluso con la ficha
           de una publicación abierta encima. */}
-      <View className="overflow-hidden rounded-2xl bg-organic-surface shadow-sm">
-        <View className="w-full bg-organic-neutral-200" style={{ aspectRatio: 4 / 3 }}>
+      <View className="rounded-[22px] bg-organic-surface p-2 shadow-sm">
+        <View className="w-full overflow-hidden rounded-2xl bg-organic-neutral-200" style={{ aspectRatio: 1 }}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Ver a ${mascota.nombre ?? 'esta mascota'}`}
@@ -116,14 +141,22 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
             )}
           </Pressable>
 
+          <View className="absolute left-2 top-2" style={{ pointerEvents: 'none' }}>
+            <EstadoMascotaBadge
+              estado={mascota.estado.nombre}
+              adoptadaPorMi={mascota.adoptadaPorMi}
+              sobreFoto
+            />
+          </View>
+
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Quitar a ${mascota.nombre ?? 'esta mascota'} de favoritos`}
             onPress={onQuitar}
             hitSlop={10}
-            className="absolute right-2 top-2 h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
+            className="absolute right-2 top-2 h-9 w-9 items-center justify-center rounded-full bg-white/95 active:opacity-70"
           >
-            <Ionicons name="heart" size={20} color={PALETA.accent[600]} />
+            <Ionicons name="heart" size={19} color={PALETA.accent[600]} />
           </Pressable>
         </View>
 
@@ -132,29 +165,45 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
           accessibilityLabel={`Ver a ${mascota.nombre ?? 'esta mascota'}`}
           disabled={mascota.publicacionId === null}
           onPress={irADetalle}
-          className="p-3 active:opacity-90"
+          className="px-1 pt-3 active:opacity-90"
         >
-          <Text numberOfLines={1} className="font-cuerpo-bold text-lg text-organic-neutral-900">
-            {mascota.nombre ?? 'Sin nombre'}
-          </Text>
-          {edadTexto ? (
-            <Text className="mt-0.5 font-cuerpo text-sm text-organic-neutral-600">
-              {edadTexto}
+          <View className="flex-row items-baseline justify-between gap-2">
+            <Text
+              numberOfLines={1}
+              className="flex-1 font-titulo text-[20px] leading-[24px] text-organic-neutral-900"
+            >
+              {mascota.nombre ?? 'Sin nombre'}
             </Text>
-          ) : null}
+            {edadTexto ? (
+              <Text className="font-cuerpo-bold text-[13px] text-organic-accent-600">
+                {edadTexto}
+              </Text>
+            ) : null}
+          </View>
 
-          <View className="mt-2">
-            <EstadoMascotaBadge estado={mascota.estado.nombre} tamanio="md" />
+          <View className="mt-2 flex-row flex-wrap gap-1.5">
+            <Chip
+              variante="dato"
+              icono={mascota.genero === 'MACHO' ? 'male' : 'female'}
+              etiqueta={etiquetaGenero(mascota.genero)}
+            />
+            {tamanio ? <Chip variante="dato" etiqueta={tamanio} /> : null}
+          </View>
+
+          <View className="mt-2 flex-row items-center gap-1">
+            <Ionicons
+              name={mascota.refugio ? 'location-outline' : 'paw-outline'}
+              size={13}
+              color={PALETA.accent[600]}
+            />
+            <Text numberOfLines={1} className="flex-1 font-cuerpo text-[12px] text-organic-neutral-600">
+              {lugar}
+            </Text>
           </View>
         </Pressable>
 
-        {/* Sin publicación no hay nada que solicitar. Con publicación pero en un estado no
-            solicitable (En_Tratamiento, En_Transito, Adoptado…) tampoco, salvo que ya haya
-            una solicitud en curso: esa se sigue mostrando aunque la mascota haya cambiado
-            de estado mientras tanto (`BotonSolicitar` decide ese caso puntual). */}
-        {mascota.publicacionId !== null &&
-        (mascota.estado.nombre === ESTADO_SOLICITABLE || mascota.solicitudAbiertaId !== null) ? (
-          <View className="px-3 pb-3">
+        <View className="px-1 pb-1 pt-3">
+          {puedeSolicitar && mascota.publicacionId !== null ? (
             <BotonSolicitar
               variante="tarjeta"
               mascota={{
@@ -166,8 +215,10 @@ function TarjetaFavorito({ mascota, onQuitar, onSolicitada }: TarjetaFavoritoPro
               solicitudAbiertaId={mascota.solicitudAbiertaId}
               onCreada={onSolicitada}
             />
-          </View>
-        ) : null}
+          ) : (
+            <BotonNoDisponible />
+          )}
+        </View>
       </View>
     </Animated.View>
   );
@@ -284,10 +335,10 @@ function GrillaFavoritos() {
 
       void encolar(mascota.id, () => quitarFavorito(mascota.id))
         .then(() => {
-          toast.mostrarExito(`Quitamos a ${nombre} de favoritos.`, {
-            etiqueta: 'Deshacer',
-            onPress: () => deshacer(mascota),
-          });
+          toast.mostrarExito(
+            { titulo: `${nombre} quitado`, icono: 'heart-dislike' },
+            { etiqueta: 'Deshacer', onPress: () => deshacer(mascota) },
+          );
         })
         .catch((err: unknown) => {
           setFavoritos((actuales) => reponerOrdenado(actuales, mascota));
@@ -315,18 +366,11 @@ function GrillaFavoritos() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-[22px] pb-4 pt-2">
-          <BotonCircular icono="arrow-back" etiqueta="Volver" onPress={volver} grande />
-
-          <View>
-            <Text className="font-titulo text-[28px] leading-[28px] text-organic-accent-600">
-              Favoritos
-            </Text>
-            <Text className="mt-1.5 font-cuerpo text-base text-organic-neutral-700">
-              {cargando ? 'Cargando…' : subtituloContador(favoritos.length)}
-            </Text>
-          </View>
-        </View>
+        <EncabezadoPantalla
+          titulo="Favoritos"
+          subtitulo={cargando ? 'Cargando…' : subtituloContador(favoritos.length)}
+          onVolver={volver}
+        />
 
         {cargando ? (
           <EstadoCargando />
@@ -357,8 +401,8 @@ function GrillaFavoritos() {
               )
             }
             ListEmptyComponent={ListaVacia}
-            columnWrapperStyle={{ gap: 11, marginBottom: 11 }}
-            contentContainerStyle={{ paddingHorizontal: 14, paddingVertical: 13 }}
+            columnWrapperStyle={{ gap: 12, marginBottom: 12 }}
+            contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 14 }}
             refreshControl={
               <RefreshControl
                 refreshing={refrescando}

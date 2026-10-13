@@ -17,7 +17,7 @@ import { useToast } from '@/components/feedback/Toast';
 import { ResenaModal } from '@/components/resenas/ResenaModal';
 import { ResumenReputacion } from '@/components/resenas/ResumenReputacion';
 import { Avatar } from '@/components/ui/Avatar';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { Chip } from '@/components/ui/Chip';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
@@ -139,16 +139,12 @@ export default function ResenasScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-[22px] pb-3.5 pt-2">
-          <BotonCircular
-            icono="arrow-back"
-            etiqueta="Volver"
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/perfil' as Href))}
-          />
-          <Text className="font-titulo text-[22px] leading-[22px] text-organic-accent-600">
-            Reseñas
-          </Text>
-        </View>
+        <EncabezadoPantalla
+          titulo="Reseñas"
+          onVolver={() =>
+            router.canGoBack() ? router.back() : router.replace('/(tabs)/perfil' as Href)
+          }
+        />
 
         {cargando ? (
           <EstadoCargando />

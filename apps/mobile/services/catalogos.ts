@@ -30,6 +30,11 @@ export function listarEstadosPublicacion(): Promise<OpcionCatalogo[]> {
   return get('/estados-publicacion');
 }
 
+/** Filtro por estado de «Mis Campañas» (spec 026). */
+export function listarEstadosCampania(): Promise<OpcionCatalogo[]> {
+  return get('/estados-campania');
+}
+
 export interface EstadoAnimalPerdido extends OpcionCatalogo {
   /** Si un aviso nuevo puede nacer con este estado (Perdido y Encontrado sí, Resuelto no). */
   seleccionableEnAlta: boolean;

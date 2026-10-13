@@ -129,21 +129,6 @@ export function BotonAmarillo({ texto, onPress, iconoInicio, iconoFin }: BotonAm
   );
 }
 
-/** Para las secciones cuyo módulo todavía no existe (campañas, mascotas perdidas). */
-export function PastillaProximamente({ fondo, tinta }: { fondo: string; tinta: string }) {
-  return (
-    <View
-      className="flex-row items-center gap-1.5 self-start rounded-full px-3 py-1.5"
-      style={{ backgroundColor: fondo }}
-    >
-      <Ionicons name="time-outline" size={13} color={tinta} />
-      <Text className="font-cuerpo-bold text-[12px]" style={{ color: tinta }}>
-        Muy pronto
-      </Text>
-    </View>
-  );
-}
-
 /**
  * Lo que muestra una sección cuando su pedido falló y no hay datos anteriores. Chico a
  * propósito: el resto de Inicio sigue funcionando y no tiene sentido tapar la pantalla.

@@ -3,7 +3,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { Mail, MapPin, MessageCircle } from "lucide-react";
 import { FOTO_EQUIPO_FONDO } from "@/components/landing/fotos";
-import { EQUIPO, SiteFooter } from "@/components/landing/SiteFooter";
+import { EMAIL_CONTACTO, EQUIPO, SiteFooter } from "@/components/landing/SiteFooter";
 import { SiteHeader } from "@/components/landing/SiteHeader";
 
 export const metadata: Metadata = { title: "PetHood — Equipo y contacto" };
@@ -20,7 +20,7 @@ const LinkedIn = () => (
 
 // Contenido mockeado: los href son de relleno hasta tener las cuentas reales.
 const CONTACTOS: { icono: ReactNode; titulo: string; detalle: string; href: string }[] = [
-  { icono: <Mail />, titulo: "Email", detalle: "contacto@pethood.example", href: "mailto:contacto@pethood.example" },
+  { icono: <Mail />, titulo: "Email", detalle: EMAIL_CONTACTO, href: `mailto:${EMAIL_CONTACTO}` },
   { icono: <MessageCircle />, titulo: "WhatsApp", detalle: "+54 261 000 0000", href: "#" },
   { icono: <Instagram />, titulo: "Instagram", detalle: "@pethood.ar", href: "#" },
   { icono: <LinkedIn />, titulo: "LinkedIn", detalle: "PetHood", href: "#" },
@@ -35,7 +35,7 @@ const VALORES = [
 
 const FOTOS: Record<string, string> = {
   "Agustín Leyes": "Agustin-leyes.jpeg",
-  "Camila Fabián": "Camila-Fabian.jpeg",
+  "Camila Fabián": "Camila-Fabian.jpg",
   "Juan Ignacio Castro": "Juan-Ignacio-Castro.jpeg",
   "Matías Hansen": "Matias-Hansen.jpeg",
   "Nicolás Correa": "Nicolas-Correa.png",

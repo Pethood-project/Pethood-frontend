@@ -7,10 +7,10 @@
  * interruptor de Perfil (`vistaRefugio`), no de esta pantalla.
  *
  * Cada sección trae sus propios datos y falla por separado (ver `useDatosInicio`).
- * Campañas todavía no tiene módulo: ver `SeccionesProximamente.tsx`. Mascotas perdidas lleva
- * al portal (GUI-06) desde `PerdidasInicio.tsx`.
+ * Campañas lleva al portal (GUI-13) o a «Mis Campañas» (GUI-36) desde `CampaniasInicio.tsx`, y
+ * Mascotas perdidas al portal (GUI-06) desde `PerdidasInicio.tsx`.
  */
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import type { ReactNode } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,13 +22,15 @@ import {
 } from '@/components/home/PanelSolicitudesRefugio';
 import { PublicacionesInicio } from '@/components/home/PublicacionesInicio';
 import { PerdidasAdoptante, PerdidasRefugio } from '@/components/home/PerdidasInicio';
-import { CampaniasAdoptante } from '@/components/home/SeccionesProximamente';
+import { CampaniasAdoptante } from '@/components/home/CampaniasInicio';
 import { TarjetaAdoptar } from '@/components/home/TarjetaAdoptar';
 import { TarjetasAdoptante } from '@/components/home/TarjetasAdoptante';
 import { TarjetasRefugio } from '@/components/home/TarjetasRefugio';
 import { BotonCircular } from '@/components/ui/BotonCircular';
+import { TituloPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { useDatosInicio } from '@/hooks/useDatosInicio';
+import { useNotificaciones } from '@/hooks/useNotificaciones';
 import { useSesion } from '@/hooks/useSesion';
 import { saludoPara } from '@/lib/saludo';
 import { listarFavoritos } from '@/services/favoritos';
@@ -127,7 +129,7 @@ function InicioAdoptante({ subtitulo }: { subtitulo: string }) {
         errorSeguimientos={secciones.seguimientos.error}
       />
       <PerdidasAdoptante onPress={() => router.push('/perdidos')} />
-      <CampaniasAdoptante />
+      <CampaniasAdoptante onPress={() => router.push('/campanias' as Href)} />
     </PantallaInicio>
   );
 }
@@ -212,12 +214,13 @@ function PantallaInicio({
  * grande y en semi: identifica la cuenta en vez de saludar.
  */
 function Encabezado({ subtitulo, destacado = false }: { subtitulo: string; destacado?: boolean }) {
+  const router = useRouter();
+  const { noLeidas } = useNotificaciones();
+
   return (
     <View className="flex-row items-start justify-between gap-3 px-[22px] pb-2 pt-2">
       <View className="min-w-0 flex-1">
-        <Text className="font-titulo text-[27px] leading-[27px] text-organic-accent-600">
-          PetHood
-        </Text>
+        <TituloPantalla>PetHood</TituloPantalla>
         <Text
           numberOfLines={1}
           className={`mt-[5px] text-organic-neutral-700 ${
@@ -228,11 +231,12 @@ function Encabezado({ subtitulo, destacado = false }: { subtitulo: string; desta
         </Text>
       </View>
 
-      {/* Todavía no hay pantalla de notificaciones: se ve, pero no navega. Es del
-          Módulo 4, y de ahí cuelga el pendiente de HU-9.3 (entrar a una actualización
-          de seguimiento desde su notificación): ver "Pendientes por dependencias de
-          otros módulos" en el README. */}
-      <BotonCircular icono="notifications-outline" etiqueta="Notificaciones" />
+      <BotonCircular
+        icono="notifications-outline"
+        etiqueta="Notificaciones"
+        contador={noLeidas}
+        onPress={() => router.push('/notificaciones')}
+      />
     </View>
   );
 }

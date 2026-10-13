@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantalla';
 import { ResumenReputacion } from '@/components/resenas/ResumenReputacion';
 import { Avatar } from '@/components/ui/Avatar';
+import { BotonVolver } from '@/components/ui/BotonVolver';
 import { PALETA } from '@/constants/theme';
 import { resumenMascota } from '@/constants/Mascotas';
 import { useSesion } from '@/hooks/useSesion';
@@ -191,15 +192,9 @@ export function PerfilPublico({ tipo, id }: PerfilPublicoProps) {
   const volver = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)'));
 
   const barra = (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Volver"
-      onPress={volver}
-      hitSlop={12}
-      className="mx-4 mt-2 h-10 w-10 items-center justify-center rounded-full bg-white/90 active:opacity-70"
-    >
-      <Ionicons name="arrow-back" size={20} color={PALETA.grisCalido[900]} />
-    </Pressable>
+    <View className="px-[22px] pt-2">
+      <BotonVolver onPress={volver} />
+    </View>
   );
 
   if (error || !perfil) {

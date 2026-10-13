@@ -4,14 +4,18 @@
  * Como en el diseño, muestra lo justo para reconocer al animal: foto con el estado encima,
  * nombre y "especie · hace cuánto". La descripción, el lugar y el botón para escribirle a
  * quien lo publicó van en el popup de detalle (pantalla 6b), que se abre al tocarla.
+ *
+ * En un aviso resuelto, debajo del subtítulo va "Volvió con su dueño" (HU-13.2): el badge de
+ * la foto dice el estado y esta línea dice qué pasó, que es lo que pide la HU.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { Image, Pressable, Text, View } from 'react-native';
 
 import { EstadoAnimalPerdidoBadge } from '@/components/ui/EstadoAnimalPerdidoBadge';
+import { LEYENDA_RESUELTO } from '@/constants/EstadosAnimalPerdido';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
-import type { AvisoPerdido } from '@/services/animalesPerdidos';
+import { estaResuelto, type AvisoPerdido } from '@/services/animalesPerdidos';
 import { antiguedadEnDias } from '@/shared/validation/dates';
 
 /** "Perro · Ayer". Los avisos anteriores a HU-13.1 pueden no tener especie. */
@@ -57,6 +61,18 @@ export function TarjetaAviso({ aviso, onPress }: TarjetaAvisoProps) {
         <Text numberOfLines={1} className="mt-0.5 font-cuerpo text-[13px] text-organic-neutral-600">
           {subtituloAviso(aviso)}
         </Text>
+
+        {estaResuelto(aviso) ? (
+          <View className="mt-1.5 flex-row items-center gap-1">
+            <Ionicons name="heart-circle" size={14} color={PALETA.accent[600]} />
+            <Text
+              numberOfLines={1}
+              className="min-w-0 flex-1 font-cuerpo-bold text-[12px] text-organic-accent-700"
+            >
+              {LEYENDA_RESUELTO}
+            </Text>
+          </View>
+        ) : null}
       </View>
     </Pressable>
   );

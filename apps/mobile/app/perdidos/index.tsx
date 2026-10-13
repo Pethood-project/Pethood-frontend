@@ -27,22 +27,26 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
+import { useToast } from '@/components/feedback/Toast';
 import { DetalleAvisoModal } from '@/components/perdidos/DetalleAvisoModal';
 import { FiltrosPerdidosModal } from '@/components/perdidos/FiltrosPerdidosModal';
 import { TarjetaAviso } from '@/components/perdidos/TarjetaAviso';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { BotonFlotante } from '@/components/ui/BotonFlotante';
 import { PALETA } from '@/constants/theme';
+import { useGestionAviso } from '@/hooks/useGestionAviso';
 import { usePaginacionCursor } from '@/hooks/usePaginacionCursor';
-import { tomarAvisoCreado } from '@/lib/avisoRecienCreado';
+import { tomarAvisoCreado, tomarAvisoEditado } from '@/lib/avisoRecienCreado';
 import { coordenadasRecordadas, pedirUbicacion, type Coordenadas } from '@/lib/ubicacion';
 import {
   contarFiltrosActivosPerdidos,
   listarAvisos,
+  reclamarAviso,
   SIN_FILTROS_PERDIDOS,
   type AvisoPerdido,
   type FiltrosPerdidos,
 } from '@/services/animalesPerdidos';
+import { ApiError } from '@/services/api';
 
 const SIN_CONEXION =
   'No pudimos cargar las publicaciones. Revisá tu conexión e intentalo de nuevo.';
@@ -171,6 +175,7 @@ function PieLista({ cargandoMas, errorMas, onReintentar }: PieListaProps) {
 
 export default function MascotasPerdidasScreen() {
   const router = useRouter();
+  const toast = useToast();
   const [seleccionado, setSeleccionado] = useState<AvisoPerdido | null>(null);
   const [filtros, setFiltros] = useState<FiltrosPerdidos>(SIN_FILTROS_PERDIDOS);
   const [modalFiltros, setModalFiltros] = useState(false);
@@ -201,7 +206,7 @@ export default function MascotasPerdidasScreen() {
 
   // Al volver del alta (GUI-25), el aviso recién publicado va arriba sin recargar la grilla.
   // Con filtros aplicados puede no cumplirlos: ahí se recarga y aparece sólo si corresponde.
-  const { agregarAlPrincipio, refrescar } = lista;
+  const { agregarAlPrincipio, refrescar, reemplazar } = lista;
 
   /** La ubicación llegó con la grilla ya cargada: hay que volver a pedirla con distancias. */
   const [ubicacionNueva, setUbicacionNueva] = useState(false);
@@ -226,6 +231,14 @@ export default function MascotasPerdidasScreen() {
     refrescar();
   }, [ubicacionNueva, refrescar]);
 
+  // Al volver de editar un aviso propio, se reemplaza en su lugar.
+  useFocusEffect(
+    useCallback(() => {
+      const editado = tomarAvisoEditado();
+      if (editado) reemplazar(editado);
+    }, [reemplazar]),
+  );
+
   useFocusEffect(
     useCallback(() => {
       const creado = tomarAvisoCreado();
@@ -243,6 +256,55 @@ export default function MascotasPerdidasScreen() {
     setFiltros({ ...nuevos });
   }, []);
 
+  /**
+   * HU-13.2: reclamar el aviso y entrar a la conversación con quien lo publicó.
+   *
+   * Cierra el popup antes de navegar: si quedara abierto, al volver del chat el usuario se
+   * encontraría el detalle encima de la grilla sin haberlo pedido.
+   *
+   * El backend resuelve a qué sala entrar: si ya había una con esa persona, es ésa. Tocar el
+   * botón dos veces no abre dos conversaciones ni repite la tarjeta.
+   */
+  const reclamar = useCallback(
+    async (aviso: AvisoPerdido): Promise<void> => {
+      try {
+        const { chatId } = await reclamarAviso(aviso.id);
+        setSeleccionado(null);
+        router.push(`/chats/${chatId}`);
+      } catch (err) {
+        // El backend manda el mensaje en voseo, listo para mostrar: los casos que puede
+        // devolver son el aviso ya resuelto o la cuenta del reportante dada de baja.
+        toast.mostrarError(
+          err instanceof ApiError ? err.message : 'No pudimos abrir la conversación. Probá de nuevo.',
+        );
+      }
+    },
+    [router, toast],
+  );
+
+  /**
+   * Lo que hace quien publicó el aviso desde su popup (HU-13.2 y HU-13.3).
+   *
+   * Resuelto, el aviso se reemplaza en el listado **sin moverlo de lugar** y sin refetch; el
+   * popup se queda abierto mostrando "Volvió con su dueño", que es la confirmación de que la
+   * acción surtió efecto. Eliminado, se cierra el popup y se recarga la grilla. Para editar se
+   * cierra el popup antes de navegar, y al volver el aviso editado se reemplaza (ver el foco).
+   */
+  const gestion = useGestionAviso({
+    onActualizado: useCallback(
+      (actualizado: AvisoPerdido) => {
+        reemplazar(actualizado);
+        setSeleccionado(actualizado);
+      },
+      [reemplazar],
+    ),
+    onEliminado: useCallback(() => {
+      setSeleccionado(null);
+      refrescar();
+    }, [refrescar]),
+    onAntesDeEditar: useCallback(() => setSeleccionado(null), []),
+  });
+
   // Se entra desde las dos vistas de Inicio: `back()` vuelve al origen real. El fallback
   // cubre el caso sin historial (deep link directo).
   const volver = useCallback((): void => {
@@ -256,16 +318,9 @@ export default function MascotasPerdidasScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="gap-3 border-b border-organic-neutral-300 bg-organic-surface px-[22px] pb-4 pt-2">
-          <View className="flex-row items-center gap-3">
-            <BotonCircular icono="arrow-back" etiqueta="Volver" onPress={volver} grande />
-            <Text className="font-titulo text-[28px] leading-[32px] text-organic-accent-600">
-              Mascotas Perdidas
-            </Text>
-          </View>
-
+        <EncabezadoPantalla barra titulo="Mascotas Perdidas" onVolver={volver}>
           <PastillaFiltros activos={filtrosActivos} onPress={() => setModalFiltros(true)} />
-        </View>
+        </EncabezadoPantalla>
 
         {lista.cargando ? (
           <EstadoCargando />
@@ -325,7 +380,14 @@ export default function MascotasPerdidasScreen() {
         />
       </SafeAreaView>
 
-      <DetalleAvisoModal aviso={seleccionado} onCerrar={() => setSeleccionado(null)} />
+      <DetalleAvisoModal
+        aviso={seleccionado}
+        onCerrar={() => setSeleccionado(null)}
+        onReclamar={reclamar}
+        onResolver={gestion.resolver}
+        onEditar={gestion.editar}
+        onEliminar={gestion.eliminar}
+      />
 
       <FiltrosPerdidosModal
         visible={modalFiltros}

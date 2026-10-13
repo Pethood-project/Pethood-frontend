@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BadgeCheck, Eye, RotateCcw, ShieldOff, UserCog, UserX } from "lucide-react";
+import { BadgeCheck, BadgeX, Eye, RotateCcw, ShieldOff, UserCog, UserX } from "lucide-react";
 import { Feedback } from "@/components/ui/Feedback";
 import { EstadoBadge } from "@/components/ui/EstadoBadge";
 import { RolBadge } from "@/components/ui/RolBadge";
@@ -12,6 +12,7 @@ import {
   bajaUsuario,
   gestionarRoles,
   reactivarUsuario,
+  revocarVerificacionUsuario,
   suspenderUsuario,
 } from "@/services/admin-usuarios";
 import { ApiError } from "@/services/api";
@@ -35,6 +36,7 @@ export function UsuariosTabla({
   const [exito, setExito] = useState<string | null>(null);
   const [modalSuspender, setModalSuspender] = useState<UsuarioAdmin | null>(null);
   const [modalBaja, setModalBaja] = useState<UsuarioAdmin | null>(null);
+  const [modalRevocar, setModalRevocar] = useState<UsuarioAdmin | null>(null);
   const [modalRoles, setModalRoles] = useState<UsuarioAdmin | null>(null);
   const [detalle, setDetalle] = useState<number | null>(null);
   const [verificando, setVerificando] = useState<number | null>(null);
@@ -188,6 +190,11 @@ export function UsuariosTabla({
                           Verificar
                         </AccionButton>
                       )}
+                      {!esAdmin && usuario.verificado && usuario.estado === "Activo" && (
+                        <AccionButton icono={BadgeX} tono="peligro" onClick={() => setModalRevocar(usuario)}>
+                          Revocar verificación
+                        </AccionButton>
+                      )}
                       {!esAdmin && usuario.estado === "Activo" && (
                         <AccionButton icono={ShieldOff} tono="peligro" onClick={() => setModalSuspender(usuario)}>
                           Suspender
@@ -255,6 +262,21 @@ export function UsuariosTabla({
               () => suspenderUsuario(modalSuspender.id, motivo, token),
               "Usuario suspendido correctamente.",
             ).then(() => setModalSuspender(null))
+          }
+        />
+      )}
+
+      {modalRevocar && (
+        <MotivoModal
+          titulo={`Revocar la verificación de ${modalRevocar.nombre} ${modalRevocar.apellido}`}
+          descripcion="Pasa a Pendiente de verificación y tiene que subir de nuevo el DNI y la selfie. Los archivos anteriores quedan guardados y registrados en auditoría."
+          onCerrar={() => setModalRevocar(null)}
+          onConfirmar={(motivo) =>
+            ejecutar(
+              modalRevocar.id,
+              () => revocarVerificacionUsuario(modalRevocar.id, motivo, token),
+              "Verificación revocada correctamente.",
+            ).then(() => setModalRevocar(null))
           }
         />
       )}

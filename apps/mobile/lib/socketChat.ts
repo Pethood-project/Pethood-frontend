@@ -23,11 +23,17 @@ export const EVENTOS = {
   UNIRSE: 'chat:unirse',
   SALIR: 'chat:salir',
   MENSAJE_NUEVO: 'chat:mensaje-nuevo',
+  /** server → sala personal. El autor eliminó un mensaje: la burbuja pasa a ser el aviso. */
+  MENSAJE_ELIMINADO: 'chat:mensaje-eliminado',
   LEIDO: 'chat:leido',
   ENTREGADO: 'chat:entregado',
   NO_LEIDOS: 'chat:no-leidos',
   PRESENCIA: 'chat:presencia',
   ERROR: 'chat:error',
+  /** server → sala personal. Notificación nueva de la bandeja (spec 004). */
+  NOTIFICACION_NUEVA: 'notificacion:nueva',
+  /** server → sala personal. Contador de no leídas, recalculado por el server. */
+  NOTIFICACION_CONTADOR: 'notificacion:contador',
 } as const;
 
 /** Respuesta de los eventos que el cliente emite. El error tiene la forma de la API REST. */
@@ -50,6 +56,12 @@ export interface EventoAcuse {
   hasta: string;
 }
 
+/** `chat:mensaje-eliminado`: con el id alcanza para cambiar la burbuja, sin refetch. */
+export interface EventoMensajeEliminado {
+  chatId: number;
+  mensajeId: number;
+}
+
 export interface EventoNoLeidos {
   chatId: number;
   noLeidos: number;
@@ -63,6 +75,21 @@ export interface EventoPresencia {
 
 export interface EventoError {
   error: { codigo: string; mensaje: string };
+}
+
+/** Mismo shape que `NotificacionItem` de `services/notificaciones.ts`. */
+export interface EventoNotificacionNueva {
+  id: number;
+  tipo: string;
+  mensaje: string;
+  leido: boolean;
+  entidadTipo: string | null;
+  entidadId: number | null;
+  fechaAlta: string;
+}
+
+export interface EventoNotificacionContador {
+  contador: number;
 }
 
 let socket: Socket | null = null;

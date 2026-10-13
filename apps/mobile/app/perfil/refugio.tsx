@@ -27,7 +27,8 @@ import {
 } from '@/components/CustomButton';
 import { useToast } from '@/components/feedback/Toast';
 import { AvisoVerificacionUbicacion } from '@/components/perfil/AvisoVerificacionUbicacion';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
+import { TarjetaMercadoPago } from '@/components/perfil/TarjetaMercadoPago';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
@@ -341,12 +342,7 @@ export default function DatosRefugioScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-[19px] py-[13px]">
-          <BotonCircular icono="arrow-back" etiqueta="Volver" variante="neutro" onPress={volver} />
-          <Text className="font-titulo text-[22px] leading-[26px] text-organic-accent-600">
-            Datos del refugio
-          </Text>
-        </View>
+        <EncabezadoPantalla barra titulo="Datos del refugio" onVolver={volver} />
 
         {cargando ? (
           <View className="flex-1 items-center justify-center">
@@ -500,6 +496,9 @@ export default function DatosRefugioScreen() {
             {formError ? (
               <Text className="mt-3 text-center text-sm text-red-500">{formError}</Text>
             ) : null}
+
+            {/* Conexión con Mercado Pago para confirmar donaciones solas (spec 027). */}
+            <TarjetaMercadoPago />
 
             {hayCambios ? (
               <View className="mt-6 flex-row gap-3">

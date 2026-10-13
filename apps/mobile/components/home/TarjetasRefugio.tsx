@@ -1,9 +1,9 @@
 /**
- * Las dos tarjetas chicas de Inicio del refugio, lado a lado: "Mis campañas" (todavía sin
- * módulo, ver `SeccionesProximamente.tsx`) y "Seguimientos" (las mascotas que entregó y
+ * Las dos tarjetas chicas de Inicio del refugio, lado a lado: "Mis campañas" (lleva a GUI-36,
+ * ver `CampaniasInicio.tsx`) y "Seguimientos" (las mascotas que entregó y
  * siguen en seguimiento post-adopción o tránsito).
  */
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 
 import { Avatar } from '@/components/ui/Avatar';
@@ -13,7 +13,7 @@ import { urlAbsoluta } from '@/services/api';
 import type { SolicitudEnSeguimiento } from '@/services/seguimiento';
 
 import { AvisoSeccionFallida } from './PiezasInicio';
-import { CampaniasRefugio } from './SeccionesProximamente';
+import { CampaniasRefugio } from './CampaniasInicio';
 
 const ALTO_MINIMO = 184;
 
@@ -23,9 +23,14 @@ interface TarjetasRefugioProps {
 }
 
 export function TarjetasRefugio({ seguimientos, errorSeguimientos }: TarjetasRefugioProps) {
+  const router = useRouter();
+
   return (
     <View className="flex-row gap-3">
-      <CampaniasRefugio altoMinimo={ALTO_MINIMO} />
+      <CampaniasRefugio
+        altoMinimo={ALTO_MINIMO}
+        onPress={() => router.push('/campanias/refugio' as Href)}
+      />
       <TarjetaSeguimientos seguimientos={seguimientos} error={errorSeguimientos} />
     </View>
   );

@@ -82,13 +82,18 @@ export function validarPasswordIngreso(valor: string): string | null {
   return valor ? null : OBLIGATORIO;
 }
 
-/** Registro: mínimo 8, una mayúscula y un número (hint de la landing). */
+/** Registro: mínimo 8, con mayúscula, minúscula, número y símbolo (espeja el backend). */
 export function validarPasswordNueva(valor: string): string | null {
   if (!valor) return OBLIGATORIO;
-  if (valor.length < LIMITES.password.min || !/[A-ZÁÉÍÓÚÑ]/.test(valor) || !/\d/.test(valor)) {
-    return "La contraseña debe tener al menos 8 caracteres, con una mayúscula y un número.";
-  }
-  return null;
+  const cumple =
+    valor.length >= LIMITES.password.min &&
+    /[A-ZÁÉÍÓÚÜÑ]/.test(valor) &&
+    /[a-záéíóúüñ]/.test(valor) &&
+    /\d/.test(valor) &&
+    /[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\d\s]/.test(valor);
+  return cumple
+    ? null
+    : "La contraseña debe tener al menos 8 caracteres, con una mayúscula, una minúscula, un número y un símbolo.";
 }
 
 export function validarConfirmacion(password: string, confirmacion: string): string | null {

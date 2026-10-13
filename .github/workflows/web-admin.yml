@@ -1,0 +1,43 @@
+name: Web-admin — deploy Vercel
+
+# Vercel Hobby no puede conectar repos de una organización de GitHub, así que el deploy
+# automático va por la CLI: build en el runner y se sube el resultado ya armado (--prebuilt).
+# Secrets del repo: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID (los IDs salen de
+# apps/web-admin/.vercel/project.json después de `vercel link`).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web-admin/**'
+      - '.github/workflows/web-admin.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Web-admin — producción
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web-admin
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Trae la config del proyecto y las variables de Production (NEXT_PUBLIC_API_URL).
+      - name: Traer config de Vercel
+        run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}

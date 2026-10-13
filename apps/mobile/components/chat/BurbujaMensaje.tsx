@@ -18,12 +18,31 @@
  * No sabe de dónde salió el mensaje: recibe un `ItemChat` ya armado, así que un mensaje del
  * historial, uno que llegó por socket y uno que todavía está subiendo se pintan con el
  * mismo componente.
+ *
+ * Tres gestos, todos sobre mensajes ya enviados:
+ * - **Deslizar a la derecha** responde (`DeslizarParaResponder`): arriba de la barra queda la
+ *   cita, y la respuesta la lleva adentro de su burbuja.
+ * - **Mantener apretado** uno propio —texto, foto o video— pide eliminarlo; uno recibido abre
+ *   el reporte. El diálogo de confirmación lo monta la pantalla.
+ * - **Tocar la cita** lleva al mensaje citado.
+ *
+ * Un mensaje eliminado se pinta como el aviso "Se eliminó este mensaje", en su lado y con su
+ * hora, y no admite ninguno de los tres.
+ *
+ * Las tarjetas también pasan por acá: las de PetHood (solicitud, aviso) a todo el ancho y sin
+ * lado, y las que manda una persona (mascota compartida, ubicación del refugio) de su lado,
+ * con su hora y sus tildes.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, Text, View, useWindowDimensions } from 'react-native';
 
+import { CitaMensaje } from '@/components/chat/CitaMensaje';
+import { DeslizarParaResponder } from '@/components/chat/DeslizarParaResponder';
 import { GrillaAdjuntosMensaje } from '@/components/chat/GrillaAdjuntosMensaje';
+import { TarjetaAvisoChat } from '@/components/chat/TarjetaAvisoChat';
+import { TarjetaMascotaChat } from '@/components/chat/TarjetaMascotaChat';
 import { TarjetaSolicitudChat } from '@/components/chat/TarjetaSolicitudChat';
+import { TarjetaUbicacionChat } from '@/components/chat/TarjetaUbicacionChat';
 import { entregaDe, TicksMensaje } from '@/components/chat/TicksMensaje';
 import { PALETA } from '@/constants/theme';
 import type { ItemChat } from '@/lib/mensajesChat';
@@ -33,6 +52,9 @@ import { horaVisible } from '@/shared/validation/dates';
 const RADIO_SUPERIOR = 23;
 const RADIO_INFERIOR = 20;
 const RADIO_COLA = 5;
+
+/** El mismo tope que el `max-w-[80%]` de la burbuja: el ancho de una burbuja con cita. */
+const ANCHO_MAXIMO_BURBUJA = '80%';
 
 /** Padding interno de la burbuja: 8/11 del artboard. */
 const RELLENO = { paddingHorizontal: 15, paddingVertical: 11 };
@@ -77,8 +99,64 @@ interface BurbujaMensajeProps {
   onAbrirImagen?: (indice: number) => void;
   /** Navega al detalle de la solicitud embebida. Sólo en los mensajes de sistema. */
   onVerSolicitud?: () => void;
+  /** Navega al aviso de mascota perdida de la tarjeta (HU-13.2). */
+  onVerAviso?: () => void;
+  /** Lleva a la publicación de la mascota compartida (tarjeta `MASCOTA`). */
+  onVerMascota?: () => void;
   /** Mantener apretada una burbuja recibida: abre el reporte del mensaje. */
   onReportar?: () => void;
+  /** Mantener apretada una propia (texto, foto o video): pide confirmar la eliminación. */
+  onEliminar?: () => void;
+  /** Deslizar a la derecha: responder este mensaje. Sin esto no se puede deslizar. */
+  onResponder?: () => void;
+  /** Tocar la cita: ir al mensaje citado. */
+  onIrACita?: (mensajeId: number) => void;
+  /** Nombre del contacto, para la cita de un mensaje suyo ("Vos" si es propio). */
+  nombreContacto: string;
+  /** Destello breve al llegar desde una cita, para que se vea cuál era. */
+  resaltado?: boolean;
+}
+
+/**
+ * El aviso que reemplaza a un mensaje eliminado. Va en el lado del autor y con su hora, como
+ * en WhatsApp, pero sin tildes: no hay nada que acusar de algo que ya no está.
+ */
+function AvisoEliminado({ item }: { item: ItemChat }) {
+  const propia = item.esMio;
+
+  return (
+    <View
+      style={{
+        ...(propia ? RADIOS_PROPIA : RADIOS_RECIBIDA),
+        ...RELLENO,
+        ...(propia ? null : SOMBRA),
+      }}
+      className={`max-w-[80%] ${propia ? 'bg-organic-accent-600' : 'bg-organic-neutral-100'}`}
+    >
+      <View className="flex-row items-center gap-1.5">
+        <Ionicons
+          name="ban-outline"
+          size={15}
+          color={propia ? PALETA.blanco : PALETA.neutral[500]}
+        />
+        <Text
+          className={`font-cuerpo text-[15px] italic ${
+            propia ? 'text-white/85' : 'text-organic-neutral-500'
+          }`}
+        >
+          {propia ? 'Eliminaste este mensaje' : 'Se eliminó este mensaje'}
+        </Text>
+      </View>
+
+      <Text
+        className={`mt-1 font-cuerpo text-[11px] ${
+          propia ? 'text-right text-white/80' : 'text-organic-neutral-500'
+        }`}
+      >
+        {item.fecha ? horaVisible(new Date(item.fecha)) : ''}
+      </Text>
+    </View>
+  );
 }
 
 /** Hora del mensaje dentro de la burbuja, o el estado mientras no hay fecha del servidor. */
@@ -163,7 +241,14 @@ export function BurbujaMensaje({
   onDescartar,
   onAbrirImagen,
   onVerSolicitud,
+  onVerAviso,
+  onVerMascota,
   onReportar,
+  onEliminar,
+  onResponder,
+  onIrACita,
+  nombreContacto,
+  resaltado = false,
 }: BurbujaMensajeProps) {
   const { width: anchoPantalla } = useWindowDimensions();
 
@@ -178,72 +263,185 @@ export function BurbujaMensaje({
     ) : null;
   }
 
+  // HU-13.2: el aviso reclamado, con el mismo tratamiento que la solicitud. Sin `aviso` no
+  // se pinta nada: es un mensaje de sistema sin su carga, y una burbuja vacía sería peor.
+  if (item.tipo === 'ANIMAL_PERDIDO') {
+    return item.aviso ? (
+      <TarjetaAvisoChat aviso={item.aviso} fecha={item.fecha} onVerAviso={onVerAviso} />
+    ) : null;
+  }
+
   const propia = item.esMio;
+
+  if (item.eliminado) {
+    return (
+      <View className={`w-full ${propia ? 'items-end' : 'items-start'}`}>
+        <AvisoEliminado item={item} />
+      </View>
+    );
+  }
+
+  // Las tarjetas que manda una persona (una mascota compartida, la ubicación del refugio): van
+  // de su lado, al ancho de una burbuja con cita, y con la hora y los tildes debajo como la
+  // foto suelta. No se deslizan ni se reportan; mantener apretada la propia la elimina.
+  if (item.tipo === 'MASCOTA' || item.tipo === 'UBICACION_REFUGIO') {
+    const tarjeta =
+      item.tipo === 'MASCOTA' ? (
+        item.mascota ? (
+          <TarjetaMascotaChat mascota={item.mascota} onVerMascota={onVerMascota} />
+        ) : null
+      ) : item.ubicacion ? (
+        <TarjetaUbicacionChat ubicacion={item.ubicacion} />
+      ) : null;
+
+    // Sin su carga es una tarjeta que no se puede dibujar: mejor nada que un recuadro vacío.
+    if (!tarjeta) return null;
+
+    return (
+      <View className={`w-full ${propia ? 'items-end' : 'items-start'}`}>
+        <Pressable
+          onLongPress={propia && item.estado === 'enviado' ? onEliminar : undefined}
+          delayLongPress={400}
+          accessibilityActions={
+            propia && onEliminar ? [{ name: 'longpress', label: 'Eliminar mensaje' }] : undefined
+          }
+          onAccessibilityAction={() => onEliminar?.()}
+          style={{ width: ANCHO_MAXIMO_BURBUJA }}
+        >
+          {tarjeta}
+        </Pressable>
+
+        <View className="mt-1 flex-row items-center gap-[5px]">
+          <Text className="font-cuerpo text-[11px] text-organic-neutral-600">
+            {item.fecha ? horaVisible(new Date(item.fecha)) : ''}
+          </Text>
+          {propia ? <TicksMensaje entrega={entregaDe(item)} fondo="pantalla" /> : null}
+        </View>
+      </View>
+    );
+  }
+
   const hayAdjuntos = item.adjuntos.length > 0;
   const soloFotos = hayAdjuntos && !item.contenido;
   const anchoFotoPropia = Math.floor((anchoPantalla - MARGEN_LISTA) * FRACCION_FOTO_PROPIA);
+  const enviado = item.estado === 'enviado';
+
+  // Mantener apretado: lo propio se elimina, lo ajeno se reporta. Sólo con el mensaje ya en el
+  // servidor: uno en vuelo o fallido tiene sus propias acciones (Reintentar / Descartar).
+  const alMantener = enviado ? (propia ? onEliminar : onReportar) : undefined;
+  const etiquetaMantener = propia ? 'Eliminar mensaje' : 'Reportar mensaje';
+
+  // Las mismas acciones para quien usa lector de pantalla, que no puede deslizar ni mantener.
+  const accionesAccesibles = [
+    ...(alMantener ? [{ name: 'longpress', label: etiquetaMantener }] : []),
+    ...(enviado && onResponder ? [{ name: 'responder', label: 'Responder' }] : []),
+  ];
+
+  const alAccionAccesible = (nombre: string): void => {
+    if (nombre === 'longpress') alMantener?.();
+    if (nombre === 'responder') onResponder?.();
+  };
+
+  const cita = item.respondeA ? (
+    <CitaMensaje
+      cita={item.respondeA}
+      autor={item.respondeA.esMia ? 'Vos' : nombreContacto}
+      fondo={propia ? 'propia' : 'neutra'}
+      onPress={onIrACita ? () => onIrACita(item.respondeA!.id) : undefined}
+    />
+  ) : null;
 
   return (
-    <View className={`w-full ${propia ? 'items-end' : 'items-start'}`}>
-      {hayAdjuntos ? (
-        <GrillaAdjuntosMensaje
-          adjuntos={item.adjuntos}
-          lado={LADO_MINIATURA}
-          anchoUnica={propia ? anchoFotoPropia : LADO_MINIATURA}
-          altoUnica={propia ? ALTO_FOTO_PROPIA : LADO_MINIATURA}
-          subiendo={item.estado === 'enviando'}
-          onAbrir={onAbrirImagen}
-        />
-      ) : null}
-
-      {/* Un mensaje de sólo fotos no tiene burbuja: las propias llevan su pie debajo y las
-          recibidas van peladas, como en el artboard 37. */}
-      {soloFotos ? (
-        propia ? (
-          <View style={{ width: anchoFotoPropia }}>
-            <PieFotoPropia item={item} />
+    <DeslizarParaResponder onResponder={enviado ? onResponder : undefined}>
+      <View
+        className={`w-full rounded-[20px] ${propia ? 'items-end' : 'items-start'} ${
+          resaltado ? 'bg-organic-accent-200' : ''
+        }`}
+      >
+        {/* Un mensaje de sólo fotos no tiene burbuja: la cita va en una propia, encima de la
+            grilla, del color del lado que corresponde. */}
+        {soloFotos && cita ? (
+          <View
+            style={{
+              ...(propia ? RADIOS_PROPIA : RADIOS_RECIBIDA),
+              padding: 5,
+              width: propia ? anchoFotoPropia : LADO_MINIATURA * 2,
+            }}
+            className={`mb-[5px] ${propia ? 'bg-organic-accent-600' : 'bg-organic-neutral-100'}`}
+          >
+            {cita}
           </View>
-        ) : null
-      ) : (
-        <Pressable
-          onLongPress={!propia && item.estado === 'enviado' ? onReportar : undefined}
-          delayLongPress={400}
-          accessibilityActions={onReportar && !propia ? [{ name: 'longpress', label: 'Reportar mensaje' }] : undefined}
-          onAccessibilityAction={onReportar ? () => onReportar() : undefined}
-          style={{
-            ...(propia ? RADIOS_PROPIA : RADIOS_RECIBIDA),
-            ...RELLENO,
-            ...(propia ? null : SOMBRA),
-          }}
-          className={`max-w-[80%] ${hayAdjuntos ? 'mt-[5px]' : ''} ${
-            propia ? 'bg-organic-accent-600' : 'bg-organic-neutral-100'
-          }`}
-        >
-          <Text
-            className={`font-cuerpo text-[16px] leading-[22px] ${
-              propia ? 'text-white' : 'text-organic-neutral-900'
+        ) : null}
+
+        {hayAdjuntos ? (
+          <GrillaAdjuntosMensaje
+            adjuntos={item.adjuntos}
+            lado={LADO_MINIATURA}
+            anchoUnica={propia ? anchoFotoPropia : LADO_MINIATURA}
+            altoUnica={propia ? ALTO_FOTO_PROPIA : LADO_MINIATURA}
+            subiendo={item.estado === 'enviando'}
+            onAbrir={onAbrirImagen}
+            onMantener={alMantener}
+          />
+        ) : null}
+
+        {/* Un mensaje de sólo fotos no tiene burbuja: las propias llevan su pie debajo y las
+            recibidas van peladas, como en el artboard 37. */}
+        {soloFotos ? (
+          propia ? (
+            <View style={{ width: anchoFotoPropia }}>
+              <PieFotoPropia item={item} />
+            </View>
+          ) : null
+        ) : (
+          <Pressable
+            onLongPress={alMantener}
+            delayLongPress={400}
+            accessibilityActions={accionesAccesibles.length > 0 ? accionesAccesibles : undefined}
+            onAccessibilityAction={(evento) => alAccionAccesible(evento.nativeEvent.actionName)}
+            style={{
+              ...(propia ? RADIOS_PROPIA : RADIOS_RECIBIDA),
+              ...RELLENO,
+              ...(propia ? null : SOMBRA),
+              // Con cita, la burbuja va siempre al ancho máximo: si se achicara al largo de la
+              // respuesta ("Ok"), la cita quedaría cortada e ilegible. Como en WhatsApp.
+              ...(cita ? { width: ANCHO_MAXIMO_BURBUJA } : null),
+            }}
+            className={`max-w-[80%] ${hayAdjuntos ? 'mt-[5px]' : ''} ${
+              propia ? 'bg-organic-accent-600' : 'bg-organic-neutral-100'
             }`}
           >
-            {item.contenido}
-          </Text>
+            {/* La cita va arriba del texto, dentro de la burbuja, como en WhatsApp. */}
+            {cita ? <View className="mb-1.5">{cita}</View> : null}
 
-          <PieBurbuja item={item} />
-        </Pressable>
-      )}
+            <Text
+              className={`font-cuerpo text-[16px] leading-[22px] ${
+                propia ? 'text-white' : 'text-organic-neutral-900'
+              }`}
+            >
+              {item.contenido}
+            </Text>
 
-      {/* El error no se traga el mensaje: el texto sigue en la burbuja y se puede reintentar
-          sin volver a escribirlo. */}
-      {item.estado === 'error' ? (
-        <View className="mt-1 flex-row justify-end gap-3">
-          <Pressable accessibilityRole="button" onPress={onReintentar} hitSlop={8}>
-            <Text className="font-cuerpo-semi text-[12px] text-organic-accent-600">Reintentar</Text>
+            <PieBurbuja item={item} />
           </Pressable>
+        )}
 
-          <Pressable accessibilityRole="button" onPress={onDescartar} hitSlop={8}>
-            <Text className="font-cuerpo text-[12px] text-organic-neutral-500">Descartar</Text>
-          </Pressable>
-        </View>
-      ) : null}
-    </View>
+        {/* El error no se traga el mensaje: el texto sigue en la burbuja y se puede reintentar
+            sin volver a escribirlo. */}
+        {item.estado === 'error' ? (
+          <View className="mt-1 flex-row justify-end gap-3">
+            <Pressable accessibilityRole="button" onPress={onReintentar} hitSlop={8}>
+              <Text className="font-cuerpo-semi text-[12px] text-organic-accent-600">
+                Reintentar
+              </Text>
+            </Pressable>
+
+            <Pressable accessibilityRole="button" onPress={onDescartar} hitSlop={8}>
+              <Text className="font-cuerpo text-[12px] text-organic-neutral-500">Descartar</Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </View>
+    </DeslizarParaResponder>
   );
 }

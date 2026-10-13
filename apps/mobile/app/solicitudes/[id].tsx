@@ -21,7 +21,7 @@ import { LineaTiempoEstados } from '@/components/solicitudes/LineaTiempoEstados'
 import { ResolverSolicitudModal } from '@/components/solicitudes/ResolverSolicitudModal';
 import { ResumenReputacion } from '@/components/resenas/ResumenReputacion';
 import { Avatar } from '@/components/ui/Avatar';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { EstadoSolicitudBadge } from '@/components/ui/EstadoSolicitudBadge';
 import { FilaDato, TarjetaDatos } from '@/components/ui/FilaDato';
 import { Nota } from '@/components/ui/Nota';
@@ -190,24 +190,11 @@ export default function DetalleSolicitudScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 px-[22px] pb-3.5 pt-2">
-          <BotonCircular
-            icono="arrow-back"
-            etiqueta="Volver"
-            onPress={() => (router.canGoBack() ? router.back() : router.replace('/solicitudes'))}
-          />
-
-          <View>
-            <Text className="font-titulo text-[22px] leading-[22px] text-organic-accent-600">
-              Solicitud
-            </Text>
-            {solicitud?.mascota.nombre ? (
-              <Text className="mt-1 font-cuerpo text-[13px] text-organic-neutral-700">
-                {solicitud.mascota.nombre}
-              </Text>
-            ) : null}
-          </View>
-        </View>
+        <EncabezadoPantalla
+          titulo="Solicitud"
+          subtitulo={solicitud?.mascota.nombre ?? undefined}
+          onVolver={() => (router.canGoBack() ? router.back() : router.replace('/solicitudes'))}
+        />
 
         {cargando ? (
           <EstadoCargando />

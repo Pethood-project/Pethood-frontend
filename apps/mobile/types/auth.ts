@@ -38,8 +38,15 @@ export interface Usuario {
   refugio?: RefugioDeSesion | null;
 }
 
+export interface DocumentosIdentidad {
+  dniImagenUrl: string | null;
+  selfieUrl: string | null;
+}
+
 export interface Perfil extends Usuario {
   telefono: string | null;
+  /** Se carga una sola vez; `null` en cuentas viejas y de Google (spec 027). */
+  dni: string | null;
   provincia: string | null;
   localidad: string | null;
   calleAltura: string | null;
@@ -48,6 +55,10 @@ export interface Perfil extends Usuario {
   longitud: number | null;
   ubicacionVerificada: boolean;
   imagenUrl: string | null;
+  /** Identidad validada por un admin (HU-2.3, spec 002.1). */
+  verificado: boolean;
+  /** DNI y selfie subidos, con URL firmada de corta vida (5–10 min): no cachearla. */
+  documentos: DocumentosIdentidad;
   tienePassword: boolean;
   mascotas: number;
   favoritos: number;
@@ -75,6 +86,8 @@ export interface RegistroPayload {
   password: string;
   fechaNacimiento: string;
   telefono: string;
+  /** Obligatorio (HU-1.1, spec 027): 7 u 8 dígitos. */
+  dni: string;
   /** Dirección opcional; si vienen las tres, el backend geocodifica y guarda coordenadas. */
   provincia?: string;
   localidad?: string;

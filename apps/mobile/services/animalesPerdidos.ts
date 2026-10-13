@@ -1,13 +1,14 @@
 /**
- * Avisos de mascotas perdidas y encontradas (HU-13.1). Contrato completo en
- * `pethood-backend/docs/api-mascotas-perdidas.md`.
+ * Avisos de mascotas perdidas y encontradas: alta y portal (HU-13.1), reclamo y cierre del
+ * caso (HU-13.2), y lo que gestiona quien lo publicó: verlo, editarlo y eliminarlo (HU-13.3).
+ * Contrato completo en `pethood-backend/docs/api-mascotas-perdidas.md`.
  */
 import type { Coordenadas } from '@/lib/ubicacion';
 import { LIMITES } from '@/shared/validation/limits';
 import { aFechaISO } from '@/shared/validation/dates';
 import type { UbicacionPreview } from '@/types/auth';
 
-import { adjuntarArchivo, get, post, postFormData } from './api';
+import { adjuntarArchivo, del, get, post, postFormData, putFormData } from './api';
 
 /** Una tarjeta del portal, igual en el listado que en la respuesta del alta. */
 export interface AvisoPerdido {
@@ -39,6 +40,11 @@ export interface AvisoPerdido {
    * del lugar si no. Nunca apunta a dónde estaba quien reportó.
    */
   mapaUrl: string | null;
+  /**
+   * El pin del lugar (el mismo de `mapaUrl`), o `null` si no se pudo ubicar. Lo usa la
+   * edición para arrancar con el pin que el aviso ya tenía. Nunca es el del teléfono.
+   */
+  lugar: Coordenadas | null;
   estado: { id: number; nombre: string };
   /** `null` sólo en avisos cargados antes de HU-13.1. */
   especie: { id: number; nombre: string } | null;
@@ -50,10 +56,21 @@ export interface AvisoPerdido {
   /** ISO 8601. Define el orden del portal. */
   fechaAlta: string;
   fechaResuelto: string | null;
-  /** Contraparte del chat de reencuentro (HU-13.2, todavía sin implementar). */
+  /** Contraparte del chat de reencuentro (HU-13.2). */
   reportante: { id: number; nombre: string; apellido: string; imagenUrl: string | null };
-  /** Con `true` el aviso es del usuario: no se le ofrece escribirse a sí mismo. */
+  /**
+   * Con `true` el aviso es del usuario. Decide qué botones ofrece el detalle: con `false`,
+   * "Enviar mensaje"; con `true`, "Marcar como resuelto", "Editar" y "Eliminar".
+   */
   esPropio: boolean;
+}
+
+/** Una foto del aviso tal como la espera el formulario: las que ya estaban llevan `remota`. */
+export interface FotoDelAviso {
+  uri: string;
+  nombre: string;
+  tipo: string;
+  remota?: string;
 }
 
 /** Una página del portal, paginado por cursor (estándar de listados de la app). */
@@ -253,4 +270,132 @@ export interface ProvinciaConLocalidades {
  */
 export function listarUbicaciones(): Promise<ProvinciaConLocalidades[]> {
   return get('/animales-perdidos/ubicaciones');
+}
+
+// ─────────────── HU-13.2 · Reclamo y cierre del caso ───────────────
+
+/** El estado que cierra el caso, tal como lo nombra el catálogo del backend. */
+export const ESTADO_RESUELTO = 'Resuelto';
+
+/** Si el aviso ya está cerrado: no se reclama ni se vuelve a resolver. */
+export function estaResuelto(aviso: AvisoPerdido): boolean {
+  return aviso.estado.nombre === ESTADO_RESUELTO;
+}
+
+/** La conversación que devuelve el reclamo. */
+export interface ReclamoAviso {
+  chatId: number;
+  /**
+   * `true` sólo si hubo que **abrir** la conversación. Con `false` ya existía una con esa
+   * persona —por una adopción, o por otro aviso— y el reclamo entró ahí.
+   */
+  nueva: boolean;
+}
+
+/**
+ * Reclama el aviso y devuelve la conversación con quien lo publicó, para navegar a ella.
+ *
+ * Es idempotente del lado del backend (responde 200, no 201): volver a tocar el botón devuelve
+ * la misma conversación y no repite la tarjeta del aviso.
+ */
+export function reclamarAviso(id: number): Promise<ReclamoAviso> {
+  // Sin cuerpo: el endpoint no recibe body.
+  return post(`/animales-perdidos/${id}/reclamo`, {});
+}
+
+/**
+ * Cierra el **caso**: el aviso pasa a "Resuelto" y el portal lo marca con "Volvió con su dueño".
+ *
+ * **No cierra ninguna conversación** — decisión del equipo del 2026-10-01, ver la spec 024 §9.
+ * Las dos personas siguen pudiendo escribirse, que es justamente cuando coordinan la entrega.
+ *
+ * Devuelve la tarjeta ya actualizada para reemplazar el aviso en memoria, sin refetch del portal.
+ */
+export function resolverAviso(id: number): Promise<AvisoPerdido> {
+  return post(`/animales-perdidos/${id}/resuelto`, {});
+}
+
+// ─────────────── HU-13.3 · Lo que gestiona quien publicó el aviso ───────────────
+
+/**
+ * El detalle de un aviso, para abrir el popup desde la tarjeta del chat. Con `coordenadas`, el
+ * backend agrega la distancia como en el portal.
+ *
+ * Si el aviso se eliminó, falla con `ApiError` de código `AVISO_ELIMINADO` y el mensaje "Se
+ * eliminó esta publicación": la tarjeta del chat lo sigue mostrando después de la baja.
+ */
+export function obtenerAviso(id: number, coordenadas: Coordenadas | null): Promise<AvisoPerdido> {
+  const query = coordenadas
+    ? `?${new URLSearchParams({
+        latitud: String(coordenadas.latitud),
+        longitud: String(coordenadas.longitud),
+      }).toString()}`
+    : '';
+  return get(`/animales-perdidos/${id}${query}`);
+}
+
+/** Los avisos del usuario, en cualquier estado, del más reciente al más viejo. */
+export function listarMisAvisos(): Promise<AvisoPerdido[]> {
+  return get('/animales-perdidos/mios');
+}
+
+/**
+ * En `imagenes`, el lugar de cada foto nueva: la primera marca es la primera de las que se
+ * suben en `fotos`, y así. Tiene que coincidir con `MARCADOR_FOTO_NUEVA` del backend.
+ */
+const MARCADOR_FOTO_NUEVA = 'nueva';
+
+export interface DatosEdicionAviso {
+  estadoId: number;
+  nombre: string;
+  especieId: number;
+  descripcion: string;
+  provincia: string;
+  localidad: string;
+  referencia: string;
+  /** El pin que el usuario vio en el mapa. Sin él, el backend decide (ver `editarAviso`). */
+  puntoDelLugar: Coordenadas | null;
+  fechaSuceso: Date;
+  /** Galería final en orden: las que ya estaban traen `remota`, las nuevas no. */
+  fotos: FotoDelAviso[];
+}
+
+/**
+ * Reemplaza todo lo que carga el formulario y devuelve el aviso actualizado. Mismo multipart
+ * que la edición de una publicación: el orden de la galería viaja en `imagenes`, con las fotos
+ * existentes por su ruta y las nuevas marcadas.
+ *
+ * Sin `puntoDelLugar`, el backend deja el pin que el aviso tenía si el lugar no cambió, o lo
+ * vuelve a geocodificar si cambió.
+ */
+export async function editarAviso(id: number, datos: DatosEdicionAviso): Promise<AvisoPerdido> {
+  const formData = new FormData();
+
+  formData.append('estadoId', String(datos.estadoId));
+  formData.append('nombre', datos.nombre);
+  formData.append('especieId', String(datos.especieId));
+  formData.append('descripcion', datos.descripcion);
+  formData.append('provincia', datos.provincia);
+  formData.append('localidad', datos.localidad);
+  if (datos.referencia) formData.append('referencia', datos.referencia);
+  if (datos.puntoDelLugar) {
+    formData.append('lugarLatitud', String(datos.puntoDelLugar.latitud));
+    formData.append('lugarLongitud', String(datos.puntoDelLugar.longitud));
+  }
+  formData.append('fechaSuceso', aFechaISO(datos.fechaSuceso));
+
+  for (const foto of datos.fotos) {
+    formData.append('imagenes', foto.remota ?? MARCADOR_FOTO_NUEVA);
+    if (!foto.remota) await adjuntarArchivo(formData, 'fotos', foto);
+  }
+
+  return putFormData(`/animales-perdidos/${id}`, formData);
+}
+
+/**
+ * Elimina el aviso (baja lógica). Uno resuelto no se puede eliminar: el backend responde
+ * `AVISO_RESUELTO` con el motivo, pero el popup ya lo explica antes de llamar.
+ */
+export function eliminarAviso(id: number): Promise<void> {
+  return del(`/animales-perdidos/${id}`);
 }

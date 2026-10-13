@@ -3,6 +3,7 @@
  * `pethood-backend/docs/api-favoritos.md`.
  */
 import { del, get, post } from './api';
+import type { Genero, Tamanio } from './mascotas';
 
 /**
  * Una tarjeta del listado. Ojo con `id`: es el id de la **mascota**, no el del favorito
@@ -13,6 +14,9 @@ export interface MascotaFavorita {
   nombre: string | null;
   /** `AAAA-MM-DD` o null. La edad se formatea en el cliente con `edadEnTexto`. */
   fechaNacimiento: string | null;
+  genero: Genero;
+  /** `null` si quien la dio de alta no lo cargó. */
+  tamanio: Tamanio | null;
   imagenUrl: string | null;
   especie: { id: number; nombre: string };
   raza: { id: number; nombre: string };
@@ -27,6 +31,8 @@ export interface MascotaFavorita {
   publicacionId: number | null;
   /** Solicitud viva propia sobre esa publicación: la tarjeta pasa a "Solicitud enviada". */
   solicitudAbiertaId: number | null;
+  /** La adoptó este usuario (y no otra persona): con "Adoptado" solo, no se distinguen. */
+  adoptadaPorMi: boolean;
   fechaAgregado: string;
 }
 

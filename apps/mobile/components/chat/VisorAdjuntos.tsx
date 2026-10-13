@@ -49,6 +49,11 @@ interface VisorAdjuntosProps {
   /** Cuál se abre primero, o `null` para mantener el visor cerrado. */
   indiceInicial: number | null;
   onCerrar: () => void;
+  /**
+   * Texto arriba a la izquierda, en lugar del "2 de 5". Lo usa la foto de perfil del listado
+   * de chats para mostrar de quién es: una sola foto no tiene contador que mostrar.
+   */
+  titulo?: string;
 }
 
 /**
@@ -244,7 +249,7 @@ function PaginaVideo({ uri, ancho, alto, activa }: PaginaVideoProps) {
   );
 }
 
-export function VisorAdjuntos({ adjuntos, indiceInicial, onCerrar }: VisorAdjuntosProps) {
+export function VisorAdjuntos({ adjuntos, indiceInicial, onCerrar, titulo }: VisorAdjuntosProps) {
   const { width: anchoPantalla, height: altoPantalla } = useWindowDimensions();
 
   const abierto = indiceInicial !== null && adjuntos.length > 0;
@@ -319,7 +324,13 @@ export function VisorAdjuntos({ adjuntos, indiceInicial, onCerrar }: VisorAdjunt
             <View className="flex-row items-center justify-between p-3">
               {/* "2 de 5", como en la galería de la publicación. Con un solo adjunto no
                   aporta nada y se omite. */}
-              {adjuntos.length > 1 ? (
+              {titulo ? (
+                <View className="min-w-0 flex-1 pr-3">
+                  <Text numberOfLines={1} className="font-cuerpo-semi text-[16px] text-white">
+                    {titulo}
+                  </Text>
+                </View>
+              ) : adjuntos.length > 1 ? (
                 <View className="rounded-full bg-black/50 px-3 py-1.5">
                   <Text className="font-cuerpo-semi text-[13px] text-white">
                     {`${indice + 1} de ${adjuntos.length}`}

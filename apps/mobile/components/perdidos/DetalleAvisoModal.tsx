@@ -8,8 +8,14 @@
  *   sabe la especie: va "especie · hace cuánto", igual que en la tarjeta.
  * - El diseño muestra un teléfono de contacto que la API no expone. En su lugar va quién
  *   publicó el aviso, que es con quien se va a hablar.
- * - "Enviar mensaje" queda deshabilitado: el chat de reencuentro es de HU-13.2. En un aviso
- *   propio ni se muestra, porque no hay a quién escribirle.
+ * - "Enviar mensaje" abre la conversación con quien publicó el aviso (HU-13.2); si ya tenían
+ *   una, entra a ésa. En un aviso propio no se muestra —no hay a quién escribirle— y en su
+ *   lugar va "Marcar como resuelto", que cierra el caso **pero no la conversación**. Un aviso
+ *   ya resuelto no ofrece ninguno de los dos. Abierto desde la tarjeta del chat tampoco hay
+ *   "Enviar mensaje": ya se está en esa conversación.
+ * - En un aviso propio, además, "Editar" y "Eliminar" (HU-13.3), si la pantalla los pasa. Uno
+ *   resuelto no se elimina: el botón está igual y explica por qué, en vez de desaparecer sin
+ *   decir nada.
  * - Dos agregados que el diseño no trae, de cuando el lugar pasó al catálogo de provincias: a
  *   qué distancia está el lugar (si el usuario dio su ubicación y el lugar se pudo ubicar en
  *   el mapa) y un botón para verlo en Google Maps.
@@ -19,14 +25,25 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Image, Linking, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Image,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 
 import { BotonReportar } from '@/components/reportes/BotonReportar';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EstadoAnimalPerdidoBadge } from '@/components/ui/EstadoAnimalPerdidoBadge';
+import { LEYENDA_RESUELTO } from '@/constants/EstadosAnimalPerdido';
 import { PALETA } from '@/constants/theme';
 import { distanciaEnTexto } from '@/lib/ubicacion';
 import { urlAbsoluta } from '@/services/api';
-import type { AvisoPerdido } from '@/services/animalesPerdidos';
+import { estaResuelto, type AvisoPerdido } from '@/services/animalesPerdidos';
 import { aFechaVisible, parsearFecha } from '@/shared/validation/dates';
 
 import { subtituloAviso } from './TarjetaAviso';
@@ -49,9 +66,27 @@ interface DetalleAvisoModalProps {
   /** El aviso a mostrar, o `null` con el popup cerrado. */
   aviso: AvisoPerdido | null;
   onCerrar: () => void;
+  /**
+   * Reclamar el aviso (HU-13.2). Lo resuelve la pantalla, que es la que navega a la sala: el
+   * popup no conoce el router ni el servicio. Sin esto no hay "Enviar mensaje" (desde el chat).
+   */
+  onReclamar?: (aviso: AvisoPerdido) => Promise<void>;
+  /** Cerrar el caso. Devuelve el aviso actualizado para que la pantalla lo reemplace. */
+  onResolver: (aviso: AvisoPerdido) => Promise<void>;
+  /** HU-13.3: ir a editar el aviso propio. Sin esto no hay botón "Editar". */
+  onEditar?: (aviso: AvisoPerdido) => void;
+  /** HU-13.3: eliminar el aviso propio, ya confirmado. Sin esto no hay botón "Eliminar". */
+  onEliminar?: (aviso: AvisoPerdido) => Promise<void>;
 }
 
-export function DetalleAvisoModal({ aviso, onCerrar }: DetalleAvisoModalProps) {
+export function DetalleAvisoModal({
+  aviso,
+  onCerrar,
+  onReclamar,
+  onResolver,
+  onEditar,
+  onEliminar,
+}: DetalleAvisoModalProps) {
   return (
     <Modal
       visible={aviso !== null}
@@ -70,13 +105,72 @@ export function DetalleAvisoModal({ aviso, onCerrar }: DetalleAvisoModalProps) {
           className="absolute inset-0"
         />
 
-        {aviso ? <TarjetaDetalle aviso={aviso} onCerrar={onCerrar} /> : null}
+        {aviso ? (
+          <TarjetaDetalle
+            aviso={aviso}
+            onCerrar={onCerrar}
+            onReclamar={onReclamar}
+            onResolver={onResolver}
+            onEditar={onEditar}
+            onEliminar={onEliminar}
+          />
+        ) : null}
       </View>
     </Modal>
   );
 }
 
-function TarjetaDetalle({ aviso, onCerrar }: { aviso: AvisoPerdido; onCerrar: () => void }) {
+function TarjetaDetalle({
+  aviso,
+  onCerrar,
+  onReclamar,
+  onResolver,
+  onEditar,
+  onEliminar,
+}: Omit<DetalleAvisoModalProps, 'aviso'> & { aviso: AvisoPerdido }) {
+  // Un solo estado para todas las acciones: cada una tiene su confirmación, así que nunca se
+  // está haciendo más de una a la vez.
+  const [enViaje, setEnViaje] = useState(false);
+  const [confirmarResuelto, setConfirmarResuelto] = useState(false);
+  const [confirmarEliminar, setConfirmarEliminar] = useState(false);
+  /** Se tocó "Eliminar" en un caso resuelto: se explica por qué no se puede. */
+  const [explicarNoSeElimina, setExplicarNoSeElimina] = useState(false);
+
+  const resuelto = estaResuelto(aviso);
+  const gestionPropia = aviso.esPropio && (onEditar !== undefined || onEliminar !== undefined);
+
+  const reclamar = async (): Promise<void> => {
+    if (!onReclamar) return;
+    setEnViaje(true);
+    try {
+      await onReclamar(aviso);
+    } finally {
+      // La pantalla puede haber cerrado el popup al navegar; el estado se descarta con él.
+      setEnViaje(false);
+    }
+  };
+
+  const resolver = async (): Promise<void> => {
+    setEnViaje(true);
+    try {
+      await onResolver(aviso);
+      setConfirmarResuelto(false);
+    } finally {
+      setEnViaje(false);
+    }
+  };
+
+  const eliminar = async (): Promise<void> => {
+    if (!onEliminar) return;
+    setEnViaje(true);
+    try {
+      await onEliminar(aviso);
+      setConfirmarEliminar(false);
+    } finally {
+      setEnViaje(false);
+    }
+  };
+
   const fotos = aviso.imagenes
     .map(urlAbsoluta)
     .filter((url): url is string => url !== null);
@@ -154,25 +248,79 @@ function TarjetaDetalle({ aviso, onCerrar }: { aviso: AvisoPerdido; onCerrar: ()
             </Pressable>
           ) : null}
 
-          {aviso.esPropio ? null : (
-            <View className={mapaUrl ? 'mt-3' : 'mt-5'}>
-              {/* Deshabilitado con el mismo gris que las funciones que todavía no están en
-                  el Perfil: el chat de reencuentro llega con HU-13.2. */}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ disabled: true }}
-                accessibilityHint="Todavía no disponible"
-                disabled
-                className="h-[52px] flex-row items-center justify-center gap-2 rounded-full bg-organic-accent-600 opacity-40"
-              >
-                <Ionicons name="chatbubble-outline" size={19} color={PALETA.blanco} />
-                <Text className="font-cuerpo-bold text-[16px] text-white">Enviar mensaje</Text>
-              </Pressable>
-              <Text className="mt-2 text-center font-cuerpo text-[12.5px] text-organic-neutral-600">
-                Muy pronto vas a poder escribirle desde acá.
+          {/* Caso cerrado: ni se reclama ni se vuelve a resolver, así que en lugar de un
+              botón va la marca que pide el criterio de aceptación de la HU. */}
+          {resuelto ? (
+            <View
+              className={`${mapaUrl ? 'mt-3' : 'mt-5'} flex-row items-center justify-center gap-2 rounded-2xl bg-organic-accent-100 px-4 py-3`}
+            >
+              <Ionicons name="heart-circle-outline" size={20} color={PALETA.accent[700]} />
+              <Text className="font-cuerpo-bold text-[15px] text-organic-accent-700">
+                {LEYENDA_RESUELTO}
               </Text>
             </View>
-          )}
+          ) : aviso.esPropio ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Marcar el aviso como resuelto"
+              accessibilityState={{ disabled: enViaje }}
+              disabled={enViaje}
+              onPress={() => setConfirmarResuelto(true)}
+              className={`${mapaUrl ? 'mt-3' : 'mt-5'} h-[52px] flex-row items-center justify-center gap-2 rounded-full bg-organic-accent-600 active:opacity-70 ${enViaje ? 'opacity-60' : ''}`}
+            >
+              <Ionicons name="checkmark-circle-outline" size={19} color={PALETA.blanco} />
+              <Text className="font-cuerpo-bold text-[16px] text-white">Marcar como resuelto</Text>
+            </Pressable>
+          ) : onReclamar ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Enviar un mensaje a ${reportante}`}
+              accessibilityState={{ disabled: enViaje, busy: enViaje }}
+              disabled={enViaje}
+              onPress={() => void reclamar()}
+              className={`${mapaUrl ? 'mt-3' : 'mt-5'} h-[52px] flex-row items-center justify-center gap-2 rounded-full bg-organic-accent-600 active:opacity-70 ${enViaje ? 'opacity-60' : ''}`}
+            >
+              {enViaje ? (
+                <ActivityIndicator size="small" color={PALETA.blanco} />
+              ) : (
+                <Ionicons name="chatbubble-outline" size={19} color={PALETA.blanco} />
+              )}
+              <Text className="font-cuerpo-bold text-[16px] text-white">Enviar mensaje</Text>
+            </Pressable>
+          ) : null}
+
+          {gestionPropia ? (
+            <View className="mt-3 flex-row gap-3">
+              {onEditar ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Editar el aviso"
+                  disabled={enViaje}
+                  onPress={() => onEditar(aviso)}
+                  className="h-[48px] flex-1 flex-row items-center justify-center gap-2 rounded-full border border-organic-accent-600 active:opacity-70"
+                >
+                  <Ionicons name="create-outline" size={19} color={PALETA.accent[600]} />
+                  <Text className="font-cuerpo-bold text-[16px] text-organic-accent-600">
+                    Editar
+                  </Text>
+                </Pressable>
+              ) : null}
+              {onEliminar ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Eliminar el aviso"
+                  disabled={enViaje}
+                  onPress={() =>
+                    resuelto ? setExplicarNoSeElimina(true) : setConfirmarEliminar(true)
+                  }
+                  className="h-[48px] flex-1 flex-row items-center justify-center gap-2 rounded-full border border-red-300 active:opacity-70"
+                >
+                  <Ionicons name="trash-outline" size={19} color={PALETA.estado.error} />
+                  <Text className="font-cuerpo-bold text-[16px] text-red-600">Eliminar</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
 
           {aviso.esPropio ? null : (
             <BotonReportar
@@ -184,6 +332,48 @@ function TarjetaDetalle({ aviso, onCerrar }: { aviso: AvisoPerdido; onCerrar: ()
           )}
         </View>
       </ScrollView>
+
+      {/* Acción crítica y, por ahora, irreversible: "Resuelto" es terminal hasta HU-13.3.
+          Regla transversal 6 — confirmación antes de ejecutarla. */}
+      <ConfirmDialog
+        visible={confirmarResuelto}
+        tono="exito"
+        icono="checkmark-circle-outline"
+        titulo="¿El caso se resolvió?"
+        mensaje={`Vamos a marcar el aviso de ${nombre} como resuelto.`}
+        detalle="Vas a poder seguir hablando con quien te escribió, pero no vas a poder volver atrás."
+        textoConfirmar="Sí, se resolvió"
+        textoCancelar="Cancelar"
+        cargando={enViaje}
+        onConfirmar={() => void resolver()}
+        onCerrar={() => setConfirmarResuelto(false)}
+      />
+
+      {/* Regla transversal 6: la baja se confirma. Las conversaciones no se tocan: la tarjeta
+          del aviso queda en el chat y, al tocarla, dice que se eliminó. */}
+      <ConfirmDialog
+        visible={confirmarEliminar}
+        tono="peligro"
+        titulo="¿Eliminar el aviso?"
+        mensaje={`Vamos a eliminar el aviso de ${nombre}.`}
+        detalle="Deja de verse en Mascotas Perdidas y en Mis publicaciones. Si alguien ya te escribió por este aviso, la conversación sigue igual."
+        textoConfirmar="Sí, eliminar"
+        textoCancelar="Cancelar"
+        cargando={enViaje}
+        onConfirmar={() => void eliminar()}
+        onCerrar={() => setConfirmarEliminar(false)}
+      />
+
+      {/* Sin `onConfirmar`: un solo "Entendido". No hay nada que el usuario pueda hacer. */}
+      <ConfirmDialog
+        visible={explicarNoSeElimina}
+        tono="bloqueo"
+        icono="heart-circle-outline"
+        titulo="Este aviso no se puede eliminar"
+        mensaje="El caso ya está resuelto."
+        detalle="Un aviso resuelto queda como registro de que la mascota volvió con su dueño, así que no se puede eliminar."
+        onCerrar={() => setExplicarNoSeElimina(false)}
+      />
     </View>
   );
 }

@@ -276,3 +276,16 @@ export function validarFechaFutura(
 
   return null;
 }
+
+/** Fecha de algo planificado (inicio de una campaña): obligatoria y de hoy en adelante. */
+export function validarFechaNoPasada(
+  valor: string | Date | null | undefined,
+  etiqueta: string,
+): string | null {
+  const fecha = parsearFecha(valor);
+
+  if (!fecha) return `${etiqueta} es obligatoria`;
+  if (esPasada(fecha)) return `${etiqueta} no puede ser anterior a hoy`;
+
+  return null;
+}

@@ -119,7 +119,7 @@ export function RegistroRefugioForm() {
         {campo("nombre", "Nombre *", { auto: "given-name", max: LIMITES.persona.nombre.max })}
         {campo("apellido", "Apellido *", { auto: "family-name", max: LIMITES.persona.nombre.max })}
         {campo("email", "Email *", { tipo: "email", auto: "email", full: true, max: 100 })}
-        {campo("pass", "Contraseña *", { tipo: "password", auto: "new-password", hint: "Mínimo 8 caracteres, con una mayúscula y un número." })}
+        {campo("pass", "Contraseña *", { tipo: "password", auto: "new-password", hint: "Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo." })}
         {campo("pass2", "Confirmar contraseña *", { tipo: "password", auto: "new-password" })}
       </Grupo>
       <Grupo titulo="Datos del refugio">

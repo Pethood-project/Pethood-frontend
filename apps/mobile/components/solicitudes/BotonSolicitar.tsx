@@ -325,9 +325,8 @@ function detalleDe(elegibilidad: Elegibilidad): string | undefined {
 /** Qué hay que tener a mano y qué pasa después, para que el cartel no deje dudas. */
 function PasosVerificacion() {
   const pasos: { icono: keyof typeof Ionicons.glyphMap; texto: string }[] = [
-    { icono: 'card-outline', texto: 'Una foto del frente de tu DNI' },
-    { icono: 'card-outline', texto: 'Una foto del dorso de tu DNI' },
-    { icono: 'person-circle-outline', texto: 'Una selfie tuya, con buena luz y sin anteojos de sol' },
+    { icono: 'card-outline', texto: 'Una foto de tu DNI sacada con la cámara, donde se lea bien' },
+    { icono: 'person-circle-outline', texto: 'Una selfie tuya, sacada en el momento, con buena luz y sin anteojos de sol' },
   ];
 
   return (
@@ -397,7 +396,7 @@ function BotonAbrir({ variante, cargando, onPress }: BotonAbrirProps) {
       accessibilityState={{ busy: cargando }}
       disabled={cargando}
       onPress={onPress}
-      className={`items-center justify-center rounded-xl bg-organic-accent-600 py-2.5 active:opacity-90 ${
+      className={`items-center justify-center rounded-full bg-organic-accent-600 py-3 active:opacity-90 ${
         cargando ? 'opacity-60' : ''
       }`}
     >
@@ -450,12 +449,12 @@ function EstadoEnviada({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Ver mi solicitud"
+      accessibilityLabel="Ya solicitada. Ver mi solicitud"
       onPress={onVer}
-      className="flex-row items-center justify-center gap-1.5 rounded-xl border border-organic-accent-300 bg-organic-accent-100 py-2.5 active:opacity-80"
+      className="flex-row items-center justify-center gap-1.5 rounded-full border border-organic-accent-300 bg-organic-accent-100 py-3 active:opacity-80"
     >
       <Ionicons name="checkmark" size={16} color={PALETA.accent[600]} />
-      <Text className="font-cuerpo-semi text-[15px] text-organic-accent-600">Enviada</Text>
+      <Text className="font-cuerpo-semi text-[15px] text-organic-accent-600">Ya solicitada</Text>
     </Pressable>
   );
 }

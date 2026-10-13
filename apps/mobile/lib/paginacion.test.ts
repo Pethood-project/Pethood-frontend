@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { agregarAlPrincipio, unirPagina } from './paginacion.ts';
+import { agregarAlPrincipio, reemplazar, unirPagina } from './paginacion.ts';
 
 interface Item {
   id: number;
@@ -53,5 +53,32 @@ describe('agregarAlPrincipio', () => {
       agregarAlPrincipio([item(2), item(3), item(1)], item(3), porId).map(porId),
       [3, 2, 1],
     );
+  });
+});
+
+describe('reemplazar', () => {
+  it('actualiza el ítem sin moverlo de lugar', () => {
+    const lista = reemplazar([item(3), item(2), item(1)], item(2, 'resuelto'), porId);
+
+    assert.deepEqual(lista.map(porId), [3, 2, 1]);
+    assert.equal(lista[1]!.texto, 'resuelto');
+  });
+
+  it('con la clave ausente deja la lista intacta', () => {
+    // El ítem no es de esta página: recargar el listado por eso sería peor que no mostrar
+    // el cambio (HU-13.2, al resolver un aviso que quedó fuera de la página cargada).
+    const original = [item(3), item(1)];
+    const lista = reemplazar(original, item(2, 'resuelto'), porId);
+
+    assert.deepEqual(lista.map(porId), [3, 1]);
+    assert.deepEqual(lista.map((actual) => actual.texto), original.map((actual) => actual.texto));
+  });
+
+  it('a diferencia de agregarAlPrincipio, no lo sube', () => {
+    const subido = agregarAlPrincipio([item(3), item(2), item(1)], item(1, 'nuevo'), porId);
+    const enSuLugar = reemplazar([item(3), item(2), item(1)], item(1, 'nuevo'), porId);
+
+    assert.deepEqual(subido.map(porId), [1, 3, 2]);
+    assert.deepEqual(enSuLugar.map(porId), [3, 2, 1]);
   });
 });

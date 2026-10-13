@@ -7,16 +7,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomButton, FORMA_BOTON_ORGANIC_PRINCIPAL } from '@/components/CustomButton';
 import { CustomInput } from '@/components/CustomInput';
 import { useToast } from '@/components/feedback/Toast';
-import { BotonCircular } from '@/components/ui/BotonCircular';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { PALETA } from '@/constants/theme';
 import {
   validarCodigoRecuperacion,
   validarConfirmacionPassword,
-  validarPassword,
 } from '@/lib/validacionRegistro';
 import { ApiError } from '@/services/api';
 import { resetearPassword } from '@/services/auth';
+import { validarPasswordNueva } from '@/shared/validation/password';
 
 /**
  * Recuperar contraseña, paso 2: código de 6 dígitos + contraseña nueva. Mismo estilo que
@@ -45,7 +45,7 @@ export default function ResetearScreen() {
   const handleGuardar = async (): Promise<void> => {
     const nextErrors = {
       codigo: validarCodigoRecuperacion(codigo),
-      password: validarPassword(password),
+      password: validarPasswordNueva(password) ?? undefined,
       confirmacion: validarConfirmacionPassword(password, confirmacion),
     };
     setErrors(nextErrors);
@@ -71,17 +71,7 @@ export default function ResetearScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-[19px] py-[13px]">
-          <BotonCircular
-            icono="chevron-back"
-            etiqueta="Volver"
-            variante="neutro"
-            onPress={() => router.back()}
-          />
-          <Text className="font-titulo text-[24px] leading-[29px] text-organic-accent-600">
-            Nueva contraseña
-          </Text>
-        </View>
+        <EncabezadoPantalla barra titulo="Nueva contraseña" onVolver={() => router.back()} />
 
         <FormularioConTeclado
           showsVerticalScrollIndicator={false}

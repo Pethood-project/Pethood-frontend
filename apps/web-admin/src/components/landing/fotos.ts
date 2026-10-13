@@ -41,3 +41,25 @@ export const FOTO_REGISTRO: FotoData = {
   licencia: "CC BY-SA 4.0",
   url: "https://commons.wikimedia.org/wiki/File:Sled_dog_on_Svalbard_with_heterochromia.jpg",
 };
+
+export const FOTO_DESCARGAR_GATO: FotoData = {
+  src: "/img/descargar-gato.jpg",
+  alt: "Gata blanca y naranja echada sobre paja de arroz, mirando a cámara",
+  width: 1920,
+  height: 1280,
+  autor: "Basile Morin",
+  licencia: "CC BY-SA 4.0",
+  url: "https://commons.wikimedia.org/wiki/File:Felis_silvestris_catus_lying_on_rice_straw.jpg",
+  posicion: "78% center",
+};
+
+export const FOTO_DESCARGAR_BEAGLE: FotoData = {
+  src: "/img/descargar-beagle.jpg",
+  alt: "Beagle con arnés rojo echado en el pasto",
+  width: 1920,
+  height: 1238,
+  autor: "Trougnouf (Benoit Brummer)",
+  licencia: "CC BY 4.0",
+  url: "https://commons.wikimedia.org/wiki/File:Beagle_in_Viroinval_(DSC04556).jpg",
+  posicion: "72% center",
+};

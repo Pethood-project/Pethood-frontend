@@ -27,6 +27,7 @@ export function SiteNav({ panel }: { panel?: string }) {
         <Link href="/faq">Preguntas frecuentes</Link>
         <Link href="/equipo">Equipo</Link>
         <Link href="/equipo#contacto">Contacto</Link>
+        <Link href="/descargar">Descargá la app</Link>
         <Link href={panel ?? "/login"} className="btn">
           {panel ? "Ir al panel" : "Ingresar"}
         </Link>

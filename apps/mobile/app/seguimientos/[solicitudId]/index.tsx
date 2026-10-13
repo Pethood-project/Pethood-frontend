@@ -27,6 +27,7 @@ import { FilaPedidoSeguimiento } from '@/components/seguimiento/FilaPedidoSeguim
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { FotoMascota } from '@/components/ui/FotoMascota';
 import { PressableAnimado } from '@/components/ui/PressableAnimado';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
 import {
@@ -204,28 +205,12 @@ export default function SeguimientoSolicitudScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 border-b border-organic-neutral-300 bg-organic-neutral-100 px-4 py-4">
-          <PressableAnimado
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-            onPress={() => router.back()}
-            hitSlop={8}
-            className="h-12 w-12 items-center justify-center rounded-full border border-organic-neutral-300 bg-organic-neutral-100"
-          >
-            <Ionicons name="arrow-back" size={22} color={PALETA.neutral[700]} />
-          </PressableAnimado>
-
-          <View className="flex-1">
-            <Text className="font-titulo text-[26px] leading-8 text-organic-accent-600">
-              Seguimiento
-            </Text>
-            {detalle ? (
-              <Text className="font-cuerpo text-sm text-organic-neutral-600" numberOfLines={1}>
-                {nombreMascota} · {NOMBRE_TIPO[detalle.tipo]}
-              </Text>
-            ) : null}
-          </View>
-        </View>
+        <EncabezadoPantalla
+          barra
+          titulo="Seguimiento"
+          subtitulo={detalle ? `${nombreMascota} · ${NOMBRE_TIPO[detalle.tipo]}` : undefined}
+          onVolver={() => router.back()}
+        />
 
         {cargando ? (
           <EstadoCargando />

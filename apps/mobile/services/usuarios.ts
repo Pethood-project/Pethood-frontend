@@ -2,9 +2,26 @@ import { appendArchivoImagen, type ArchivoImagenLocal } from '@/lib/formDataImag
 import { apiFetch } from '@/services/api';
 import type {
   ActualizarPerfilPayload,
+  DocumentosIdentidad,
   RespuestaPerfil,
   UbicacionPreview,
 } from '@/types/auth';
+
+/**
+ * Sube o reemplaza el DNI y/o la selfie para la verificación de identidad (spec 002.1).
+ * Con la cuenta ya verificada el backend responde USUARIO_YA_VERIFICADO: solo un admin los
+ * puede dar de baja.
+ */
+export async function subirDocumentos(
+  token: string,
+  archivos: { dni?: ArchivoImagenLocal; selfie?: ArchivoImagenLocal },
+): Promise<{ mensaje: string; documentos: DocumentosIdentidad }> {
+  const form = new FormData();
+  if (archivos.dni) await appendArchivoImagen(form, 'dni_imagen', archivos.dni);
+  if (archivos.selfie) await appendArchivoImagen(form, 'selfie', archivos.selfie);
+
+  return apiFetch('/usuarios/me/documentos', { method: 'POST', token, body: form });
+}
 
 export function obtenerPerfil(token: string): Promise<RespuestaPerfil> {
   return apiFetch<RespuestaPerfil>('/usuarios/me', {
@@ -43,6 +60,18 @@ export async function actualizarPerfil(
  * Corrige a mano el link de Google Maps del perfil. El backend recalcula latitud/longitud a
  * partir del link nuevo (lápiz de "Ubicación" en Mi Perfil).
  */
+/**
+ * Carga el DNI, sólo si todavía no tiene (spec 027). Con DNI cargado el backend responde
+ * DNI_YA_CARGADO: lo corrige un admin.
+ */
+export function cargarDni(token: string, dni: string): Promise<RespuestaPerfil> {
+  return apiFetch<RespuestaPerfil>('/usuarios/me/dni', {
+    method: 'PATCH',
+    token,
+    body: { dni: dni.trim() },
+  });
+}
+
 export function actualizarUbicacion(token: string, mapaUrl: string): Promise<RespuestaPerfil> {
   return apiFetch<RespuestaPerfil>('/usuarios/me/ubicacion', {
     method: 'PATCH',

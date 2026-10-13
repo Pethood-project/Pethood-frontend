@@ -17,7 +17,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
@@ -31,6 +31,7 @@ import {
 import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { TextAreaField } from '@/components/ui/TextAreaField';
+import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import {
   obtenerSeguimientoDeSolicitud,
@@ -147,28 +148,12 @@ export default function ActualizacionSeguimientoScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <View className="flex-row items-center gap-3 bg-organic-accent-600 px-5 pb-[14px] pt-[9px]">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Volver"
-            onPress={() => router.back()}
-            hitSlop={8}
-            className="h-11 w-11 items-center justify-center rounded-full bg-white/20 active:opacity-80"
-          >
-            <Ionicons name="chevron-back" size={22} color={PALETA.blanco} />
-          </Pressable>
-
-          <View className="flex-1">
-            <Text className="font-titulo text-[22px] leading-[26px] text-white">
-              Subir actualización
-            </Text>
-            {detalle ? (
-              <Text className="mt-0.5 text-[13px] text-white/80" numberOfLines={1}>
-                {detalle.mascota.nombre ?? 'Tu mascota'} · Seguimiento
-              </Text>
-            ) : null}
-          </View>
-        </View>
+        <EncabezadoPantalla
+          claro
+          titulo="Subir actualización"
+          subtitulo={detalle ? `${detalle.mascota.nombre ?? 'Tu mascota'} · Seguimiento` : undefined}
+          onVolver={() => router.back()}
+        />
 
         {cargando ? (
           <EstadoCargando />

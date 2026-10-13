@@ -17,6 +17,7 @@ import 'react-native-reanimated';
 
 import { BarraNavegacionSistema } from '@/components/BarraNavegacionSistema';
 import { ToastProvider } from '@/components/feedback/Toast';
+import { AbrirNotificacionPush } from '@/components/notificaciones/AbrirNotificacionPush';
 import { SesionProvider, useSesion } from '@/hooks/useSesion';
 
 export { ErrorBoundary } from 'expo-router';
@@ -47,6 +48,7 @@ export default function RootLayout() {
                 web BarraNavegacionSistema no importa expo-navigation-bar. */}
             <BarraNavegacionSistema />
             <RootNavigator />
+            <AbrirNotificacionPush />
           </ToastProvider>
         </SesionProvider>
       </KeyboardProvider>
@@ -87,6 +89,13 @@ function RootNavigator() {
         <Stack.Screen name="perdidos/index" />
         {/* GUI-25. Pantalla y no modal, como en el diseño (pantalla 26). */}
         <Stack.Screen name="perdidos/nuevo" options={{ presentation: 'card' }} />
+        <Stack.Screen name="campanias/index" />
+        <Stack.Screen name="campanias/[id]/donar" options={{ presentation: 'card' }} />
+        <Stack.Screen name="campanias/refugio/index" />
+        <Stack.Screen name="campanias/refugio/nueva" options={{ presentation: 'card' }} />
+        <Stack.Screen name="campanias/refugio/[id]/donaciones" options={{ presentation: 'card' }} />
+        {/* HU-13.3. El mismo formulario del alta, desde el popup del aviso propio. */}
+        <Stack.Screen name="perdidos/[id]/editar" options={{ presentation: 'card' }} />
         <Stack.Screen name="mascotas/crear" options={{ presentation: 'card' }} />
         {/* HU-6.4. Se abre tocando una tarjeta de "Mis mascotas". */}
         <Stack.Screen name="mascotas/[id]/index" options={{ presentation: 'card' }} />
@@ -106,6 +115,8 @@ function RootNavigator() {
         <Stack.Screen name="solicitudes/[id]" options={{ presentation: 'card' }} />
         <Stack.Screen name="perfil/editar" options={{ presentation: 'card' }} />
         <Stack.Screen name="perfil/password" options={{ presentation: 'card' }} />
+        {/* Spec 002.1. DNI + selfie para verificar la identidad; se entra desde el menú de Perfil. */}
+        <Stack.Screen name="perfil/verificacion" options={{ presentation: 'card' }} />
         {/* Spec 017. Datos del refugio: se entra desde el ícono de Mi Perfil en la vista de refugio. */}
         <Stack.Screen name="perfil/refugio" options={{ presentation: 'card' }} />
         {/* HU-9.1/HU-9.2. Fuera de las tabs: se entra desde Perfil y el back vuelve al

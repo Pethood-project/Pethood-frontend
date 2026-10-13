@@ -39,3 +39,22 @@ export function agregarAlPrincipio<T>(
   const clave = claveDe(item);
   return [item, ...actuales.filter((actual) => claveDe(actual) !== clave)];
 }
+
+/**
+ * Reemplaza un ítem que ya está en la lista, **sin moverlo de lugar**.
+ *
+ * Es para cuando una acción devuelve la versión nueva del mismo ítem (marcar un aviso como
+ * resuelto, por ejemplo): el listado se actualiza en memoria sin refetch y sin que la tarjeta
+ * salte de posición, que es justamente lo que haría `agregarAlPrincipio`.
+ *
+ * Si la clave no está, devuelve la lista intacta: el ítem no es de esta página y recargar por
+ * eso sería peor que no mostrar el cambio.
+ */
+export function reemplazar<T>(
+  actuales: T[],
+  item: T,
+  claveDe: (item: T) => number | string,
+): T[] {
+  const clave = claveDe(item);
+  return actuales.map((actual) => (claveDe(actual) === clave ? item : actual));
+}

@@ -17,7 +17,16 @@
  */
 import type { ArchivoAdjunto } from '@/services/api';
 import { urlAbsoluta } from '@/services/api';
-import type { AvisoEnChat, Mensaje, MensajeCitado, SolicitudEnChat } from '@/services/chats';
+import {
+  esTarjetaDeSistema,
+  type AvisoEnChat,
+  type MascotaEnChat,
+  type Mensaje,
+  type MensajeCitado,
+  type SolicitudEnChat,
+  type TipoMensaje,
+  type UbicacionRefugioEnChat,
+} from '@/services/chats';
 import { tipoDeMime, type Adjunto, type TipoAdjunto } from '@/lib/adjuntos';
 import { etiquetaDia, inicioDelDia } from '@/shared/validation/dates';
 
@@ -81,12 +90,16 @@ export interface ItemChat {
   entregado: boolean;
   /** Lo leyó el destinatario. Sólo tiene sentido en los propios. */
   leido: boolean;
-  /** `SOLICITUD` y `ANIMAL_PERDIDO` se pintan como tarjeta y no como burbuja. */
-  tipo: 'TEXTO' | 'SOLICITUD' | 'ANIMAL_PERDIDO';
+  /** Todo lo que no es `TEXTO` se pinta como tarjeta y no como burbuja. */
+  tipo: TipoMensaje;
   /** Sólo en los de tipo `SOLICITUD`. */
   solicitud: SolicitudEnChat | null;
   /** Sólo en los de tipo `ANIMAL_PERDIDO` (HU-13.2). */
   aviso: AvisoEnChat | null;
+  /** Sólo en los de tipo `MASCOTA`: la mascota compartida. */
+  mascota: MascotaEnChat | null;
+  /** Sólo en los de tipo `UBICACION_REFUGIO`: la ubicación del refugio. */
+  ubicacion: UbicacionRefugioEnChat | null;
   /** El autor lo eliminó: en lugar de la burbuja va el aviso, sin contenido ni adjuntos. */
   eliminado: boolean;
   /** El mensaje al que responde, o `null`. */
@@ -221,6 +234,8 @@ export function marcarEliminado(lista: Mensaje[], mensajeId: number): Mensaje[] 
         imagenes: [],
         adjuntos: [],
         respondeA: null,
+        mascota: null,
+        ubicacion: null,
       };
     }
 
@@ -326,6 +341,8 @@ export function aItems(
       tipo: 'TEXTO' as const,
       solicitud: null,
       aviso: null,
+      mascota: null,
+      ubicacion: null,
       eliminado: false,
       respondeA: pendiente.respondeA,
       estado: pendiente.fallo ? ('error' as const) : ('enviando' as const),
@@ -343,14 +360,17 @@ export function aItems(
       uri: urlAbsoluta(adjunto.url) ?? adjunto.url,
       tipo: adjunto.tipo,
     })),
-    // Un mensaje de sistema lo emite SISTEMA, que no participa de la sala: nunca es propio.
-    esMio: mensaje.tipo === 'TEXTO' && mensaje.usuarioId === miUsuarioId,
+    // Una tarjeta de sistema la emite SISTEMA, que no participa de la sala: nunca es propia.
+    // Las que manda una persona (mascota, ubicación) sí tienen dueño, como un texto.
+    esMio: !esTarjetaDeSistema(mensaje.tipo) && mensaje.usuarioId === miUsuarioId,
     fecha: mensaje.fechaAlta,
     entregado: mensaje.entregado,
     leido: mensaje.leido,
     tipo: mensaje.tipo,
     solicitud: mensaje.solicitud,
     aviso: mensaje.aviso,
+    mascota: mensaje.mascota ?? null,
+    ubicacion: mensaje.ubicacion ?? null,
     // `?? false` / `?? null`: un backend anterior a esta versión no manda los campos.
     eliminado: mensaje.eliminado ?? false,
     respondeA: mensaje.respondeA ? aCita(mensaje.respondeA, miUsuarioId) : null,

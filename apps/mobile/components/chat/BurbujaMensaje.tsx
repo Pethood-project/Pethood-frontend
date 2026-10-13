@@ -28,6 +28,10 @@
  *
  * Un mensaje eliminado se pinta como el aviso "Se eliminó este mensaje", en su lado y con su
  * hora, y no admite ninguno de los tres.
+ *
+ * Las tarjetas también pasan por acá: las de PetHood (solicitud, aviso) a todo el ancho y sin
+ * lado, y las que manda una persona (mascota compartida, ubicación del refugio) de su lado,
+ * con su hora y sus tildes.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, Text, View, useWindowDimensions } from 'react-native';
@@ -36,7 +40,9 @@ import { CitaMensaje } from '@/components/chat/CitaMensaje';
 import { DeslizarParaResponder } from '@/components/chat/DeslizarParaResponder';
 import { GrillaAdjuntosMensaje } from '@/components/chat/GrillaAdjuntosMensaje';
 import { TarjetaAvisoChat } from '@/components/chat/TarjetaAvisoChat';
+import { TarjetaMascotaChat } from '@/components/chat/TarjetaMascotaChat';
 import { TarjetaSolicitudChat } from '@/components/chat/TarjetaSolicitudChat';
+import { TarjetaUbicacionChat } from '@/components/chat/TarjetaUbicacionChat';
 import { entregaDe, TicksMensaje } from '@/components/chat/TicksMensaje';
 import { PALETA } from '@/constants/theme';
 import type { ItemChat } from '@/lib/mensajesChat';
@@ -95,6 +101,8 @@ interface BurbujaMensajeProps {
   onVerSolicitud?: () => void;
   /** Navega al aviso de mascota perdida de la tarjeta (HU-13.2). */
   onVerAviso?: () => void;
+  /** Lleva a la publicación de la mascota compartida (tarjeta `MASCOTA`). */
+  onVerMascota?: () => void;
   /** Mantener apretada una burbuja recibida: abre el reporte del mensaje. */
   onReportar?: () => void;
   /** Mantener apretada una propia (texto, foto o video): pide confirmar la eliminación. */
@@ -234,6 +242,7 @@ export function BurbujaMensaje({
   onAbrirImagen,
   onVerSolicitud,
   onVerAviso,
+  onVerMascota,
   onReportar,
   onEliminar,
   onResponder,
@@ -268,6 +277,46 @@ export function BurbujaMensaje({
     return (
       <View className={`w-full ${propia ? 'items-end' : 'items-start'}`}>
         <AvisoEliminado item={item} />
+      </View>
+    );
+  }
+
+  // Las tarjetas que manda una persona (una mascota compartida, la ubicación del refugio): van
+  // de su lado, al ancho de una burbuja con cita, y con la hora y los tildes debajo como la
+  // foto suelta. No se deslizan ni se reportan; mantener apretada la propia la elimina.
+  if (item.tipo === 'MASCOTA' || item.tipo === 'UBICACION_REFUGIO') {
+    const tarjeta =
+      item.tipo === 'MASCOTA' ? (
+        item.mascota ? (
+          <TarjetaMascotaChat mascota={item.mascota} onVerMascota={onVerMascota} />
+        ) : null
+      ) : item.ubicacion ? (
+        <TarjetaUbicacionChat ubicacion={item.ubicacion} />
+      ) : null;
+
+    // Sin su carga es una tarjeta que no se puede dibujar: mejor nada que un recuadro vacío.
+    if (!tarjeta) return null;
+
+    return (
+      <View className={`w-full ${propia ? 'items-end' : 'items-start'}`}>
+        <Pressable
+          onLongPress={propia && item.estado === 'enviado' ? onEliminar : undefined}
+          delayLongPress={400}
+          accessibilityActions={
+            propia && onEliminar ? [{ name: 'longpress', label: 'Eliminar mensaje' }] : undefined
+          }
+          onAccessibilityAction={() => onEliminar?.()}
+          style={{ width: ANCHO_MAXIMO_BURBUJA }}
+        >
+          {tarjeta}
+        </Pressable>
+
+        <View className="mt-1 flex-row items-center gap-[5px]">
+          <Text className="font-cuerpo text-[11px] text-organic-neutral-600">
+            {item.fecha ? horaVisible(new Date(item.fecha)) : ''}
+          </Text>
+          {propia ? <TicksMensaje entrega={entregaDe(item)} fondo="pantalla" /> : null}
+        </View>
       </View>
     );
   }

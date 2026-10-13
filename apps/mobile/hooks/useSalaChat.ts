@@ -32,8 +32,10 @@ import {
 import type { ArchivoAdjunto } from '@/services/api';
 import { ApiError } from '@/services/api';
 import {
+  compartirMascota as compartirMascotaEnSala,
   eliminarMensaje,
   enviarMensaje,
+  enviarUbicacionRefugio as enviarUbicacionEnSala,
   listarMensajes,
   marcarChatEntregado,
   marcarChatLeido,
@@ -74,6 +76,10 @@ export interface EstadoSalaChat {
   descartar: (claveLocal: string) => void;
   /** Elimina un mensaje propio. Rechaza con el `ApiError` del servidor si no se pudo. */
   eliminar: (mensajeId: number) => Promise<void>;
+  /** Comparte una mascota de favoritos. Rechaza con el `ApiError` del servidor. */
+  compartirMascota: (mascotaId: number) => Promise<void>;
+  /** Manda la ubicación del refugio. Rechaza con el `ApiError` del servidor. */
+  enviarUbicacion: () => Promise<void>;
 }
 
 export function useSalaChat(chatId: number, miUsuarioId: number, token: string | null) {
@@ -297,6 +303,29 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
     [chatId],
   );
 
+  /**
+   * Manda una tarjeta (mascota o ubicación) y la suma a la lista con lo que responde el
+   * servidor. No es optimista: la tarjeta necesita los datos que resuelve el backend (la foto,
+   * la dirección), y la pantalla la pide con un diálogo que queda cargando hasta la respuesta.
+   * Si el broadcast llega antes, `insertarMensaje` deduplica por id.
+   */
+  const publicarTarjeta = useCallback(async (envio: Promise<Mensaje>): Promise<void> => {
+    const mensaje = await envio;
+    if (!montado.current) return;
+    setConfirmados((actuales) => insertarMensaje(actuales, mensaje));
+  }, []);
+
+  const compartirMascota = useCallback(
+    (mascotaId: number): Promise<void> =>
+      publicarTarjeta(compartirMascotaEnSala(chatId, mascotaId)),
+    [chatId, publicarTarjeta],
+  );
+
+  const enviarUbicacion = useCallback(
+    (): Promise<void> => publicarTarjeta(enviarUbicacionEnSala(chatId)),
+    [chatId, publicarTarjeta],
+  );
+
   // ─── Tiempo real ───
   useEffect(() => {
     if (!token) return;
@@ -442,5 +471,7 @@ export function useSalaChat(chatId: number, miUsuarioId: number, token: string |
     reintentar,
     descartar,
     eliminar,
+    compartirMascota,
+    enviarUbicacion,
   } satisfies EstadoSalaChat;
 }

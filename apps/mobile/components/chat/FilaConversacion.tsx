@@ -28,13 +28,26 @@ import { Avatar } from '@/components/ui/Avatar';
 import { BadgeContador } from '@/components/ui/BadgeContador';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
-import type { Conversacion } from '@/services/chats';
+import type { Conversacion, TipoMensaje } from '@/services/chats';
 import { tiempoRelativo } from '@/shared/validation/dates';
 
 /** Lado del avatar en la fila. El diseño lo da en 42px sobre una maqueta de 262px de ancho. */
 const AVATAR = 56;
 /** Iniciales del avatar: 13px en el artboard. */
 const AVATAR_TEXTO = 17;
+
+/**
+ * Lo que dice la fila cuando lo último de la sala es una tarjeta: no tiene texto propio, así
+ * que se nombra el hecho con un ícono adelante, igual que una foto suelta.
+ */
+const PREVIEW_DE_TARJETA: Partial<
+  Record<TipoMensaje, { texto: string; icono: keyof typeof Ionicons.glyphMap }>
+> = {
+  SOLICITUD: { texto: 'Solicitud', icono: 'document-text-outline' },
+  ANIMAL_PERDIDO: { texto: 'Mascota perdida', icono: 'paw-outline' },
+  MASCOTA: { texto: 'Mascota compartida', icono: 'heart-outline' },
+  UBICACION_REFUGIO: { texto: 'Ubicación del refugio', icono: 'location-outline' },
+};
 
 interface FilaConversacionProps {
   conversacion: Conversacion;
@@ -74,12 +87,10 @@ export function FilaConversacion({
   const sinLeer = noLeidos > 0;
   // `=== true`: un backend anterior a la eliminación de mensajes no manda el campo.
   const eliminado = ultimoMensaje?.eliminado === true;
-  const esSolicitud = ultimoMensaje?.tipo === 'SOLICITUD';
-  const esAviso = ultimoMensaje?.tipo === 'ANIMAL_PERDIDO';
-  // Las dos tarjetas vienen sin texto propio, así que ninguna cuenta como adjunto suelto.
-  const esTarjeta = esSolicitud || esAviso;
+  // Las tarjetas vienen sin texto propio, así que ninguna cuenta como adjunto suelto.
+  const tarjeta = ultimoMensaje ? PREVIEW_DE_TARJETA[ultimoMensaje.tipo] : undefined;
   const soloAdjunto =
-    !esTarjeta &&
+    !tarjeta &&
     !eliminado &&
     ultimoMensaje?.tieneImagen &&
     ultimoMensaje.contenido.trim() === '';
@@ -96,15 +107,13 @@ export function FilaConversacion({
     ? ultimoMensaje?.esMio
       ? 'Eliminaste este mensaje'
       : 'Se eliminó este mensaje'
-    : esSolicitud
-      ? 'Solicitud'
-      : esAviso
-        ? 'Mascota perdida'
-        : soloVideo
-          ? 'Video'
-          : soloAdjunto
-            ? 'Foto'
-            : (ultimoMensaje?.contenido ?? 'Todavía no hay mensajes');
+    : tarjeta
+      ? tarjeta.texto
+      : soloVideo
+        ? 'Video'
+        : soloAdjunto
+          ? 'Foto'
+          : (ultimoMensaje?.contenido ?? 'Todavía no hay mensajes');
 
   const foto = urlAbsoluta(contacto.imagenUrl);
 
@@ -197,12 +206,8 @@ export function FilaConversacion({
             />
           ) : null}
 
-          {esSolicitud ? (
-            <Ionicons name="document-text-outline" size={16} color={PALETA.neutral[500]} />
-          ) : null}
-
-          {esAviso ? (
-            <Ionicons name="paw-outline" size={16} color={PALETA.neutral[500]} />
+          {tarjeta && !eliminado ? (
+            <Ionicons name={tarjeta.icono} size={16} color={PALETA.neutral[500]} />
           ) : null}
 
           {eliminado ? (

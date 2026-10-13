@@ -21,7 +21,7 @@
  */
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Platform, RefreshControl, Text, View } from 'react-native';
+import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ReporteModal, type ObjetoReportado } from '@/components/reportes/ReporteModal';
@@ -31,6 +31,7 @@ import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/
 import { BarraBusqueda } from '@/components/ui/BarraBusqueda';
 import { TituloPantalla } from '@/components/ui/EncabezadoPantalla';
 import { HojaOpciones } from '@/components/ui/HojaOpciones';
+import { ESPERA_ENTRE_MODALES_MS } from '@/constants/modales';
 import { PALETA } from '@/constants/theme';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useListaChats } from '@/hooks/useListaChats';
@@ -66,13 +67,6 @@ const REFRESCO_TEXTOS_MS = 60_000;
  * un número.
  */
 const RETRASO_FILTRO_MS = 300;
-
-/**
- * Espera entre cerrar la hoja de opciones y abrir el reporte. iOS no presenta un `Modal`
- * mientras otro todavía se está yendo (el fade dura ~300 ms) y el segundo no aparece; Android
- * no tiene ese problema, así que ahí va de una.
- */
-const ESPERA_ENTRE_MODALES_MS = Platform.OS === 'ios' ? 350 : 0;
 
 /**
  * Subtítulo de GUI-31: "Refugio Esperanza · 4 sin leer".

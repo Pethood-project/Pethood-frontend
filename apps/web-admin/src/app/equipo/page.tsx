@@ -35,7 +35,7 @@ const VALORES = [
 
 const FOTOS: Record<string, string> = {
   "Agustín Leyes": "Agustin-leyes.jpeg",
-  "Camila Fabián": "Camila-Fabian.jpeg",
+  "Camila Fabián": "Camila-Fabian.jpg",
   "Juan Ignacio Castro": "Juan-Ignacio-Castro.jpeg",
   "Matías Hansen": "Matias-Hansen.jpeg",
   "Nicolás Correa": "Nicolas-Correa.png",

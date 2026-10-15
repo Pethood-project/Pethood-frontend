@@ -1,11 +1,11 @@
 /**
- * GUI-36 Campañas Refugio — «Mis Campañas» (spec 026, HU-12.1, HU-12.5, HU-12.6).
+ * GUI-36 Campañas Refugio — «Mis Campañas» (spec 026, HU-12.1, HU-12.6, y spec 028).
  *
  * Listado de las campañas del refugio, de la más reciente a la más vieja, con filtros por
  * estado (selección múltiple) y por fecha de inicio (desde obligatoria, hasta opcional: el
- * «Hasta» aparece recién con un «Desde» elegido). Finalizar y cancelar piden confirmación
- * (regla transversal 6). Al volver de otra pantalla la lista se refresca: aplicar una donación
- * cambia el recaudado y puede haber finalizado la campaña. El «+» avisa del límite de 5
+ * «Hasta» aparece recién con un «Desde» elegido). Pausar, reactivar, finalizar y eliminar piden
+ * confirmación (regla transversal 6). Al volver de otra pantalla la lista se refresca: aplicar
+ * una donación o editar la campaña cambia lo que muestra la tarjeta. El «+» avisa del límite de 5
  * campañas antes de abrir el alta. Se entra desde la vista de refugio: el backend corta si el
  * perfil activo no es el de refugio.
  */
@@ -30,6 +30,7 @@ import { tomarCampaniaCreada } from '@/lib/campaniaRecienCreada';
 import { ApiError } from '@/services/api';
 import {
   cambiarEstadoCampania,
+  eliminarCampania,
   listarMisCampanias,
   SIN_FILTROS_CAMPANIAS,
   type CampaniaRefugio,
@@ -49,21 +50,47 @@ const claveDeCampania = (campania: CampaniaRefugio): number => campania.id;
 
 const CONFIRMACION: Record<
   AccionCampania,
-  { titulo: string; mensaje: string; boton: string; estado: 'Finalizada' | 'Cancelada' }
+  { titulo: string; mensaje: string; boton: string; exito: string; peligro: boolean }
 > = {
+  pausar: {
+    titulo: '¿Pausar la campaña?',
+    mensaje:
+      'Deja de mostrarse y de recibir donaciones hasta que la reactives. Vas a poder seguir revisando las que ya te avisaron.',
+    boton: 'Pausar',
+    exito: 'Pausaste la campaña.',
+    peligro: false,
+  },
+  reactivar: {
+    titulo: '¿Reactivar la campaña?',
+    mensaje: 'Vuelve a mostrarse y a recibir donaciones. Si ya venció, se finaliza.',
+    boton: 'Reactivar',
+    exito: 'Reactivaste la campaña.',
+    peligro: false,
+  },
   finalizar: {
     titulo: '¿Finalizar la campaña?',
-    mensaje: 'Deja de recibir donaciones. Vas a poder seguir revisando las que ya te avisaron.',
+    mensaje:
+      'Deja de recibir donaciones y ya no se puede editar ni reactivar. Vas a poder seguir revisando las que ya te avisaron.',
     boton: 'Finalizar',
-    estado: 'Finalizada',
+    exito: 'Finalizaste la campaña.',
+    peligro: true,
   },
-  cancelar: {
-    titulo: '¿Cancelar la campaña?',
-    mensaje: 'La campaña se da de baja y deja de recibir donaciones. No se puede deshacer.',
-    boton: 'Cancelar campaña',
-    estado: 'Cancelada',
+  eliminar: {
+    titulo: '¿Eliminar la campaña?',
+    mensaje: 'Se borra de tus campañas y nadie más la va a ver. No se puede deshacer.',
+    boton: 'Eliminar',
+    exito: 'Eliminaste la campaña.',
+    peligro: true,
   },
 };
+
+/** Lo que pide al backend cada acción. */
+function ejecutarAccion(campaniaId: number, accion: AccionCampania): Promise<unknown> {
+  if (accion === 'eliminar') return eliminarCampania(campaniaId);
+  if (accion === 'pausar') return cambiarEstadoCampania(campaniaId, 'Pausada');
+  if (accion === 'reactivar') return cambiarEstadoCampania(campaniaId, 'Activa');
+  return cambiarEstadoCampania(campaniaId, 'Finalizada');
+}
 
 /** Literal de HU-12.1. */
 function ListaVacia() {
@@ -177,10 +204,8 @@ export default function MisCampaniasScreen() {
 
     setProcesando(true);
     try {
-      await cambiarEstadoCampania(campania.id, CONFIRMACION[accion].estado);
-      toast.mostrarExito(
-        accion === 'finalizar' ? 'Finalizaste la campaña.' : 'Cancelaste la campaña.',
-      );
+      await ejecutarAccion(campania.id, accion);
+      toast.mostrarExito(CONFIRMACION[accion].exito);
       setConfirmando(null);
       recargar();
     } catch (err) {
@@ -260,6 +285,7 @@ export default function MisCampaniasScreen() {
                 campania={item}
                 onAccion={(accion) => setConfirmando({ campania: item, accion })}
                 onRevisar={() => router.push(`/campanias/refugio/${item.id}/donaciones` as Href)}
+                onAbrir={() => router.push(`/campanias/refugio/${item.id}` as Href)}
               />
             )}
             ListEmptyComponent={ListaVacia}
@@ -291,7 +317,7 @@ export default function MisCampaniasScreen() {
 
       <ConfirmDialog
         visible={confirmando !== null}
-        tono="peligro"
+        tono={confirmando && !CONFIRMACION[confirmando.accion].peligro ? 'advertencia' : 'peligro'}
         titulo={confirmando ? CONFIRMACION[confirmando.accion].titulo : ''}
         mensaje={confirmando ? CONFIRMACION[confirmando.accion].mensaje : ''}
         textoConfirmar={confirmando ? CONFIRMACION[confirmando.accion].boton : undefined}
@@ -305,7 +331,7 @@ export default function MisCampaniasScreen() {
         visible={limiteAlcanzado}
         tono="bloqueo"
         titulo="Llegaste al límite de campañas"
-        mensaje={`Alcanzaste el límite de ${LIMITES.campania.vigentesPorRefugio} campañas activas. Finalizá o cancelá una para crear otra.`}
+        mensaje={`Alcanzaste el límite de ${LIMITES.campania.vigentesPorRefugio} campañas activas. Finalizá o eliminá una para crear otra.`}
         onCerrar={() => setLimiteAlcanzado(false)}
       />
     </View>

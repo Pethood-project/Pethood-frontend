@@ -94,6 +94,7 @@ function RootNavigator() {
         <Stack.Screen name="campanias/refugio/index" />
         <Stack.Screen name="campanias/refugio/nueva" options={{ presentation: 'card' }} />
         <Stack.Screen name="campanias/refugio/[id]/donaciones" options={{ presentation: 'card' }} />
+        <Stack.Screen name="campanias/refugio/[id]/index" options={{ presentation: 'card' }} />
         {/* HU-13.3. El mismo formulario del alta, desde el popup del aviso propio. */}
         <Stack.Screen name="perdidos/[id]/editar" options={{ presentation: 'card' }} />
         <Stack.Screen name="mascotas/crear" options={{ presentation: 'card' }} />

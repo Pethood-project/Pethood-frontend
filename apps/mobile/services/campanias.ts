@@ -1,5 +1,5 @@
 /**
- * Campañas de donación (spec 026 del backend, HU-12.1 a HU-12.7). Contrato completo en
+ * Campañas de donación (specs 026 y 028 del backend, HU-12.1 a HU-12.7). Contrato completo en
  * `pethood-backend/docs/api-campanias.md`.
  *
  * El perfil activo viaja solo en la cabecera `X-Ambito` (`api.ts`): el portal y donar son del
@@ -9,7 +9,7 @@ import type { MotivoRechazo, OrigenDonacion } from '@/lib/campanias';
 import { aFechaISO } from '@/shared/validation/dates';
 import { LIMITES } from '@/shared/validation/limits';
 
-import { adjuntarArchivo, get, patch, post, postFormData } from './api';
+import { adjuntarArchivo, del, get, patch, patchFormData, post, postFormData } from './api';
 
 export interface Campania {
   id: number;
@@ -37,6 +37,8 @@ export interface Campania {
 export interface CampaniaRefugio extends Campania {
   /** Donaciones esperando revisión. */
   pendientes: number;
+  /** Alguien avisó que donó, en cualquier estado: ya no se puede eliminar (spec 028). */
+  tieneDonaciones: boolean;
 }
 
 export interface PaginaCampanias<T extends Campania> {
@@ -147,10 +149,41 @@ export async function crearCampania(datos: DatosNuevaCampania): Promise<Campania
   return postFormData('/refugio/campanias', formData);
 }
 
-/** HU-12.6 (finalizar) y HU-12.5 (cancelar). */
+/** Lo que cambió en la edición (spec 028). Alias, CBU y fecha de inicio no se editan. */
+export interface CambiosCampania {
+  titulo?: string;
+  descripcion?: string;
+  /** Tal cual se escribió: sólo dígitos. */
+  objetivo?: string;
+  fechaFin?: Date;
+  imagen?: { uri: string; nombre: string; tipo: string };
+}
+
+/** Spec 028. Multipart con sólo lo que cambió: lo que no viaja, el backend no lo toca. */
+export async function editarCampania(
+  id: number,
+  cambios: CambiosCampania,
+): Promise<CampaniaRefugio> {
+  const formData = new FormData();
+
+  if (cambios.titulo !== undefined) formData.append('titulo', cambios.titulo);
+  if (cambios.descripcion !== undefined) formData.append('descripcion', cambios.descripcion);
+  if (cambios.objetivo !== undefined) formData.append('objetivo', cambios.objetivo);
+  if (cambios.fechaFin) formData.append('fechaFin', aFechaISO(cambios.fechaFin));
+  if (cambios.imagen) await adjuntarArchivo(formData, 'imagen', cambios.imagen);
+
+  return patchFormData(`/refugio/campanias/${id}`, formData);
+}
+
+/** «Eliminar» (spec 028): baja lógica, sólo si la campaña no tiene donaciones. */
+export function eliminarCampania(id: number): Promise<void> {
+  return del(`/refugio/campanias/${id}`);
+}
+
+/** HU-12.6 (finalizar) y spec 028 (pausar y reactivar: «Activa» desde una Pausada). */
 export function cambiarEstadoCampania(
   id: number,
-  estado: 'Finalizada' | 'Cancelada',
+  estado: 'Finalizada' | 'Pausada' | 'Activa',
 ): Promise<CampaniaRefugio> {
   return patch(`/refugio/campanias/${id}/estado`, { estado });
 }

@@ -1,6 +1,8 @@
 /**
  * Filtro por estado para los listados del refugio ("Mascotas del refugio", "Publicaciones del
- * refugio"): una fila de chips con "Todos" más uno por estado, de selección múltiple.
+ * refugio", "Mis Campañas"): una fila de chips con "Todos" más uno por estado, de selección
+ * múltiple. Usa la paleta Organic de los filtros de Adoptar y Solicitudes (variante `filtro`):
+ * el naranja de marca ya no se usa en los filtros.
  *
  * La selección vacía es "Todos" — así viaja al backend, que sin `?estados=` no filtra. Elegir
  * todos los estados uno por uno equivale a lo mismo, así que se colapsa a "Todos" en vez de
@@ -41,7 +43,7 @@ export function FiltroEstados({ opciones, seleccionados, onChange }: FiltroEstad
     >
       <Chip
         etiqueta="Todos"
-        variante="multiple"
+        variante="filtro"
         rol="radio"
         amplio
         activa={seleccionados.length === 0}
@@ -52,7 +54,7 @@ export function FiltroEstados({ opciones, seleccionados, onChange }: FiltroEstad
         <Chip
           key={opcion.id}
           etiqueta={opcion.etiqueta}
-          variante="multiple"
+          variante="filtro"
           rol="checkbox"
           amplio
           activa={seleccionados.includes(opcion.id)}

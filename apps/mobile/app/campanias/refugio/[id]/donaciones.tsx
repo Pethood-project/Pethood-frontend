@@ -10,7 +10,7 @@
  */
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
@@ -18,7 +18,7 @@ import { useToast } from '@/components/feedback/Toast';
 import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { Chip } from '@/components/ui/Chip';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { Segmentado, type OpcionSegmento } from '@/components/ui/Segmentado';
+import type { OpcionSegmento } from '@/components/ui/Segmentado';
 import { PALETA } from '@/constants/theme';
 import { usePaginacionCursor } from '@/hooks/usePaginacionCursor';
 import {
@@ -210,9 +210,26 @@ export default function RevisarDonacionesScreen() {
       <SafeAreaView className="flex-1" edges={['top']}>
         <EncabezadoPantalla barra titulo="Donaciones" onVolver={() => router.back()} />
 
-        <View className="px-4 pt-3">
-          <Segmentado opciones={VISTAS} valor={vista} onChange={setVista} variante="organica" />
-        </View>
+        {/* Chips con la paleta de los filtros del resto de la app (variante `filtro`). */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="items-center gap-2.5 px-4 pb-1 pt-3"
+          // Sin esto, en Android el ScrollView horizontal se estira a todo el alto disponible.
+          className="flex-grow-0"
+        >
+          {VISTAS.map((opcion) => (
+            <Chip
+              key={opcion.valor}
+              etiqueta={opcion.etiqueta}
+              variante="filtro"
+              rol="radio"
+              amplio
+              activa={vista === opcion.valor}
+              onPress={() => setVista(opcion.valor)}
+            />
+          ))}
+        </ScrollView>
 
         {lista.cargando ? (
           <EstadoCargando />
@@ -273,7 +290,7 @@ export default function RevisarDonacionesScreen() {
               <Chip
                 key={clave}
                 etiqueta={ETIQUETA_MOTIVO[clave]}
-                variante="seleccion"
+                variante="filtro"
                 rol="radio"
                 activa={motivo === clave}
                 onPress={() => setMotivo(clave)}

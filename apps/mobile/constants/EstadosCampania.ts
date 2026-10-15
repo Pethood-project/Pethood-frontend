@@ -11,12 +11,16 @@ const ESTILOS: Record<string, EstiloEstado> = {
     texto: 'text-emerald-700',
     etiqueta: 'Activa',
   },
+  Pausada: {
+    fondo: 'bg-amber-50 border-amber-200',
+    texto: 'text-amber-700',
+    etiqueta: 'Pausada',
+  },
   Finalizada: {
     fondo: 'bg-gray-100 border-gray-300',
     texto: 'text-gray-500',
     etiqueta: 'Finalizada',
   },
-  Cancelada: { fondo: 'bg-red-50 border-red-200', texto: 'text-red-700', etiqueta: 'Cancelada' },
 };
 
 export function estiloDeEstadoCampania(nombre: string): EstiloEstado {

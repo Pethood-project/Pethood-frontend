@@ -1,6 +1,6 @@
 /**
- * Textos y reglas de presentación de las campañas (spec 026 del backend). Puro, sin React:
- * se testea con `node --test`.
+ * Textos y reglas de presentación de las campañas (specs 026 y 028 del backend). Puro, sin
+ * React: se testea con `node --test`.
  */
 
 /** «$1.430.000» como en el diseño; con centavos sólo si los hay («$5.000,50»). */
@@ -22,20 +22,33 @@ export function textoPendientes(cantidad: number): string | null {
   return `Tenés ${cantidad} ${cantidad === 1 ? 'donación' : 'donaciones'} para revisar`;
 }
 
-export type AccionCampania = 'finalizar' | 'cancelar';
+/**
+ * Las que todavía no cerraron: cuentan para el límite de campañas por refugio (spec 026 §6.3)
+ * y se pueden editar o finalizar (spec 028). La Pausada cuenta porque se puede reactivar.
+ */
+const ESTADOS_VIGENTES = ['Inactiva', 'Activa', 'Pausada'];
+
+export type AccionCampania = 'pausar' | 'reactivar' | 'finalizar' | 'eliminar';
 
 /**
  * Qué puede hacer el refugio con la campaña según su estado. Espejo de la máquina de estados
- * del backend (spec 026 §6.4): el backend igual valida, esto sólo decide qué botones mostrar.
+ * del backend (spec 028 §6.1): el backend igual valida, esto sólo decide qué botones mostrar.
+ * «Eliminar» sólo aparece si nadie avisó nunca que donó; si no, queda «Finalizar».
  */
-export function accionesDisponibles(estado: string): AccionCampania[] {
-  if (estado === 'Activa') return ['finalizar', 'cancelar'];
-  if (estado === 'Inactiva') return ['cancelar'];
-  return [];
+export function accionesDisponibles(estado: string, tieneDonaciones: boolean): AccionCampania[] {
+  const acciones: AccionCampania[] = [];
+
+  if (estado === 'Activa') acciones.push('pausar');
+  if (estado === 'Pausada') acciones.push('reactivar');
+  if (ESTADOS_VIGENTES.includes(estado)) acciones.push('finalizar');
+  if (!tieneDonaciones) acciones.push('eliminar');
+
+  return acciones;
 }
 
-/** Las que cuentan para el límite de campañas por refugio (spec 026 §6.3). */
-const ESTADOS_VIGENTES = ['Inactiva', 'Activa'];
+export function puedeEditar(estado: string): boolean {
+  return ESTADOS_VIGENTES.includes(estado);
+}
 
 /**
  * Ids de los estados vigentes según el catálogo, para preguntar cuántas campañas cuentan para
@@ -57,6 +70,9 @@ export function motivoParaNoDonar(campania: {
   alias: string | null;
   cbu: string | null;
 }): string | null {
+  if (campania.estado.nombre === 'Pausada') {
+    return 'El refugio pausó esta campaña. Por ahora no está recibiendo donaciones.';
+  }
   if (campania.estado.nombre !== 'Activa') return 'Esta campaña ya no está recibiendo donaciones.';
   if (!campania.alias && !campania.cbu) {
     return 'Esta campaña todavía no cargó un alias ni un CBU para transferir.';

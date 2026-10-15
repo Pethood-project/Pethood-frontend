@@ -14,6 +14,7 @@ import {
   motivoParaNoDonar,
   notaDonar,
   origenDeDonacion,
+  puedeEditar,
   textoDonantes,
   textoPendientes,
 } from './campanias.ts';
@@ -48,23 +49,38 @@ describe('textoPendientes', () => {
 });
 
 describe('accionesDisponibles', () => {
-  it('sigue la máquina de estados de la spec 026', () => {
-    assert.deepEqual(accionesDisponibles('Activa'), ['finalizar', 'cancelar']);
-    assert.deepEqual(accionesDisponibles('Inactiva'), ['cancelar']);
-    assert.deepEqual(accionesDisponibles('Finalizada'), []);
-    assert.deepEqual(accionesDisponibles('Cancelada'), []);
+  it('sigue la máquina de estados de la spec 028', () => {
+    assert.deepEqual(accionesDisponibles('Inactiva', true), ['finalizar']);
+    assert.deepEqual(accionesDisponibles('Activa', true), ['pausar', 'finalizar']);
+    assert.deepEqual(accionesDisponibles('Pausada', true), ['reactivar', 'finalizar']);
+    assert.deepEqual(accionesDisponibles('Finalizada', true), []);
+  });
+
+  it('sin donaciones suma «Eliminar», en cualquier estado', () => {
+    assert.deepEqual(accionesDisponibles('Inactiva', false), ['finalizar', 'eliminar']);
+    assert.deepEqual(accionesDisponibles('Activa', false), ['pausar', 'finalizar', 'eliminar']);
+    assert.deepEqual(accionesDisponibles('Finalizada', false), ['eliminar']);
+  });
+});
+
+describe('puedeEditar', () => {
+  it('mientras la campaña no cerró', () => {
+    assert.equal(puedeEditar('Inactiva'), true);
+    assert.equal(puedeEditar('Activa'), true);
+    assert.equal(puedeEditar('Pausada'), true);
+    assert.equal(puedeEditar('Finalizada'), false);
   });
 });
 
 describe('idsDeEstadosVigentes', () => {
-  it('devuelve los ids de Inactiva y Activa, las que cuentan para el límite de 5', () => {
+  it('devuelve los ids de Inactiva, Activa y Pausada, las que cuentan para el límite de 5', () => {
     const catalogo = [
       { id: 1, nombre: 'Inactiva' },
       { id: 2, nombre: 'Activa' },
       { id: 3, nombre: 'Finalizada' },
-      { id: 4, nombre: 'Cancelada' },
+      { id: 4, nombre: 'Pausada' },
     ];
-    assert.deepEqual(idsDeEstadosVigentes(catalogo), [1, 2]);
+    assert.deepEqual(idsDeEstadosVigentes(catalogo), [1, 2, 4]);
   });
 
   it('sin catálogo no hay ids: la pantalla deja que decida el backend', () => {
@@ -87,6 +103,13 @@ describe('motivoParaNoDonar', () => {
     assert.equal(
       motivoParaNoDonar({ ...activa, estado: { nombre: 'Finalizada' } }),
       'Esta campaña ya no está recibiendo donaciones.',
+    );
+  });
+
+  it('avisa si el refugio la pausó', () => {
+    assert.equal(
+      motivoParaNoDonar({ ...activa, estado: { nombre: 'Pausada' } }),
+      'El refugio pausó esta campaña. Por ahora no está recibiendo donaciones.',
     );
   });
 

@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 
-import { agregarAlPrincipio, reemplazar, unirPagina } from './paginacion.ts';
+import { agregarAlPrincipio, quitar, reemplazar, unirPagina } from './paginacion.ts';
 
 interface Item {
   id: number;
@@ -80,5 +80,19 @@ describe('reemplazar', () => {
 
     assert.deepEqual(subido.map(porId), [1, 3, 2]);
     assert.deepEqual(enSuLugar.map(porId), [3, 2, 1]);
+  });
+});
+
+describe('quitar', () => {
+  it('saca el ítem y deja el resto en su orden', () => {
+    const lista = quitar([item(3), item(2), item(1)], 2, porId);
+
+    assert.deepEqual(lista.map(porId), [3, 1]);
+  });
+
+  it('con la clave ausente deja la lista intacta', () => {
+    const lista = quitar([item(3), item(1)], 2, porId);
+
+    assert.deepEqual(lista.map(porId), [3, 1]);
   });
 });

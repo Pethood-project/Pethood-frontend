@@ -26,6 +26,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   agregarAlPrincipio as ponerArriba,
+  quitar as quitarDeLista,
   reemplazar as reemplazarEnLista,
   unirPagina,
   type PaginaCursor,
@@ -70,6 +71,8 @@ export interface PaginacionCursor<T> {
   agregarAlPrincipio: (item: T) => void;
   /** Actualiza un ítem que ya está en la lista, sin moverlo de lugar ni recargar. */
   reemplazar: (item: T) => void;
+  /** Saca de la lista el ítem con esa clave (ya eliminado en el backend), sin recargar. */
+  quitar: (clave: number | string) => void;
 }
 
 function mensajeDe(err: unknown, sinConexion: string): string {
@@ -190,6 +193,13 @@ export function usePaginacionCursor<T>({
     [claveDe],
   );
 
+  const quitar = useCallback(
+    (clave: number | string): void => {
+      setItems((actuales) => quitarDeLista(actuales, clave, claveDe));
+    },
+    [claveDe],
+  );
+
   // Estables a propósito: las pantallas las ponen como dependencia de `useFocusEffect`, y una
   // función nueva en cada render volvería a correr ese efecto en cada render.
   const recargar = useCallback((): void => void primeraPagina('cargando'), [primeraPagina]);
@@ -210,5 +220,6 @@ export function usePaginacionCursor<T>({
     reintentarMas,
     agregarAlPrincipio,
     reemplazar,
+    quitar,
   };
 }

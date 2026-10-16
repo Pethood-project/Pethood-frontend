@@ -1,7 +1,7 @@
 /**
  * Bandeja de notificaciones (spec 004). Lista paginada de más reciente a más antigua, con
- * estado leído/no leído, marcar todas, eliminar y estado vacío. Se accede desde la campana
- * de Inicio.
+ * estado leído/no leído, marcar todas, eliminar (deslizando la fila a la izquierda) y estado
+ * vacío. Se accede desde la campana de Inicio.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
+import { DeslizarParaEliminar } from '@/components/notificaciones/DeslizarParaEliminar';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
@@ -27,54 +28,57 @@ import {
 
 const MENSAJE_SIN_CONEXION = 'No pudimos cargar tus notificaciones. Revisá tu conexión.';
 
+/** Estable, fuera del componente: ver el contrato de `usePaginacionCursor`. */
+const claveDeNotificacion = (item: NotificacionItem): number => item.id;
+
 interface FilaNotificacionProps {
   item: NotificacionItem;
   onPress: () => void;
-  onEliminar: () => void;
+  /** `false` si no se pudo eliminar: la fila vuelve a aparecer. */
+  onEliminar: () => Promise<boolean>;
 }
 
+/** Se elimina deslizándola hacia la izquierda (ver `DeslizarParaEliminar`). */
 function FilaNotificacion({ item, onPress, onEliminar }: FilaNotificacionProps) {
   return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      className={`mb-2.5 flex-row items-start gap-3 rounded-2xl p-3.5 active:opacity-90 ${
-        item.leido ? 'bg-organic-surface' : 'bg-organic-accent-100'
-      }`}
-    >
-      <View
-        className={`mt-0.5 h-9 w-9 items-center justify-center rounded-full ${
-          item.leido ? 'bg-organic-neutral-200' : 'bg-organic-accent-200'
-        }`}
-      >
-        <Ionicons
-          name={item.leido ? 'notifications-outline' : 'notifications'}
-          size={17}
-          color={item.leido ? PALETA.neutral[600] : PALETA.accent[700]}
-        />
-      </View>
-
-      <View className="min-w-0 flex-1">
-        <Text
-          className={`font-cuerpo text-sm text-organic-neutral-900 ${item.leido ? '' : 'font-cuerpo-semi'}`}
-        >
-          {item.mensaje}
-        </Text>
-        <Text className="mt-1 font-cuerpo text-xs text-organic-neutral-500">
-          {tiempoRelativo(new Date(item.fechaAlta))}
-        </Text>
-      </View>
-
+    <DeslizarParaEliminar onEliminar={onEliminar} separacion={10} radio={16}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Eliminar notificación"
-        onPress={onEliminar}
-        hitSlop={8}
-        className="p-1"
+        // Sin la X, el lector de pantalla no tiene cómo deslizar: se le ofrece como acción.
+        accessibilityActions={[{ name: 'eliminar', label: 'Eliminar notificación' }]}
+        onAccessibilityAction={(evento) => {
+          if (evento.nativeEvent.actionName === 'eliminar') void onEliminar();
+        }}
+        onPress={onPress}
+        // El fondo es opaco a propósito: con uno translúcido se vería la acción de atrás.
+        className={`flex-row items-start gap-3 rounded-2xl p-3.5 active:opacity-90 ${
+          item.leido ? 'bg-organic-surface' : 'bg-organic-accent-100'
+        }`}
       >
-        <Ionicons name="close" size={16} color={PALETA.neutral[400]} />
+        <View
+          className={`mt-0.5 h-9 w-9 items-center justify-center rounded-full ${
+            item.leido ? 'bg-organic-neutral-200' : 'bg-organic-accent-200'
+          }`}
+        >
+          <Ionicons
+            name={item.leido ? 'notifications-outline' : 'notifications'}
+            size={17}
+            color={item.leido ? PALETA.neutral[600] : PALETA.accent[700]}
+          />
+        </View>
+
+        <View className="min-w-0 flex-1">
+          <Text
+            className={`font-cuerpo text-sm text-organic-neutral-900 ${item.leido ? '' : 'font-cuerpo-semi'}`}
+          >
+            {item.mensaje}
+          </Text>
+          <Text className="mt-1 font-cuerpo text-xs text-organic-neutral-500">
+            {tiempoRelativo(new Date(item.fechaAlta))}
+          </Text>
+        </View>
       </Pressable>
-    </Pressable>
+    </DeslizarParaEliminar>
   );
 }
 
@@ -93,7 +97,7 @@ export default function NotificacionesScreen() {
 
   const lista = usePaginacionCursor<NotificacionItem>({
     cargarPagina,
-    claveDe: (item) => item.id,
+    claveDe: claveDeNotificacion,
     mensajeSinConexion: MENSAJE_SIN_CONEXION,
   });
 
@@ -111,15 +115,20 @@ export default function NotificacionesScreen() {
     [router],
   );
 
+  const { quitar } = lista;
   const eliminar = useCallback(
-    async (item: NotificacionItem) => {
+    async (item: NotificacionItem): Promise<boolean> => {
       try {
         await eliminarNotificacion(item.id);
+        // Recién con la baja confirmada: si falla, la fila vuelve y el toast lo explica.
+        quitar(item.id);
+        return true;
       } catch {
         toast.mostrarError('No pudimos eliminar la notificación. Intentalo de nuevo.');
+        return false;
       }
     },
-    [toast],
+    [quitar, toast],
   );
 
   const marcarTodas = useCallback(async () => {
@@ -160,7 +169,7 @@ export default function NotificacionesScreen() {
               <FilaNotificacion
                 item={item}
                 onPress={() => void abrir(item)}
-                onEliminar={() => void eliminar(item)}
+                onEliminar={() => eliminar(item)}
               />
             )}
             onEndReached={lista.cargarMas}

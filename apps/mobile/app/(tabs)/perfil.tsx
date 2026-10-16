@@ -400,7 +400,7 @@ export default function PerfilScreen() {
                     </Text>
                     {/* El mail no va acá: se ve recién dentro de "Ver y editar mi perfil". */}
                     <View className="mt-2">
-                      <Chip etiqueta={etiquetaRol(visible?.roles ?? [])} grande />
+                      <Chip etiqueta={etiquetaRol(visible?.roles ?? [])} variante="organica" grande />
                     </View>
                   </View>
                 </View>

@@ -7,8 +7,8 @@ export function EstadoCampaniaBadge({ estado }: { estado: string }) {
   const { fondo, texto, etiqueta } = estiloDeEstadoCampania(estado);
 
   return (
-    <View className={`self-start rounded-full border px-2.5 py-1 ${fondo}`}>
-      <Text className={`text-xs font-medium ${texto}`}>{etiqueta}</Text>
+    <View className={`self-start rounded-full border px-3 py-1.5 ${fondo}`}>
+      <Text className={`text-[13.5px] font-medium ${texto}`}>{etiqueta}</Text>
     </View>
   );
 }

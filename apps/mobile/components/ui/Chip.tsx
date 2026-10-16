@@ -25,7 +25,9 @@ export type VarianteChip =
    */
   | 'filtro'
   /** Dato corto de una tarjeta ("Macho", "Mediano"): beige liso, sin borde, con ícono opcional. */
-  | 'dato';
+  | 'dato'
+  /** Etiqueta informativa con la paleta Organic: la de `suave`, pero en marrón y no en naranja. */
+  | 'organica';
 
 interface EstiloChip {
   contenedor: string;
@@ -79,6 +81,13 @@ const ESTILOS: Record<VarianteChip, { activa: EstiloChip; inactiva: EstiloChip }
       texto: 'text-organic-neutral-700 font-cuerpo-semi',
     },
   },
+  organica: {
+    activa: { contenedor: 'bg-organic-accent-100', texto: 'text-organic-accent-600 font-cuerpo-semi' },
+    inactiva: {
+      contenedor: 'bg-organic-accent-100',
+      texto: 'text-organic-accent-600 font-cuerpo-semi',
+    },
+  },
 };
 
 /** Las etiquetas sobre foto son más chicas para no tapar la imagen. */
@@ -89,6 +98,7 @@ const TAMANIOS: Record<VarianteChip, string> = {
   multiple: 'px-3 py-1.5',
   filtro: 'px-4 py-2',
   dato: 'px-2.5 py-1',
+  organica: 'px-3 py-1.5',
 };
 
 const TAMANIOS_TEXTO: Record<VarianteChip, string> = {
@@ -98,6 +108,7 @@ const TAMANIOS_TEXTO: Record<VarianteChip, string> = {
   multiple: 'text-sm',
   filtro: 'text-sm',
   dato: 'text-[12px]',
+  organica: 'text-[13px]',
 };
 
 /** Un escalón más grande, para el alta y la publicación de mascota. */
@@ -108,6 +119,7 @@ const TAMANIOS_TEXTO_GRANDE: Record<VarianteChip, string> = {
   multiple: 'text-base',
   filtro: 'text-base',
   dato: 'text-[13.5px]',
+  organica: 'text-[15px]',
 };
 
 export interface ChipProps {

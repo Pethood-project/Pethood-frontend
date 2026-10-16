@@ -401,8 +401,9 @@ export default function FichaPublicacionScreen() {
         </TarjetaFicha>
 
         {/* Reputación de quien publica (Módulo 10, HU-10.5): antes de decidir, el adoptante
-            ve cómo fue valorado el refugio por otras personas. */}
-        {publicacion.refugio ? (
+            ve cómo fue valorado el refugio por otras personas. Sobre lo propio (del usuario o
+            de su refugio, en cualquiera de los dos perfiles) no va: no está decidiendo nada. */}
+        {publicacion.refugio && !publicacion.esPropia ? (
           <ResumenReputacion
             tipo="refugio"
             id={publicacion.refugio.id}

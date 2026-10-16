@@ -36,8 +36,8 @@ export function SwitchRefugio({ activo, onCambiar }: SwitchRefugioProps) {
         habilitado ? 'active:bg-gray-50' : 'opacity-40'
       }`}
     >
-      <View className="h-9 w-9 items-center justify-center rounded-xl bg-orange-50">
-        <Ionicons name="home-outline" size={18} color={PALETA.pethood.naranja} />
+      <View className="h-9 w-9 items-center justify-center rounded-xl bg-organic-accent-100">
+        <Ionicons name="home-outline" size={18} color={PALETA.accent[600]} />
       </View>
 
       <View className="ml-3 flex-1">
@@ -49,7 +49,7 @@ export function SwitchRefugio({ activo, onCambiar }: SwitchRefugioProps) {
 
       <View
         className={`h-7 w-12 justify-center rounded-full px-0.5 ${
-          activo ? 'bg-pethood-orange' : 'bg-gray-300'
+          activo ? 'bg-organic-accent-600' : 'bg-gray-300'
         }`}
       >
         <View

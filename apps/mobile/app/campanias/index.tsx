@@ -18,6 +18,7 @@ import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/
 import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { usePaginacionCursor } from '@/hooks/usePaginacionCursor';
+import { useSesion } from '@/hooks/useSesion';
 import { listarCampanias, type Campania } from '@/services/campanias';
 
 const SIN_CONEXION = 'No pudimos cargar las campañas. Revisá tu conexión e intentalo de nuevo.';
@@ -74,6 +75,8 @@ function PieLista({ cargandoMas, errorMas, onReintentar }: PieListaProps) {
 
 export default function CampaniasAdoptanteScreen() {
   const router = useRouter();
+  // Quien pertenece a un refugio dona a cualquier campaña menos a las del suyo.
+  const refugioPropioId = useSesion().usuario?.refugio?.id ?? null;
 
   const cargarPagina = useCallback(async (cursor: number | null) => {
     const pagina = await listarCampanias(cursor);
@@ -115,6 +118,7 @@ export default function CampaniasAdoptanteScreen() {
             renderItem={({ item }) => (
               <TarjetaCampania
                 campania={item}
+                esPropia={refugioPropioId !== null && item.refugio.id === refugioPropioId}
                 onDonar={() => router.push(`/campanias/${item.id}/donar` as Href)}
               />
             )}

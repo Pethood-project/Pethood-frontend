@@ -1,6 +1,9 @@
 /**
  * Tarjeta del portal de campañas del adoptante (GUI-13, pantalla 13 del diseño): imagen,
  * refugio, título, descripción, «Recaudado · Meta», barra con porcentaje y «Donar ahora».
+ *
+ * A una campaña del propio refugio no se dona (el backend la rechaza con DONACION_PROPIA): en
+ * lugar del botón va un aviso, igual que no se adopta una mascota propia.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { Image, Pressable, Text, View } from 'react-native';
@@ -13,10 +16,12 @@ import type { Campania } from '@/services/campanias';
 
 interface TarjetaCampaniaProps {
   campania: Campania;
+  /** La campaña es del refugio al que pertenece quien la mira. */
+  esPropia: boolean;
   onDonar: () => void;
 }
 
-export function TarjetaCampania({ campania, onDonar }: TarjetaCampaniaProps) {
+export function TarjetaCampania({ campania, esPropia, onDonar }: TarjetaCampaniaProps) {
   const imagen = urlAbsoluta(campania.imagenUrl);
 
   return (
@@ -58,14 +63,23 @@ export function TarjetaCampania({ campania, onDonar }: TarjetaCampaniaProps) {
           {campania.porcentaje}% completado
         </Text>
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Donar a ${campania.titulo}`}
-          onPress={onDonar}
-          className="mt-2 items-center rounded-full bg-organic-accent-600 py-3 active:opacity-90"
-        >
-          <Text className="font-cuerpo-bold text-[16px] text-white">Donar ahora</Text>
-        </Pressable>
+        {esPropia ? (
+          <View className="mt-2 flex-row items-center justify-center gap-1.5 rounded-full bg-organic-neutral-200 py-3">
+            <Ionicons name="home-outline" size={16} color={PALETA.neutral[600]} />
+            <Text className="font-cuerpo-semi text-[15px] text-organic-neutral-600">
+              Es una campaña de tu refugio
+            </Text>
+          </View>
+        ) : (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Donar a ${campania.titulo}`}
+            onPress={onDonar}
+            className="mt-2 items-center rounded-full bg-organic-accent-600 py-3 active:opacity-90"
+          >
+            <Text className="font-cuerpo-bold text-[16px] text-white">Donar ahora</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );

@@ -58,3 +58,15 @@ export function reemplazar<T>(
   const clave = claveDe(item);
   return actuales.map((actual) => (claveDe(actual) === clave ? item : actual));
 }
+
+/**
+ * Saca de la lista el ítem con esa clave, sin recargar: es para cuando el usuario lo elimina
+ * y el backend ya confirmó la baja. Si la clave no está, devuelve la lista intacta.
+ */
+export function quitar<T>(
+  actuales: T[],
+  clave: number | string,
+  claveDe: (item: T) => number | string,
+): T[] {
+  return actuales.filter((actual) => claveDe(actual) !== clave);
+}

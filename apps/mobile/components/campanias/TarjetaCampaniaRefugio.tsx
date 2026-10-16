@@ -55,13 +55,13 @@ function BotonAccion({
       accessibilityRole="button"
       onPress={onPress}
       hitSlop={4}
-      className={`flex-row items-center gap-1.5 rounded-full px-3.5 py-2 active:opacity-70 ${
+      className={`flex-row items-center gap-1.5 rounded-full px-4 py-2.5 active:opacity-70 ${
         peligro ? 'bg-red-50' : 'bg-organic-neutral-200'
       }`}
     >
-      <Ionicons name={icono} size={15} color={peligro ? '#b91c1c' : PALETA.neutral[700]} />
+      <Ionicons name={icono} size={17} color={peligro ? '#b91c1c' : PALETA.neutral[700]} />
       <Text
-        className={`font-cuerpo-bold text-[13px] ${
+        className={`font-cuerpo-bold text-[14.5px] ${
           peligro ? 'text-red-700' : 'text-organic-neutral-700'
         }`}
       >

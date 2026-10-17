@@ -29,9 +29,11 @@ export function FilaDato({
 
   if (disposicion === 'apilada') {
     return (
-      <View className={`px-3.5 py-3 ${separador}`}>
-        <Text className="font-cuerpo-semi text-[11px] text-organic-neutral-600">{etiqueta}</Text>
-        <Text className="mt-1 font-cuerpo text-[14px] leading-5 text-organic-neutral-900">
+      <View className={`px-4 py-3.5 ${separador}`}>
+        <Text className="font-cuerpo-semi text-[13.5px] leading-[19px] text-organic-neutral-600">
+          {etiqueta}
+        </Text>
+        <Text className="mt-1 font-cuerpo text-[16px] leading-[22px] text-organic-neutral-900">
           {valor}
         </Text>
       </View>

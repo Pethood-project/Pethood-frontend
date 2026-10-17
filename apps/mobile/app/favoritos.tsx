@@ -27,6 +27,7 @@ import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { ESTADO_SOLICITABLE, etiquetaGenero, etiquetaTamanio } from '@/constants/Mascotas';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
+import { conRellenoDeFila, RELLENO } from '@/lib/grilla';
 import { urlAbsoluta } from '@/services/api';
 import {
   agregarFavorito,
@@ -58,18 +59,6 @@ function reponerOrdenado(lista: MascotaFavorita[], mascota: MascotaFavorita): Ma
   return [...lista, mascota].sort(
     (a, b) => Date.parse(b.fechaAgregado) - Date.parse(a.fechaAgregado),
   );
-}
-
-/**
- * Hueco que completa una fila impar. `FlatList` con `numColumns={2}` le da todo el ancho
- * al único ítem de la última fila, así que se agrega un relleno invisible para que esa
- * tarjeta conserve su mitad.
- */
-const RELLENO = '__relleno__' as const;
-type ItemGrilla = MascotaFavorita | typeof RELLENO;
-
-function conRellenoDeFila(favoritos: MascotaFavorita[]): ItemGrilla[] {
-  return favoritos.length % 2 === 1 ? [...favoritos, RELLENO] : favoritos;
 }
 
 /** Lo que reemplaza al botón cuando la mascota no se puede solicitar (sin publicación o no disponible). */

@@ -11,35 +11,59 @@
  */
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { FlatList, Image, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantalla';
 import { BotonFlotante } from '@/components/ui/BotonFlotante';
+import { Chip } from '@/components/ui/Chip';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { FiltroEstados, type OpcionEstado } from '@/components/ui/FiltroEstados';
 import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { estiloDeEstado } from '@/constants/EstadosMascota';
+import { etiquetaEdad, etiquetaGenero, etiquetaTamanio } from '@/constants/Mascotas';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
+import { conRellenoDeFila, RELLENO } from '@/lib/grilla';
 import { urlAbsoluta } from '@/services/api';
 import { listarEstadosMascota } from '@/services/catalogos';
 import { listarMisMascotas, type Mascota } from '@/services/mascotas';
-import { edadEnTexto, parsearFecha } from '@/shared/validation/dates';
 
 /** Referencia estable para "sin filtro": un `[]` nuevo en cada render recrearía `cargar`. */
 const SIN_FILTRO: number[] = [];
 
-const ETIQUETA_TAMANIO = {
-  PEQUENO: 'Pequeño',
-  MEDIANO: 'Mediano',
-  GRANDE: 'Grande',
-} as const;
+interface AccionTarjetaProps {
+  etiqueta: string;
+  accessibilityLabel: string;
+  icono: ReactNode;
+  claseFondo: string;
+  claseTexto: string;
+  onPress: () => void;
+}
 
-function edad(fechaNacimiento: string | null): string | null {
-  const fecha = parsearFecha(fechaNacimiento);
-  return fecha ? edadEnTexto(fecha) : null;
+/** Cuadradito de acción al pie de la tarjeta: ícono arriba y una palabra abajo. */
+function AccionTarjeta({
+  etiqueta,
+  accessibilityLabel,
+  icono,
+  claseFondo,
+  claseTexto,
+  onPress,
+}: AccionTarjetaProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      className={`flex-1 items-center justify-center gap-1 rounded-2xl py-2.5 active:opacity-70 ${claseFondo}`}
+    >
+      {icono}
+      <Text numberOfLines={1} className={`font-cuerpo-semi text-[12.5px] ${claseTexto}`}>
+        {etiqueta}
+      </Text>
+    </Pressable>
+  );
 }
 
 interface TarjetaMascotaProps {
@@ -60,78 +84,105 @@ function TarjetaMascota({
 }: TarjetaMascotaProps) {
   const foto = urlAbsoluta(mascota.imagenUrl);
   const nombre = mascota.nombre ?? 'esta mascota';
+  const edadTexto = etiquetaEdad(mascota.fechaNacimiento);
+  const tamanio = etiquetaTamanio(mascota.tamanio);
 
+  // Misma tarjeta que Favoritos (GUI-12), sin lo que allá dice de quién es la mascota, el
+  // corazón ni el botón de solicitar: acá todas son del perfil activo.
   return (
-    <View className="mb-3.5 flex-row gap-3.5 rounded-[26px] bg-organic-surface p-3.5 shadow-sm">
-      {/* Foto y datos son Pressables hermanos de los botones de acción, no un Pressable
-          contenedor: uno anidado dentro de otro dispara onPress apenas se monta en web
-          (React 19), como ya documenta favoritos.tsx. */}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`Ver a ${nombre}`}
-        onPress={onVer}
-        className="active:opacity-90"
-      >
-        {foto ? (
-          <Image source={{ uri: foto }} className="h-32 w-32 rounded-[20px]" />
-        ) : (
-          <View className="h-32 w-32 items-center justify-center rounded-[20px] bg-organic-calido-amarilloClaro">
-            <Ionicons name="paw-outline" size={36} color={PALETA.accent[600]} />
-          </View>
-        )}
-      </Pressable>
+    <View className="flex-1">
+      {/* Foto, datos y acciones son Pressables hermanos, no uno dentro de otro: anidados,
+          en web (React 19) disparan onPress apenas se montan, como documenta favoritos.tsx. */}
+      <View className="rounded-[22px] bg-organic-surface p-2 shadow-sm">
+        <View
+          className="w-full overflow-hidden rounded-2xl bg-organic-neutral-200"
+          style={{ aspectRatio: 1 }}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Ver a ${nombre}`}
+            onPress={onVer}
+            className="h-full w-full active:opacity-90"
+          >
+            {foto ? (
+              <Image source={{ uri: foto }} className="h-full w-full" resizeMode="cover" />
+            ) : (
+              <View className="h-full w-full items-center justify-center">
+                <Ionicons name="paw-outline" size={36} color={PALETA.neutral[400]} />
+              </View>
+            )}
+          </Pressable>
 
-      <View className="flex-1 justify-center">
+          <View className="absolute left-2 top-2" style={{ pointerEvents: 'none' }}>
+            <EstadoMascotaBadge estado={mascota.estado.nombre} sobreFoto />
+          </View>
+        </View>
+
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`Ver a ${nombre}`}
           onPress={onVer}
-          className="active:opacity-90"
+          className="px-1 pt-3 active:opacity-90"
         >
-          <Text className="font-titulo text-[19px] leading-[22px] text-organic-neutral-900">
-            {mascota.nombre}
-          </Text>
-          <Text className="mt-1 font-cuerpo text-[15px] text-organic-neutral-600">
-            {[
-              mascota.especie.nombre,
-              edad(mascota.fechaNacimiento),
-              mascota.tamanio ? ETIQUETA_TAMANIO[mascota.tamanio] : null,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </Text>
-        </Pressable>
-
-        <View className="mt-3 flex-row items-center justify-between">
-          <EstadoMascotaBadge estado={mascota.estado.nombre} />
-
-          <View className="flex-row gap-2">
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Historia clínica de ${mascota.nombre}`}
-              onPress={onVerHistoriaClinica}
-              hitSlop={6}
-              className="h-10 w-10 items-center justify-center rounded-full bg-organic-calido-amarilloClaro active:opacity-70"
+          <View className="flex-row items-baseline justify-between gap-2">
+            <Text
+              numberOfLines={1}
+              className="flex-1 font-titulo text-[20px] leading-[24px] text-organic-neutral-900"
             >
-              <MaterialCommunityIcons
-                name="clipboard-pulse-outline"
-                size={19}
-                color={PALETA.accent[600]}
-              />
-            </Pressable>
-
-            {esPropia ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Editar ${mascota.nombre}`}
-                onPress={onEditar}
-                hitSlop={6}
-                className="h-10 w-10 items-center justify-center rounded-full bg-organic-neutral-200 active:opacity-70"
-              >
-                <Ionicons name="pencil" size={18} color={PALETA.neutral[700]} />
-              </Pressable>
+              {mascota.nombre ?? 'Sin nombre'}
+            </Text>
+            {edadTexto ? (
+              <Text className="font-cuerpo-bold text-[13px] text-organic-accent-600">
+                {edadTexto}
+              </Text>
             ) : null}
           </View>
+
+          <View className="mt-2 flex-row flex-wrap gap-1.5">
+            <Chip
+              variante="dato"
+              icono={mascota.genero === 'MACHO' ? 'male' : 'female'}
+              etiqueta={etiquetaGenero(mascota.genero)}
+            />
+            {tamanio ? <Chip variante="dato" etiqueta={tamanio} /> : null}
+          </View>
+
+          <View className="mt-2 flex-row items-center gap-1">
+            <Ionicons name="paw-outline" size={13} color={PALETA.accent[600]} />
+            <Text numberOfLines={1} className="flex-1 font-cuerpo text-[12px] text-organic-neutral-600">
+              {mascota.especie.nombre} · {mascota.raza.nombre}
+            </Text>
+          </View>
+        </Pressable>
+
+        <View className="flex-row gap-2 px-1 pb-1 pt-3">
+          <AccionTarjeta
+            etiqueta="Historia"
+            accessibilityLabel={`Historia clínica de ${nombre}`}
+            icono={
+              <MaterialCommunityIcons
+                name="clipboard-pulse-outline"
+                size={20}
+                color={PALETA.accent[600]}
+              />
+            }
+            claseFondo="bg-organic-calido-amarilloClaro"
+            claseTexto="text-organic-accent-700"
+            onPress={onVerHistoriaClinica}
+          />
+
+          {/* Solo el creador del registro edita: si lo cargó otro miembro del refugio, la
+              historia clínica ocupa todo el ancho. */}
+          {esPropia ? (
+            <AccionTarjeta
+              etiqueta="Editar"
+              accessibilityLabel={`Editar a ${nombre}`}
+              icono={<Ionicons name="pencil" size={18} color={PALETA.neutral[700]} />}
+              claseFondo="bg-organic-neutral-200"
+              claseTexto="text-organic-neutral-700"
+              onPress={onEditar}
+            />
+          ) : null}
         </View>
       </View>
     </View>
@@ -281,26 +332,37 @@ export default function MisMascotasScreen() {
           />
         ) : (
           <FlatList
-            data={mascotas}
-            keyExtractor={(mascota) => String(mascota.id)}
-            renderItem={({ item }) => (
-              <TarjetaMascota
-                mascota={item}
-                esPropia={item.usuarioId === usuario?.id}
-                onVer={() => router.push({ pathname: '/mascotas/[id]', params: { id: item.id } })}
-                onEditar={() =>
-                  router.push({ pathname: '/mascotas/[id]/editar', params: { id: item.id } })
-                }
-                onVerHistoriaClinica={() =>
-                  router.push({
-                    pathname: '/mascotas/[id]/historia-clinica',
-                    params: { id: item.id },
-                  })
-                }
-              />
-            )}
+            data={conRellenoDeFila(mascotas)}
+            keyExtractor={(item, indice) =>
+              item === RELLENO ? `relleno-${indice}` : String(item.id)
+            }
+            numColumns={2}
+            renderItem={({ item }) =>
+              item === RELLENO ? (
+                <View className="flex-1" />
+              ) : (
+                <TarjetaMascota
+                  mascota={item}
+                  esPropia={item.usuarioId === usuario?.id}
+                  onVer={() =>
+                    router.push({ pathname: '/mascotas/[id]', params: { id: item.id } })
+                  }
+                  onEditar={() =>
+                    router.push({ pathname: '/mascotas/[id]/editar', params: { id: item.id } })
+                  }
+                  onVerHistoriaClinica={() =>
+                    router.push({
+                      pathname: '/mascotas/[id]/historia-clinica',
+                      params: { id: item.id },
+                    })
+                  }
+                />
+              )
+            }
             ListEmptyComponent={filtro.length > 0 ? ListaVaciaFiltrada : ListaVacia}
-            contentContainerClassName="px-5 py-4 pb-28"
+            columnWrapperStyle={{ gap: 12, marginBottom: 12 }}
+            // Abajo deja lugar para que el botón flotante no tape la última fila.
+            contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 112 }}
             refreshControl={
               <RefreshControl
                 refreshing={refrescando}

@@ -85,22 +85,22 @@ function TarjetaSolicitud({ solicitud, vista, onVerDetalle, onResolver }: Tarjet
     <Pressable
       accessibilityRole="button"
       onPress={onVerDetalle}
-      className="mb-3 overflow-hidden rounded-2xl bg-organic-surface shadow-sm active:opacity-90"
+      className="mb-3.5 overflow-hidden rounded-3xl bg-organic-surface shadow-sm active:opacity-90"
     >
-      <View className="flex-row items-center gap-3 p-3">
+      <View className="flex-row items-center gap-4 p-4">
         {foto ? (
-          <Image source={{ uri: foto }} className="h-12 w-12 rounded-xl" />
+          <Image source={{ uri: foto }} className="h-20 w-20 rounded-2xl" />
         ) : (
-          <View className="h-12 w-12 items-center justify-center rounded-xl bg-organic-accent-100">
-            <Ionicons name="paw-outline" size={20} color={PALETA.accent[600]} />
+          <View className="h-20 w-20 items-center justify-center rounded-2xl bg-organic-accent-100">
+            <Ionicons name="paw-outline" size={32} color={PALETA.accent[600]} />
           </View>
         )}
 
         <View className="flex-1">
-          <Text className="font-cuerpo-bold text-sm text-organic-neutral-900">
+          <Text className="font-cuerpo-bold text-[18px] leading-6 text-organic-neutral-900">
             {solicitud.mascota.nombre ?? 'Sin nombre'}
           </Text>
-          <Text className="mt-0.5 font-cuerpo text-xs text-organic-neutral-600">
+          <Text className="mt-1 font-cuerpo text-[14px] leading-5 text-organic-neutral-600">
             {referencia}
             {fecha ? ` · ${aFechaVisible(fecha)}` : ''}
           </Text>
@@ -278,7 +278,13 @@ export default function SolicitudesScreen() {
           }
         >
           {vistaRefugio ? null : (
-            <Segmentado opciones={OPCIONES_VISTA} valor={vista} onChange={cambiarVista} />
+            <Segmentado
+              opciones={OPCIONES_VISTA}
+              valor={vista}
+              onChange={cambiarVista}
+              variante="organica"
+              grande
+            />
           )}
         </EncabezadoPantalla>
 

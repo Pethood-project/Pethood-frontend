@@ -44,20 +44,20 @@ export function LineaTiempoEstados({ historial }: LineaTiempoEstadosProps) {
           <View key={paso.id} className="flex-row gap-3">
             <View className="items-center">
               <View
-                className={`h-6 w-6 items-center justify-center rounded-full ${
+                className={`h-8 w-8 items-center justify-center rounded-full ${
                   negativo ? 'bg-rose-500' : 'bg-organic-accent-600'
                 }`}
               >
-                <Ionicons name={negativo ? 'close' : 'checkmark'} size={14} color={PALETA.blanco} />
+                <Ionicons name={negativo ? 'close' : 'checkmark'} size={18} color={PALETA.blanco} />
               </View>
               {esUltimo ? null : <View className="w-[2px] flex-1 bg-organic-accent-300" />}
             </View>
 
-            <View className={esUltimo ? 'flex-1 pb-0.5' : 'flex-1 pb-4'}>
-              <Text className="font-cuerpo-semi text-sm text-organic-neutral-900">
+            <View className={esUltimo ? 'flex-1 pb-0.5' : 'flex-1 pb-5'}>
+              <Text className="font-cuerpo-semi text-[16px] leading-[22px] text-organic-neutral-900">
                 {ETIQUETAS[paso.nombre] ?? paso.nombre.replace(/_/g, ' ')}
               </Text>
-              <Text className="mt-0.5 font-cuerpo text-xs text-organic-neutral-600">
+              <Text className="mt-0.5 font-cuerpo text-[14px] text-organic-neutral-600">
                 {fecha ? aFechaVisible(fecha) : ''}
               </Text>
             </View>

@@ -6,8 +6,8 @@ export function EstadoSolicitudBadge({ estado }: { estado: string }) {
   const { fondo, texto, etiqueta } = estiloDeEstadoSolicitud(estado);
 
   return (
-    <View className={`self-start rounded-full border px-2.5 py-1 ${fondo}`}>
-      <Text className={`text-xs font-medium ${texto}`}>{etiqueta}</Text>
+    <View className={`self-start rounded-full border px-3 py-1.5 ${fondo}`}>
+      <Text className={`font-cuerpo-semi text-[13px] ${texto}`}>{etiqueta}</Text>
     </View>
   );
 }

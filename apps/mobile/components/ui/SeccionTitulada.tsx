@@ -12,7 +12,7 @@ interface SeccionTituladaProps {
 export function SeccionTitulada({ titulo, children, className = '' }: SeccionTituladaProps) {
   return (
     <View className={className}>
-      <Text className="mb-2 text-[11px] font-bold uppercase tracking-wide text-gray-500">
+      <Text className="mb-2.5 text-[13px] font-bold uppercase tracking-wide text-gray-500">
         {titulo}
       </Text>
       {children}

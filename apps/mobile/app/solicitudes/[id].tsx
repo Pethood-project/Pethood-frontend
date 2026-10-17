@@ -208,7 +208,7 @@ export default function DetalleSolicitudScreen() {
           />
         ) : (
           <ScrollView contentContainerClassName="px-4 py-4 pb-10">
-            <View className="flex-row items-center gap-3 rounded-2xl bg-organic-surface p-3 shadow-sm">
+            <View className="flex-row items-center gap-4 rounded-3xl bg-organic-surface p-4 shadow-sm">
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Ver a ${solicitud.mascota.nombre ?? 'la mascota'}`}
@@ -221,19 +221,19 @@ export default function DetalleSolicitudScreen() {
                 className="active:opacity-70"
               >
                 {foto ? (
-                  <Image source={{ uri: foto }} className="h-16 w-16 rounded-xl" />
+                  <Image source={{ uri: foto }} className="h-24 w-24 rounded-2xl" />
                 ) : (
-                  <View className="h-16 w-16 items-center justify-center rounded-xl bg-organic-accent-100">
-                    <Ionicons name="paw-outline" size={26} color={PALETA.accent[600]} />
+                  <View className="h-24 w-24 items-center justify-center rounded-2xl bg-organic-accent-100">
+                    <Ionicons name="paw-outline" size={36} color={PALETA.accent[600]} />
                   </View>
                 )}
               </Pressable>
 
               <View className="flex-1">
-                <Text className="font-cuerpo-bold text-base text-organic-neutral-900">
+                <Text className="font-cuerpo-bold text-[20px] leading-[26px] text-organic-neutral-900">
                   {solicitud.mascota.nombre ?? 'Sin nombre'}
                 </Text>
-                <Text className="mt-0.5 font-cuerpo text-xs text-organic-neutral-600">
+                <Text className="mt-1 font-cuerpo text-[15px] text-organic-neutral-600">
                   {etiquetaTipoSolicitud(solicitud.tipoSolicitud)}
                 </Text>
               </View>
@@ -259,7 +259,7 @@ export default function DetalleSolicitudScreen() {
                     antifraude, no un dato de rutina. */}
                 {aviso ? (
                   <View className="mt-2.5">
-                    <Nota texto={aviso} />
+                    <Nota texto={aviso} grande />
                   </View>
                 ) : null}
               </SeccionTitulada>
@@ -268,17 +268,17 @@ export default function DetalleSolicitudScreen() {
             {/* Al solicitante no le sirve una ficha de sí mismo: en "Enviadas" se omite. */}
             {esMia ? null : (
             <SeccionTitulada titulo="Solicitante" className="mt-5">
-              <View className="flex-row items-center gap-3 rounded-2xl bg-organic-surface p-3 shadow-sm">
+              <View className="flex-row items-center gap-4 rounded-2xl bg-organic-surface p-4 shadow-sm">
                 <Avatar
-                  tamanio={40}
+                  tamanio={52}
                   nombre={solicitud.solicitante.nombre}
                   apellido={solicitud.solicitante.apellido}
                 />
                 <View className="flex-1">
-                  <Text className="font-cuerpo-semi text-sm text-organic-neutral-900">
+                  <Text className="font-cuerpo-semi text-[17px] text-organic-neutral-900">
                     {solicitud.solicitante.nombre} {solicitud.solicitante.apellido}
                   </Text>
-                  <Text className="mt-0.5 font-cuerpo text-xs text-organic-neutral-600">
+                  <Text className="mt-1 font-cuerpo text-[14px] text-organic-neutral-600">
                     Solicitó el {fechaLarga(solicitud.fechaAlta)}
                   </Text>
                 </View>
@@ -297,8 +297,8 @@ export default function DetalleSolicitudScreen() {
 
             {solicitud.motivacion ? (
               <SeccionTitulada titulo="Motivo de la solicitud" className="mt-5">
-                <View className="rounded-2xl bg-organic-surface p-3.5 shadow-sm">
-                  <Text className="font-cuerpo text-sm leading-5 text-organic-neutral-700">
+                <View className="rounded-2xl bg-organic-surface p-4 shadow-sm">
+                  <Text className="font-cuerpo text-[16px] leading-[23px] text-organic-neutral-700">
                     {solicitud.motivacion}
                   </Text>
                 </View>
@@ -307,8 +307,8 @@ export default function DetalleSolicitudScreen() {
 
             {solicitud.comentario ? (
               <SeccionTitulada titulo="Tu respuesta" className="mt-5">
-                <View className="rounded-2xl bg-organic-surface p-3.5 shadow-sm">
-                  <Text className="font-cuerpo text-sm leading-5 text-organic-neutral-700">
+                <View className="rounded-2xl bg-organic-surface p-4 shadow-sm">
+                  <Text className="font-cuerpo text-[16px] leading-[23px] text-organic-neutral-700">
                     {solicitud.comentario}
                   </Text>
                 </View>

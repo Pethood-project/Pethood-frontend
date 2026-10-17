@@ -223,9 +223,11 @@ export default function EditarPerfilScreen() {
     setFormError(undefined);
   };
 
+  // Sin navegar a mano: al vaciarse la sesión, el `Stack.Protected` de la raíz ya manda a
+  // /login. Un `router.replace('/login')` encima montaba una segunda pantalla de login
+  // deslizándose sobre la primera.
   const salir = async (): Promise<void> => {
     await cerrarSesion();
-    router.replace('/login');
   };
 
   const confirmarDarDeBaja = async (): Promise<void> => {
@@ -236,7 +238,6 @@ export default function EditarPerfilScreen() {
       setConfirmarBaja(false);
       toast.mostrarExito('Tu cuenta fue dada de baja');
       await cerrarSesion();
-      router.replace('/login');
     } catch (error) {
       const mensaje =
         error instanceof ApiError

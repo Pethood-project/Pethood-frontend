@@ -31,11 +31,11 @@ export function ProgresoSolicitud({ estado }: ProgresoSolicitudProps) {
     : 'bg-organic-accent-600';
 
   return (
-    <View className="mt-2 flex-row gap-1.5">
+    <View className="mt-3 flex-row gap-1.5">
       {[1, 2, 3].map((paso) => (
         <View
           key={paso}
-          className={`h-1 flex-1 rounded-full ${
+          className={`h-1.5 flex-1 rounded-full ${
             paso <= relleno ? colorRelleno : 'bg-organic-neutral-200'
           }`}
         />

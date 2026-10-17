@@ -23,16 +23,22 @@ interface NotaProps {
   tono?: TonoNota;
   /** Enlace debajo del texto para resolver lo que la nota explica. */
   accion?: { etiqueta: string; onPress: () => void };
+  /** Letra más grande, para pantallas de lectura como el detalle de una solicitud. */
+  grande?: boolean;
 }
 
-export function Nota({ texto, tono = 'info', accion }: NotaProps) {
+export function Nota({ texto, tono = 'info', accion, grande = false }: NotaProps) {
   const { icono, color } = ESTILOS[tono];
 
   return (
     <View className="flex-row items-start gap-2 rounded-2xl bg-organic-accent-100 px-3.5 py-3">
-      <Ionicons name={icono} size={15} color={color} style={{ marginTop: 1 }} />
+      <Ionicons name={icono} size={grande ? 19 : 15} color={color} style={{ marginTop: 1 }} />
       <View className="flex-1">
-        <Text className="font-cuerpo text-[12.5px] leading-[18px] text-organic-neutral-700">
+        <Text
+          className={`font-cuerpo text-organic-neutral-700 ${
+            grande ? 'text-[15px] leading-[21px]' : 'text-[12.5px] leading-[18px]'
+          }`}
+        >
           {texto}
         </Text>
         {accion ? (

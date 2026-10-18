@@ -13,6 +13,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
+// El de la librería y no el de React Native: con edge-to-edge en Android el nativo no se
+// entera del teclado y no mueve nada.
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 import { PALETA } from '@/constants/theme';
 
@@ -139,102 +142,115 @@ export function SelectMultipleField<T extends string | number>({
         />
       </Pressable>
 
-      <Modal visible={abierto} transparent animationType="fade" onRequestClose={cerrar}>
+      <Modal
+        visible={abierto}
+        transparent
+        animationType="fade"
+        onRequestClose={cerrar}
+        statusBarTranslucent
+      >
         {/* Fondo y hoja son hermanos, como en `SelectField`: un Pressable anidado en otro en
             web (React 19) dispara su onPress al renderizar. */}
-        <View className="flex-1 justify-end bg-black/40">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar"
-            onPress={cerrar}
-            className="absolute inset-0"
-          />
-
-          <View className="max-h-[70%] rounded-t-3xl bg-white pb-6 pt-5">
-            <Text className={`mb-3 px-6 font-bold text-gray-900 ${grande ? 'text-xl' : 'text-lg'}`}>
-              {label}
-            </Text>
-
-            {buscable ? (
-              <View className="mx-6 mb-3 flex-row items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3">
-                <Ionicons name="search" size={18} color={PALETA.gris[400]} />
-                <TextInput
-                  value={busqueda}
-                  onChangeText={setBusqueda}
-                  placeholder="Buscar…"
-                  placeholderTextColor={PALETA.gris[400]}
-                  autoCorrect={false}
-                  className="flex-1 py-3 text-base text-gray-900"
-                />
-                {busqueda ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Limpiar búsqueda"
-                    onPress={() => setBusqueda('')}
-                    hitSlop={8}
-                  >
-                    <Ionicons name="close-circle" size={18} color={PALETA.gris[400]} />
-                  </Pressable>
-                ) : null}
-              </View>
-            ) : null}
-
-            <FlatList
-              data={filas}
-              keyExtractor={(fila) =>
-                fila.tipo === 'grupo' ? `grupo-${fila.titulo}` : `opcion-${fila.opcion.valor}`
-              }
-              keyboardShouldPersistTaps="handled"
-              ListHeaderComponent={
-                busqueda ? null : (
-                  <FilaOpcion
-                    etiqueta={etiquetaTodas}
-                    activa={valores.length === 0}
-                    tamanioTexto={tamanioTexto}
-                    grande={grande}
-                    onPress={() => {
-                      setEnElTope(false);
-                      onChange([]);
-                    }}
-                  />
-                )
-              }
-              ListEmptyComponent={
-                <Text className="px-6 py-4 text-base text-gray-500">
-                  {busqueda ? 'Sin resultados' : 'No hay opciones disponibles'}
-                </Text>
-              }
-              renderItem={({ item }) =>
-                item.tipo === 'grupo' ? (
-                  <Text className="px-6 pb-1 pt-4 text-[12px] font-bold uppercase tracking-wide text-gray-500">
-                    {item.titulo}
-                  </Text>
-                ) : (
-                  <FilaOpcion
-                    etiqueta={item.opcion.etiqueta}
-                    activa={valores.includes(item.opcion.valor)}
-                    tamanioTexto={tamanioTexto}
-                    grande={grande}
-                    onPress={() => alternar(item.opcion.valor)}
-                  />
-                )
-              }
-            />
-
-            {enElTope && maximo !== undefined ? (
-              <Text className="px-6 pt-2 text-center text-sm text-gray-600">
-                Podés elegir hasta {maximo} a la vez.
-              </Text>
-            ) : null}
-
+        {/* Con el buscador enfocado la hoja sube con el teclado: si no, el teclado tapa las
+            opciones que se están filtrando. El velo va por fuera para cubrir toda la pantalla. */}
+        <View className="flex-1 bg-black/40">
+          <KeyboardAvoidingView
+            behavior="padding"
+            style={{ flex: 1, justifyContent: 'flex-end' }}
+          >
             <Pressable
               accessibilityRole="button"
+              accessibilityLabel="Cerrar"
               onPress={cerrar}
-              className="mx-6 mt-3 items-center rounded-2xl bg-organic-accent-600 py-3.5 active:opacity-90"
-            >
-              <Text className="font-cuerpo-semi text-[16px] text-white">Listo</Text>
-            </Pressable>
-          </View>
+              className="absolute inset-0"
+            />
+
+            <View className="max-h-[70%] rounded-t-3xl bg-white pb-6 pt-5">
+              <Text className={`mb-3 px-6 font-bold text-gray-900 ${grande ? 'text-xl' : 'text-lg'}`}>
+                {label}
+              </Text>
+
+              {buscable ? (
+                <View className="mx-6 mb-3 flex-row items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3">
+                  <Ionicons name="search" size={18} color={PALETA.gris[400]} />
+                  <TextInput
+                    value={busqueda}
+                    onChangeText={setBusqueda}
+                    placeholder="Buscar…"
+                    placeholderTextColor={PALETA.gris[400]}
+                    autoCorrect={false}
+                    className="flex-1 py-3 text-base text-gray-900"
+                  />
+                  {busqueda ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Limpiar búsqueda"
+                      onPress={() => setBusqueda('')}
+                      hitSlop={8}
+                    >
+                      <Ionicons name="close-circle" size={18} color={PALETA.gris[400]} />
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
+
+              <FlatList
+                data={filas}
+                keyExtractor={(fila) =>
+                  fila.tipo === 'grupo' ? `grupo-${fila.titulo}` : `opcion-${fila.opcion.valor}`
+                }
+                keyboardShouldPersistTaps="handled"
+                ListHeaderComponent={
+                  busqueda ? null : (
+                    <FilaOpcion
+                      etiqueta={etiquetaTodas}
+                      activa={valores.length === 0}
+                      tamanioTexto={tamanioTexto}
+                      grande={grande}
+                      onPress={() => {
+                        setEnElTope(false);
+                        onChange([]);
+                      }}
+                    />
+                  )
+                }
+                ListEmptyComponent={
+                  <Text className="px-6 py-4 text-base text-gray-500">
+                    {busqueda ? 'Sin resultados' : 'No hay opciones disponibles'}
+                  </Text>
+                }
+                renderItem={({ item }) =>
+                  item.tipo === 'grupo' ? (
+                    <Text className="px-6 pb-1 pt-4 text-[12px] font-bold uppercase tracking-wide text-gray-500">
+                      {item.titulo}
+                    </Text>
+                  ) : (
+                    <FilaOpcion
+                      etiqueta={item.opcion.etiqueta}
+                      activa={valores.includes(item.opcion.valor)}
+                      tamanioTexto={tamanioTexto}
+                      grande={grande}
+                      onPress={() => alternar(item.opcion.valor)}
+                    />
+                  )
+                }
+              />
+
+              {enElTope && maximo !== undefined ? (
+                <Text className="px-6 pt-2 text-center text-sm text-gray-600">
+                  Podés elegir hasta {maximo} a la vez.
+                </Text>
+              ) : null}
+
+              <Pressable
+                accessibilityRole="button"
+                onPress={cerrar}
+                className="mx-6 mt-3 items-center rounded-2xl bg-organic-accent-600 py-3.5 active:opacity-90"
+              >
+                <Text className="font-cuerpo-semi text-[16px] text-white">Listo</Text>
+              </Pressable>
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </FormField>

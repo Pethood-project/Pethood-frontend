@@ -303,6 +303,14 @@ export function BotonSolicitar({
             setAbierto(false);
             irASolicitud(solicitud.id);
           }}
+          onIrAlChat={(chatId) => {
+            setAbierto(false);
+            // El aviso sigue visible en la conversación: el provider vive en el layout raíz.
+            toast.mostrarExito(
+              `Enviamos tu solicitud a ${mascota.destinatario ?? 'el refugio'}. Suelen responder dentro de 48 horas.`,
+            );
+            router.push({ pathname: '/chats/[chatId]', params: { chatId } });
+          }}
         />
       ) : null}
     </>

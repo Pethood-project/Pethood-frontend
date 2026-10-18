@@ -9,6 +9,10 @@
  *
  * Acá solo está la orquestación: qué paso se muestra, cuándo se puede avanzar y el envío.
  * La forma del borrador y su validación viven en `borrador.ts`, y cada paso en su archivo.
+ *
+ * Al enviarla, la app lleva directo a la conversación con el refugio o la persona que
+ * publicó, donde ya está la tarjeta de la solicitud (decisión del 2026-10-18). La pantalla de
+ * éxito (GUI-7.1.2) queda para cuando el backend no pudo abrir esa conversación.
  */
 import { useCallback, useState, type ReactElement } from 'react';
 import { Modal, Platform, Text, View } from 'react-native';
@@ -68,6 +72,11 @@ interface SolicitudModalProps {
   onCreada: (solicitud: SolicitudDetalle) => void;
   /** Salida a "Mi solicitud" desde la pantalla de éxito; la navegación la hace la pantalla. */
   onVerSolicitud: (solicitud: SolicitudDetalle) => void;
+  /**
+   * Recién creada (ya avisada por `onCreada`), a la conversación donde quedó la tarjeta.
+   * Como `onVerSolicitud`, la navegación la hace la pantalla: el modal no conoce el router.
+   */
+  onIrAlChat: (chatId: number) => void;
 }
 
 export function SolicitudModal({
@@ -77,6 +86,7 @@ export function SolicitudModal({
   onCerrar,
   onCreada,
   onVerSolicitud,
+  onIrAlChat,
 }: SolicitudModalProps) {
   const insets = useSafeAreaInsets();
   const [paso, setPaso] = useState(1);
@@ -122,8 +132,13 @@ export function SolicitudModal({
       const solicitud = await crearSolicitud(
         aNuevaSolicitud(borrador, mascota.publicacionId),
       );
-      setCreada(solicitud);
       onCreada(solicitud);
+      // `!= null` y no `!== null`: un backend anterior a este cambio no manda el campo.
+      if (solicitud.chatId != null) {
+        onIrAlChat(solicitud.chatId);
+        return;
+      }
+      setCreada(solicitud);
     } catch (err) {
       setErrorEnvio(
         err instanceof Error
@@ -133,7 +148,7 @@ export function SolicitudModal({
     } finally {
       setEnviando(false);
     }
-  }, [borrador, mascota.publicacionId, onCreada]);
+  }, [borrador, mascota.publicacionId, onCreada, onIrAlChat]);
 
   /**
    * Valida solo el paso actual: así el usuario no llega al final para enterarse de que le

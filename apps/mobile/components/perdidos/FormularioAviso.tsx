@@ -9,7 +9,7 @@
  * - Las coordenadas del teléfono no se piden: son las del momento de publicar y no cambian.
  * - El pin del mapa arranca en el que el aviso ya tenía, sin volver a geocodificar, hasta que
  *   se cambie el lugar.
- * - En un caso resuelto no se ofrece Perdida / Encontrada: el estado ya no cambia.
+ * - Un caso resuelto no llega acá: no se edita (lo frena `app/perdidos/[id]/editar.tsx`).
  * - El título y el botón dicen "Editar aviso" y "Guardar cambios".
  *
  * Lo que sigue, del alta:
@@ -54,7 +54,6 @@ import { Segmentado, type OpcionSegmento } from '@/components/ui/Segmentado';
 import { SelectField } from '@/components/ui/SelectField';
 import { TextAreaField } from '@/components/ui/TextAreaField';
 import { TextField } from '@/components/ui/TextField';
-import { LEYENDA_RESUELTO } from '@/constants/EstadosAnimalPerdido';
 import { PROVINCIAS, localidadesDe } from '@/constants/Provincias';
 import { usePreviewUbicacion, type DireccionEstructurada } from '@/hooks/usePreviewUbicacion';
 import { useSesion } from '@/hooks/useSesion';
@@ -64,7 +63,6 @@ import { ApiError, urlAbsoluta } from '@/services/api';
 import {
   crearAviso,
   editarAviso,
-  estaResuelto,
   leerLinkMapa,
   ubicarLugar,
   type AvisoPerdido,
@@ -191,8 +189,6 @@ export function FormularioAviso({ aviso, ubicacion }: FormularioAvisoProps) {
   const toast = useToast();
   const { usuario } = useSesion();
   const edicion = aviso !== undefined;
-  /** Un caso cerrado: su estado ya no cambia, así que no se ofrece Perdida / Encontrada. */
-  const resuelto = aviso !== undefined && estaResuelto(aviso);
 
   const [estados, setEstados] = useState<OpcionCatalogo[]>([]);
   const [especies, setEspecies] = useState<OpcionCatalogo[]>([]);
@@ -505,19 +501,13 @@ export function FormularioAviso({ aviso, ubicacion }: FormularioAvisoProps) {
             contentContainerClassName="gap-4 px-4 pb-10 pt-4"
             showsVerticalScrollIndicator={false}
           >
-            {resuelto ? (
-              <Nota
-                texto={`Este caso ya está resuelto (${LEYENDA_RESUELTO.toLowerCase()}), así que su estado no cambia. El resto del aviso lo podés corregir.`}
-              />
-            ) : (
-              <Segmentado
-                opciones={opcionesEstado}
-                valor={estadoId}
-                onChange={setEstadoId}
-                variante="organica"
-                grande
-              />
-            )}
+            <Segmentado
+              opciones={opcionesEstado}
+              valor={estadoId}
+              onChange={setEstadoId}
+              variante="organica"
+              grande
+            />
 
             <PhotosPickerField
               fotos={fotos}

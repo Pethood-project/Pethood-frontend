@@ -8,6 +8,11 @@
  * el gris de Resuelto (decisión del 2026-10-04). Resuelto no está en el diseño: va apagado, en
  * neutros, para que se lea como un caso cerrado (decisión del 2026-09-29).
  *
+ * Encontrado se muestra como "Busca a su dueño" (decisión del 2026-10-18): "Encontrado" se
+ * leía como un animal que ya había vuelto con su familia, no como uno que alguien encontró y
+ * tiene a resguardo. Es sólo lo que se ve: en el catálogo sigue siendo `Encontrado`, y al
+ * crear el aviso se sigue eligiendo "Perdida / Encontrada", que en primera persona no confunde.
+ *
  * Las claves son los nombres del catálogo `Estado_Animal_Perdido` del backend. Un estado
  * nuevo sin entrada propia cae al estilo neutro.
  */
@@ -22,7 +27,7 @@ const ESTILOS: Record<string, EstiloEstado> = {
   Encontrado: {
     fondo: 'bg-sky-100 border-sky-200',
     texto: 'text-sky-800',
-    etiqueta: 'Encontrado',
+    etiqueta: 'Busca a su dueño',
   },
   Resuelto: {
     fondo: 'bg-organic-neutral-200 border-organic-neutral-200',
@@ -48,4 +53,15 @@ export function estiloDeEstadoAnimalPerdido(nombre: string): EstiloEstado {
       etiqueta: nombre.replace(/_/g, ' '),
     }
   );
+}
+
+/** Las pastillas del filtro van en plural, como las de la pantalla 33 ("Perros", "Gatos"). */
+const ETIQUETAS_PLURALES: Record<string, string> = {
+  Perdido: 'Perdidos',
+  Encontrado: 'Buscan a su dueño',
+  Resuelto: 'Resueltos',
+};
+
+export function etiquetaPluralDeEstadoAnimalPerdido(nombre: string): string {
+  return ETIQUETAS_PLURALES[nombre] ?? estiloDeEstadoAnimalPerdido(nombre).etiqueta;
 }

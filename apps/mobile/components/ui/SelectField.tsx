@@ -2,6 +2,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import { FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
+// El de la librería y no el de React Native: con edge-to-edge en Android el nativo no se
+// entera del teclado y no mueve nada.
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { claseValor, FormField } from './FormField';
 import { usePaletaFormulario } from './FormCard';
 import { PALETA } from '@/constants/theme';
@@ -104,82 +107,90 @@ export function SelectField<T extends string | number>({
         transparent
         animationType="fade"
         onRequestClose={cerrar}
+        statusBarTranslucent
       >
         {/* Fondo y hoja son hermanos, no uno dentro del otro: un Pressable anidado en otro
             en web (React 19) dispara su onPress al renderizar y tira el handler de cerrar. */}
-        <View className="flex-1 justify-end bg-black/40">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Cerrar"
-            onPress={cerrar}
-            className="absolute inset-0"
-          />
-
-          <View className="max-h-[60%] rounded-t-3xl bg-white pb-8 pt-5">
-            <Text className={`mb-3 px-6 font-bold text-gray-900 ${grande ? 'text-xl' : 'text-lg'}`}>
-              {label}
-            </Text>
-
-            {buscable ? (
-              <View className="mx-6 mb-3 flex-row items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3">
-                <Ionicons name="search" size={18} color={PALETA.gris[400]} />
-                <TextInput
-                  value={busqueda}
-                  onChangeText={setBusqueda}
-                  placeholder="Buscar…"
-                  placeholderTextColor={PALETA.gris[400]}
-                  autoCorrect={false}
-                  className="flex-1 py-3 text-base text-gray-900"
-                />
-                {busqueda ? (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Limpiar búsqueda"
-                    onPress={() => setBusqueda('')}
-                    hitSlop={8}
-                  >
-                    <Ionicons name="close-circle" size={18} color={PALETA.gris[400]} />
-                  </Pressable>
-                ) : null}
-              </View>
-            ) : null}
-
-            <FlatList
-              data={visibles}
-              keyExtractor={(opcion) => String(opcion.valor)}
-              keyboardShouldPersistTaps="handled"
-              ListEmptyComponent={
-                <Text className="px-6 py-4 text-base text-gray-500">
-                  {buscable && busqueda ? 'Sin resultados' : 'No hay opciones disponibles'}
-                </Text>
-              }
-              renderItem={({ item }) => {
-                const activa = item.valor === valor;
-
-                return (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: activa }}
-                    onPress={() => {
-                      onChange(item.valor);
-                      setAbierto(false);
-                      setBusqueda('');
-                    }}
-                    className={`flex-row items-center justify-between px-6 active:bg-gray-50 ${grande ? 'py-5' : 'py-4'}`}
-                  >
-                    <Text
-                      className={`${grande ? 'text-xl' : 'text-base'} ${activa ? 'font-semibold text-pethood-orange' : 'text-gray-800'}`}
-                    >
-                      {item.etiqueta}
-                    </Text>
-                    {activa ? (
-                      <Ionicons name="checkmark" size={grande ? 24 : 20} color={PALETA.pethood.naranja} />
-                    ) : null}
-                  </Pressable>
-                );
-              }}
+        {/* Con el buscador enfocado la hoja sube con el teclado: si no, el teclado tapa las
+            opciones que se están filtrando. El velo va por fuera para cubrir toda la pantalla. */}
+        <View className="flex-1 bg-black/40">
+          <KeyboardAvoidingView
+            behavior="padding"
+            style={{ flex: 1, justifyContent: 'flex-end' }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Cerrar"
+              onPress={cerrar}
+              className="absolute inset-0"
             />
-          </View>
+
+            <View className="max-h-[60%] rounded-t-3xl bg-white pb-8 pt-5">
+              <Text className={`mb-3 px-6 font-bold text-gray-900 ${grande ? 'text-xl' : 'text-lg'}`}>
+                {label}
+              </Text>
+
+              {buscable ? (
+                <View className="mx-6 mb-3 flex-row items-center gap-2 rounded-2xl border border-gray-200 bg-gray-50 px-3">
+                  <Ionicons name="search" size={18} color={PALETA.gris[400]} />
+                  <TextInput
+                    value={busqueda}
+                    onChangeText={setBusqueda}
+                    placeholder="Buscar…"
+                    placeholderTextColor={PALETA.gris[400]}
+                    autoCorrect={false}
+                    className="flex-1 py-3 text-base text-gray-900"
+                  />
+                  {busqueda ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Limpiar búsqueda"
+                      onPress={() => setBusqueda('')}
+                      hitSlop={8}
+                    >
+                      <Ionicons name="close-circle" size={18} color={PALETA.gris[400]} />
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : null}
+
+              <FlatList
+                data={visibles}
+                keyExtractor={(opcion) => String(opcion.valor)}
+                keyboardShouldPersistTaps="handled"
+                ListEmptyComponent={
+                  <Text className="px-6 py-4 text-base text-gray-500">
+                    {buscable && busqueda ? 'Sin resultados' : 'No hay opciones disponibles'}
+                  </Text>
+                }
+                renderItem={({ item }) => {
+                  const activa = item.valor === valor;
+
+                  return (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: activa }}
+                      onPress={() => {
+                        onChange(item.valor);
+                        setAbierto(false);
+                        setBusqueda('');
+                      }}
+                      className={`flex-row items-center justify-between px-6 active:bg-gray-50 ${grande ? 'py-5' : 'py-4'}`}
+                    >
+                      <Text
+                        className={`${grande ? 'text-xl' : 'text-base'} ${activa ? 'font-semibold text-pethood-orange' : 'text-gray-800'}`}
+                      >
+                        {item.etiqueta}
+                      </Text>
+                      {activa ? (
+                        <Ionicons name="checkmark" size={grande ? 24 : 20} color={PALETA.pethood.naranja} />
+                      ) : null}
+                    </Pressable>
+                  );
+                }}
+              />
+            </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
     </FormField>

@@ -3,14 +3,21 @@
  * transacción, así que acá solo se eligen puntuación (obligatoria, 1-5) y comentario
  * (opcional). El texto se adapta al flujo: adoptante→refugio, refugio→adoptante,
  * refugio→tránsito y adoptante→adoptante.
+ *
+ * Con el teclado abierto la tarjeta sube como la de `ReporteModal`: si no entra, se achica y
+ * el scroll deja el comentario a la vista.
  */
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// El de la librería y no el de React Native: con edge-to-edge en Android el nativo no se
+// entera del teclado y no mueve nada.
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 import { CustomButton } from '@/components/CustomButton';
 import { Estrellas } from '@/components/resenas/Estrellas';
 import { TextAreaField } from '@/components/ui/TextAreaField';
+import { useCampoAlFinalVisible } from '@/hooks/useCampoAlFinalVisible';
+import { useMargenesDeModal } from '@/hooks/useMargenesDeModal';
 import type { FlujoResena, TransaccionElegible } from '@/services/resenas';
 import { LIMITES } from '@/shared/validation/limits';
 
@@ -49,7 +56,8 @@ function textosDe(flujo: FlujoResena, contraparte: string, mascota: string) {
 }
 
 export function ResenaModal({ transaccion, enviando, onEnviar, onCerrar }: ResenaModalProps) {
-  const insets = useSafeAreaInsets();
+  const margenes = useMargenesDeModal();
+  const { scrollRef, propsScroll, propsCampo } = useCampoAlFinalVisible();
   const [puntuacion, setPuntuacion] = useState(0);
   const [comentario, setComentario] = useState('');
 
@@ -67,73 +75,87 @@ export function ResenaModal({ transaccion, enviando, onEnviar, onCerrar }: Resen
     : { titulo: '', ayuda: '' };
 
   return (
+    // `statusBarTranslucent`: el modal ocupa la pantalla entera también en Android, así el
+    // teclado se mide contra el mismo alto que en el resto de la app.
     <Modal
       visible={transaccion !== null}
       animationType="fade"
       transparent
       onRequestClose={onCerrar}
+      statusBarTranslucent
     >
-      <View className="flex-1 justify-center bg-black/40 px-4" style={{ paddingTop: insets.top }}>
-        <View className="overflow-hidden rounded-3xl bg-organic-neutral-100">
-          <ScrollView contentContainerStyle={{ padding: 20 }}>
-            <Text className="font-titulo text-[22px] leading-[26px] text-organic-accent-600">
-              {textos.titulo}
-            </Text>
-            <Text className="mt-2 font-cuerpo text-[14px] leading-5 text-organic-neutral-600">
-              {textos.ayuda}
-            </Text>
-
-            <View className="mt-5 items-center">
-              <Estrellas
-                valor={puntuacion}
-                tamanio={40}
-                interactivo
-                onChange={setPuntuacion}
-                etiqueta="Elegí una puntuación de 1 a 5 estrellas"
-              />
-              <Text className="mt-2 font-cuerpo-semi text-[13px] text-organic-neutral-600">
-                {puntuacion === 0
-                  ? 'Tocá las estrellas para puntuar'
-                  : `${puntuacion} de 5`}
-              </Text>
-            </View>
-
-            <View className="mt-5">
-              <TextAreaField
-                label="Comentario (opcional)"
-                placeholder="Contá un poco más, si querés."
-                maximo={LIMITES.resena.comentario.max}
-                value={comentario}
-                onChangeText={setComentario}
-                editable={!enviando}
-              />
-            </View>
-          </ScrollView>
-
+      {/* El velo va por fuera para que cubra toda la pantalla mientras la tarjeta sube. */}
+      <View className="flex-1 bg-black/40">
+        <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           <View
-            className="flex-row gap-2.5 border-t border-organic-neutral-200 bg-organic-neutral-100 px-5 pt-3"
-            style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+            className="flex-1 justify-center px-4"
+            style={{ paddingTop: margenes.arriba + 8, paddingBottom: 8 }}
           >
-            <Pressable
-              accessibilityRole="button"
-              onPress={onCerrar}
-              disabled={enviando}
-              className="flex-1 items-center justify-center rounded-2xl border border-organic-neutral-300 bg-organic-surface py-3.5 active:opacity-80"
-            >
-              <Text className="font-cuerpo-semi text-base text-organic-neutral-700">Cancelar</Text>
-            </Pressable>
+            <View className="max-h-full overflow-hidden rounded-3xl bg-organic-neutral-100">
+              <ScrollView
+                ref={scrollRef}
+                {...propsScroll}
+                contentContainerStyle={{ padding: 20 }}
+                keyboardShouldPersistTaps="handled"
+              >
+                <Text className="font-titulo text-[22px] leading-[26px] text-organic-accent-600">
+                  {textos.titulo}
+                </Text>
+                <Text className="mt-2 font-cuerpo text-[14px] leading-5 text-organic-neutral-600">
+                  {textos.ayuda}
+                </Text>
 
-            <View className="flex-1">
-              <CustomButton
-                title="Publicar reseña"
-                variant="acento"
-                loading={enviando}
-                disabled={puntuacion === 0}
-                onPress={() => onEnviar(puntuacion, comentario)}
-              />
+                <View className="mt-5 items-center">
+                  <Estrellas
+                    valor={puntuacion}
+                    tamanio={40}
+                    interactivo
+                    onChange={setPuntuacion}
+                    etiqueta="Elegí una puntuación de 1 a 5 estrellas"
+                  />
+                  <Text className="mt-2 font-cuerpo-semi text-[13px] text-organic-neutral-600">
+                    {puntuacion === 0 ? 'Tocá las estrellas para puntuar' : `${puntuacion} de 5`}
+                  </Text>
+                </View>
+
+                <View className="mt-5">
+                  <TextAreaField
+                    label="Comentario (opcional)"
+                    placeholder="Contá un poco más, si querés."
+                    maximo={LIMITES.resena.comentario.max}
+                    value={comentario}
+                    onChangeText={setComentario}
+                    editable={!enviando}
+                    {...propsCampo}
+                  />
+                </View>
+              </ScrollView>
+
+              <View className="flex-row gap-2.5 border-t border-organic-neutral-200 bg-organic-neutral-100 px-5 pb-4 pt-3">
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={onCerrar}
+                  disabled={enviando}
+                  className="flex-1 items-center justify-center rounded-2xl border border-organic-neutral-300 bg-organic-surface py-3.5 active:opacity-80"
+                >
+                  <Text className="font-cuerpo-semi text-base text-organic-neutral-700">
+                    Cancelar
+                  </Text>
+                </Pressable>
+
+                <View className="flex-1">
+                  <CustomButton
+                    title="Publicar reseña"
+                    variant="acento"
+                    loading={enviando}
+                    disabled={puntuacion === 0}
+                    onPress={() => onEnviar(puntuacion, comentario)}
+                  />
+                </View>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   );

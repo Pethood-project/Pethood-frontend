@@ -5,6 +5,10 @@
  * Trae el aviso fresco por su id en vez de recibirlo de la pantalla anterior: así no se edita
  * una copia vieja, y si se eliminó mientras tanto se dice. El formulario es el mismo del alta
  * (`FormularioAviso`), que al volver deja el aviso actualizado para quien abrió la edición.
+ *
+ * Un aviso resuelto no se edita (decisión del 2026-10-18): el popup ya no ofrece "Editar" y el
+ * backend lo rechaza con `AVISO_RESUELTO`. Esto cubre llegar igual por un link o con el aviso
+ * resuelto desde otro teléfono.
  */
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -15,7 +19,7 @@ import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantal
 import { FormularioAviso } from '@/components/perdidos/FormularioAviso';
 import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { ApiError } from '@/services/api';
-import { obtenerAviso, type AvisoPerdido } from '@/services/animalesPerdidos';
+import { estaResuelto, obtenerAviso, type AvisoPerdido } from '@/services/animalesPerdidos';
 
 export default function EditarAvisoPerdidoScreen() {
   const router = useRouter();
@@ -24,6 +28,8 @@ export default function EditarAvisoPerdidoScreen() {
 
   const [aviso, setAviso] = useState<AvisoPerdido | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** El aviso existe y es propio, pero el caso está cerrado: no hay nada que reintentar. */
+  const [resuelto, setResuelto] = useState(false);
 
   const cargar = useCallback(async (): Promise<void> => {
     if (!Number.isInteger(avisoId) || avisoId <= 0) {
@@ -37,6 +43,10 @@ export default function EditarAvisoPerdidoScreen() {
       // Sólo se llega acá desde un aviso propio; esto cubre un link armado a mano.
       if (!cargado.esPropio) {
         setError('Sólo quien publicó el aviso puede editarlo.');
+        return;
+      }
+      if (estaResuelto(cargado)) {
+        setResuelto(true);
         return;
       }
       setAviso(cargado);
@@ -61,7 +71,14 @@ export default function EditarAvisoPerdidoScreen() {
       <SafeAreaView className="flex-1" edges={['top']}>
         <EncabezadoPantalla barra titulo="Editar aviso" onVolver={() => router.back()} />
 
-        {error ? (
+        {resuelto ? (
+          <EstadoError
+            icono="heart-circle-outline"
+            mensaje="Este caso ya está resuelto, así que el aviso no se puede editar."
+            etiquetaAccion="Volver"
+            onAccion={() => router.back()}
+          />
+        ) : error ? (
           <EstadoError mensaje={error} onAccion={() => void cargar()} />
         ) : (
           <EstadoCargando />

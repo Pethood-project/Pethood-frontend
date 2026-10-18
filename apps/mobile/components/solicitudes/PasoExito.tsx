@@ -5,6 +5,10 @@
  * Es una pantalla completa y no un toast a propósito: cerrar cuatro pasos de formulario
  * con un aviso de tres segundos deja al usuario sin saber si se envió, y acá además hay
  * dos cosas por hacer (ver la solicitud o volver al listado).
+ *
+ * Desde el 2026-10-18 sólo se ve si el backend no pudo abrir la conversación de la solicitud.
+ * Lo normal es ir directo al chat (ver `SolicitudModal`): ahí la tarjeta de la solicitud ya
+ * confirma que se envió, así que alcanza con un aviso de éxito encima.
  */
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';

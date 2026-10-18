@@ -13,12 +13,13 @@
  *   lugar va "Marcar como resuelto", que cierra el caso **pero no la conversación**. Un aviso
  *   ya resuelto no ofrece ninguno de los dos. Abierto desde la tarjeta del chat tampoco hay
  *   "Enviar mensaje": ya se está en esa conversación.
- * - En un aviso propio, además, "Editar" y "Eliminar" (HU-13.3), si la pantalla los pasa. Uno
- *   resuelto no se elimina: el botón está igual y explica por qué, en vez de desaparecer sin
- *   decir nada.
+ * - En un aviso propio, además, "Editar" y "Eliminar" (HU-13.3), si la pantalla los pasa.
  * - Dos agregados que el diseño no trae, de cuando el lugar pasó al catálogo de provincias: a
  *   qué distancia está el lugar (si el usuario dio su ubicación y el lugar se pudo ubicar en
  *   el mapa) y un botón para verlo en Google Maps.
+ * - Un aviso resuelto queda sólo como registro (decisión del 2026-10-18): ni "Editar" ni
+ *   "Eliminar" para quien lo publicó, ni "Ver en Google Maps" para nadie. Ya no hay a dónde ir
+ *   a buscar al animal. El backend rechaza igual editarlo o eliminarlo.
  *
  * El aviso puede traer hasta 5 fotos: la tarjeta del portal muestra sólo la portada y acá se
  * deslizan todas, con puntos que marcan en cuál se está.
@@ -133,11 +134,10 @@ function TarjetaDetalle({
   const [enViaje, setEnViaje] = useState(false);
   const [confirmarResuelto, setConfirmarResuelto] = useState(false);
   const [confirmarEliminar, setConfirmarEliminar] = useState(false);
-  /** Se tocó "Eliminar" en un caso resuelto: se explica por qué no se puede. */
-  const [explicarNoSeElimina, setExplicarNoSeElimina] = useState(false);
 
   const resuelto = estaResuelto(aviso);
-  const gestionPropia = aviso.esPropio && (onEditar !== undefined || onEliminar !== undefined);
+  const gestionPropia =
+    aviso.esPropio && !resuelto && (onEditar !== undefined || onEliminar !== undefined);
 
   const reclamar = async (): Promise<void> => {
     if (!onReclamar) return;
@@ -184,7 +184,7 @@ function TarjetaDetalle({
   ]
     .filter(Boolean)
     .join(' · ');
-  const mapaUrl = aviso.mapaUrl;
+  const mapaUrl = resuelto ? null : aviso.mapaUrl;
 
   return (
     <View
@@ -310,9 +310,7 @@ function TarjetaDetalle({
                   accessibilityRole="button"
                   accessibilityLabel="Eliminar el aviso"
                   disabled={enViaje}
-                  onPress={() =>
-                    resuelto ? setExplicarNoSeElimina(true) : setConfirmarEliminar(true)
-                  }
+                  onPress={() => setConfirmarEliminar(true)}
                   className="h-[48px] flex-1 flex-row items-center justify-center gap-2 rounded-full border border-red-300 active:opacity-70"
                 >
                   <Ionicons name="trash-outline" size={19} color={PALETA.estado.error} />
@@ -341,7 +339,7 @@ function TarjetaDetalle({
         icono="checkmark-circle-outline"
         titulo="¿El caso se resolvió?"
         mensaje={`Vamos a marcar el aviso de ${nombre} como resuelto.`}
-        detalle="Vas a poder seguir hablando con quien te escribió, pero no vas a poder volver atrás."
+        detalle="Vas a poder seguir hablando con quien te escribió, pero no vas a poder volver atrás, ni editar o eliminar el aviso."
         textoConfirmar="Sí, se resolvió"
         textoCancelar="Cancelar"
         cargando={enViaje}
@@ -362,17 +360,6 @@ function TarjetaDetalle({
         cargando={enViaje}
         onConfirmar={() => void eliminar()}
         onCerrar={() => setConfirmarEliminar(false)}
-      />
-
-      {/* Sin `onConfirmar`: un solo "Entendido". No hay nada que el usuario pueda hacer. */}
-      <ConfirmDialog
-        visible={explicarNoSeElimina}
-        tono="bloqueo"
-        icono="heart-circle-outline"
-        titulo="Este aviso no se puede eliminar"
-        mensaje="El caso ya está resuelto."
-        detalle="Un aviso resuelto queda como registro de que la mascota volvió con su dueño, así que no se puede eliminar."
-        onCerrar={() => setExplicarNoSeElimina(false)}
       />
     </View>
   );

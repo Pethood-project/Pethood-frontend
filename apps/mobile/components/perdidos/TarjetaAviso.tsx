@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image, Pressable, Text, View } from 'react-native';
 
 import { EstadoAnimalPerdidoBadge } from '@/components/ui/EstadoAnimalPerdidoBadge';
-import { LEYENDA_RESUELTO } from '@/constants/EstadosAnimalPerdido';
+import { estiloDeEstadoAnimalPerdido, LEYENDA_RESUELTO } from '@/constants/EstadosAnimalPerdido';
 import { PALETA } from '@/constants/theme';
 import { urlAbsoluta } from '@/services/api';
 import { estaResuelto, type AvisoPerdido } from '@/services/animalesPerdidos';
@@ -36,7 +36,7 @@ export function TarjetaAviso({ aviso, onPress }: TarjetaAvisoProps) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${nombre}, ${aviso.estado.nombre}. Ver el aviso`}
+      accessibilityLabel={`${nombre}, ${estiloDeEstadoAnimalPerdido(aviso.estado.nombre).etiqueta}. Ver el aviso`}
       onPress={onPress}
       className="flex-1 overflow-hidden rounded-[20px] bg-organic-surface active:opacity-90"
     >

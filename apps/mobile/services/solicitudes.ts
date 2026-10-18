@@ -107,6 +107,14 @@ export interface SolicitudDetalle extends SolicitudResumen {
   historial: EstadoSolicitudHistorial[];
 }
 
+/**
+ * Lo que devuelve el alta: el detalle más la conversación con quien publicó, que el backend
+ * abre (o reusa) con la tarjeta del pedido adentro. `null` si la sala no se pudo abrir.
+ */
+export interface SolicitudCreada extends SolicitudDetalle {
+  chatId: number | null;
+}
+
 /** Lo que se manda al crear (HU-7.1). Las fechas van solo si el tipo es "Transito". */
 export interface NuevaSolicitud {
   publicacionId: number;
@@ -219,8 +227,8 @@ export function obtenerElegibilidad(publicacionId?: number): Promise<Elegibilida
   return get(`/solicitudes/elegibilidad${query ? `?${query}` : ''}`);
 }
 
-/** HU-7.1. Devuelve la solicitud ya creada, en estado "Pendiente". */
-export function crearSolicitud(datos: NuevaSolicitud): Promise<SolicitudDetalle> {
+/** HU-7.1. Devuelve la solicitud ya creada, en estado "Pendiente", y su conversación. */
+export function crearSolicitud(datos: NuevaSolicitud): Promise<SolicitudCreada> {
   return post('/solicitudes', datos);
 }
 

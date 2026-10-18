@@ -4,7 +4,8 @@
  * avanzados) con el mismo armado que `FiltrosSolicitudesModal` (decisión del 2026-09-29).
  *
  * Las secciones:
- * - Estado: Perdido, Encontrado y Resuelto (el portal muestra los tres). Varios a la vez.
+ * - Estado: Perdido, Encontrado ("Busca a su dueño") y Resuelto (el portal muestra los tres).
+ *   Varios a la vez.
  * - Especie. Varias a la vez.
  * - Lugar: provincias y localidades en dos desplegables de selección múltiple, que cerrados
  *   dicen "Todas", la única elegida o "N seleccionadas" (con pastillas, muchas opciones hacían
@@ -32,6 +33,7 @@ import { SelectorChips, type OpcionSelector } from '@/components/ui/SelectorChip
 import { SelectorChipsMultiples } from '@/components/ui/SelectorChipsMultiples';
 import { BotonVolver } from '@/components/ui/BotonVolver';
 import { TituloPantalla } from '@/components/ui/EncabezadoPantalla';
+import { etiquetaPluralDeEstadoAnimalPerdido } from '@/constants/EstadosAnimalPerdido';
 import { PALETA } from '@/constants/theme';
 import { useMargenesDeModal } from '@/hooks/useMargenesDeModal';
 import { coordenadasRecordadas, pedirUbicacion, type ResultadoUbicacion } from '@/lib/ubicacion';
@@ -183,7 +185,10 @@ export function FiltrosPerdidosModal({
       ]);
 
       setOpciones({
-        estados: estados.map((estado) => ({ valor: estado.id, etiqueta: enPlural(estado.nombre) })),
+        estados: estados.map((estado) => ({
+          valor: estado.id,
+          etiqueta: etiquetaPluralDeEstadoAnimalPerdido(estado.nombre),
+        })),
         especies: especies.map((especie) => ({
           valor: especie.id,
           etiqueta: enPlural(especie.nombre),

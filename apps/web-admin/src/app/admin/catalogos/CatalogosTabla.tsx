@@ -218,7 +218,7 @@ export function CatalogosTabla(props: {
           id="catalogo"
           value={props.catalogo}
           onChange={(e) => router.push(`/admin/catalogos?catalogo=${e.target.value}`)}
-          className="w-full appearance-none rounded-xl border border-pethood-orange bg-white py-3 pl-4 pr-11 text-base font-medium text-neutral-900 outline-none focus:ring-2 focus:ring-pethood-orange/30"
+          className="w-full appearance-none rounded-xl border border-pethood-accent-600 bg-white py-3 pl-4 pr-11 text-base font-medium text-neutral-900 outline-none focus:ring-2 focus:ring-pethood-accent-600/30"
         >
           {CATALOGOS.map((c) => (
             <option key={c.id} value={c.id}>
@@ -226,7 +226,7 @@ export function CatalogosTabla(props: {
             </option>
           ))}
         </select>
-        <ChevronDown size={20} className="pointer-events-none absolute bottom-3.5 right-3.5 text-pethood-orange-dark" />
+        <ChevronDown size={20} className="pointer-events-none absolute bottom-3.5 right-3.5 text-pethood-accent-700" />
       </div>
 
       <nav aria-label="Catálogos" className="hidden flex-wrap gap-2 md:flex">
@@ -237,8 +237,8 @@ export function CatalogosTabla(props: {
             aria-current={c.id === props.catalogo ? "page" : undefined}
             className={`shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors ${
               c.id === props.catalogo
-                ? "border-pethood-orange bg-pethood-orange text-white"
-                : "border-neutral-300 bg-neutral-100 text-neutral-700 hover:border-pethood-orange hover:text-pethood-orange-dark"
+                ? "border-pethood-accent-600 bg-pethood-accent-600 text-white"
+                : "border-neutral-300 bg-neutral-100 text-neutral-700 hover:border-pethood-accent-600 hover:text-pethood-accent-700"
             }`}
           >
             {c.label}

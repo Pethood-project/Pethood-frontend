@@ -45,7 +45,7 @@ export function DetalleMascotaModal({ id, token, onCerrar }: { id: number; token
                     </p>
                     {h.descripcion && <p className="whitespace-pre-wrap">{h.descripcion}</p>}
                     {h.documentoUrl && (
-                      <a href={urlArchivo(h.documentoUrl)} target="_blank" rel="noreferrer" className="text-xs text-pethood-orange-dark underline">
+                      <a href={urlArchivo(h.documentoUrl)} target="_blank" rel="noreferrer" className="text-xs text-pethood-accent-700 underline">
                         Ver documento
                       </a>
                     )}

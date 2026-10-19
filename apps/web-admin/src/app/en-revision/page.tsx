@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "PetHood — Refugio en revisión" };
 // no está Activo (pendiente de verificación, suspendido o dado de baja).
 export default function EnRevisionPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-pethood-beige p-4">
+    <main className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 text-center shadow-sm sm:p-8">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50 text-amber-600">
           <Hourglass size={28} />
@@ -25,7 +25,7 @@ export default function EnRevisionPage() {
           {/* <a> y no <Link>: /salir borra la cookie y el prefetch lo ejecutaría sin que nadie haga click. */}
           <a
             href="/salir"
-            className="rounded-md bg-pethood-orange px-5 py-2.5 text-sm font-medium text-white hover:bg-pethood-orange-dark"
+            className="rounded-md bg-pethood-accent-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-pethood-accent-700"
           >
             Salir
           </a>

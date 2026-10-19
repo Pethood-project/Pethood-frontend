@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
 import type { DonacionPorMes } from "@/types/dashboard";
 
-const COLOR_BARRA = "var(--color-green-300)";
-const COLOR_BARRA_ULTIMO_MES = "var(--color-green-600)";
-const COLOR_OBJETIVO = "var(--color-sky-600)";
+// Mismos tonos que la barra de progreso de campañas de la app (BarraProgreso.tsx).
+const COLOR_BARRA = "var(--color-pethood-accent-300)";
+const COLOR_BARRA_ULTIMO_MES = "var(--color-pethood-accent-600)";
+const COLOR_OBJETIVO = "var(--color-neutral-800)";
 
 function formatoMoneda(monto: number): string {
   return `$${monto.toLocaleString("es-AR")}`;

@@ -10,7 +10,7 @@ const ICONO: Record<RolUsuario, LucideIcon> = {
 
 const COLOR: Record<RolUsuario, string> = {
   ADMIN: "bg-blue-50 text-blue-700 border-blue-200",
-  MIEMBRO_REFUGIO: "bg-pethood-beige text-pethood-orange-dark border-pethood-beige-dark",
+  MIEMBRO_REFUGIO: "bg-pethood-accent-100 text-pethood-accent-700 border-pethood-accent-200",
   ADOPTANTE: "bg-rose-50 text-rose-700 border-rose-200",
 };
 

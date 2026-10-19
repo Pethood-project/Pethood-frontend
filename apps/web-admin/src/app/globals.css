@@ -9,27 +9,30 @@
    */
   --background: #f5ead8;
   --foreground: #201e1d;
-  /* Identidad visual PetHood — CLAUDE.md, misma paleta que apps/mobile/tailwind.config.js */
-  --color-pethood-orange: #ff9d5c;
-  --color-pethood-orange-dark: #ff8a3d;
-  --color-pethood-beige: #fff5ed;
-  --color-pethood-beige-dark: #f5f1e8;
+  /* Fondo de los campos de formulario (PETHOOD.input de apps/mobile/constants/theme.js). */
   --color-pethood-input: #fafafa;
 
   /*
-   * Rampa de acento del diseño de referencia (GUI-15.1.1/15.2.1, --color-accent-* en
-   * pantallas/PetHood App (standalone).html): variantes del naranja de marca para series de
-   * gráficos e íconos de KPI que necesitan más de un tono (bg-pethood-orange es siempre el
-   * mismo). "success" es el rol que ahí cumple --color-accent-2-* (verde oliva cálido), para
-   * KPIs positivos sin recurrir al verde frío por defecto de Tailwind.
+   * Rampa de acento = ORGANIC.accent de apps/mobile/constants/theme.js, la misma de la app.
+   * Es el color de marca de la web: el naranja #ff9d5c ya no se usa. Criterio:
+   *   - 600: relleno (botón primario, chip/filtro activo, ítem activo del menú, barras).
+   *   - 700: texto y links sobre fondos claros, y hover del primario. El 600 como texto
+   *     no llega a contraste AA sobre el fondo crema.
+   *   - 100-300: fondos suaves (hover de chips, avatar, filas de alerta, badges).
+   * "success" es el verde oliva cálido del diseño de referencia, para KPIs positivos sin
+   * recurrir al verde frío por defecto de Tailwind.
    */
   --color-pethood-accent-100: #fff2eb;
+  --color-pethood-accent-200: #ffe1d0;
+  --color-pethood-accent-300: #ffc6a5;
   --color-pethood-accent-400: #f6a06b;
   --color-pethood-accent-500: #d67f48;
   --color-pethood-accent-600: #b2622d;
   --color-pethood-accent-700: #8c491a;
   --color-pethood-accent-800: #643312;
-  --color-pethood-gold: #fcb442;
+  --color-pethood-accent-900: #402310;
+  /* ORGANIC.calido.amarillo de la app (estado "En revisión" en los gráficos). */
+  --color-pethood-amarillo: #f3cc6a;
   --color-pethood-badge: #fbe6af;
   --color-pethood-success-100: #f0fae1;
   --color-pethood-success-600: #728157;
@@ -39,18 +42,17 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-pethood-orange: var(--color-pethood-orange);
-  --color-pethood-orange-dark: var(--color-pethood-orange-dark);
-  --color-pethood-beige: var(--color-pethood-beige);
-  --color-pethood-beige-dark: var(--color-pethood-beige-dark);
   --color-pethood-input: var(--color-pethood-input);
   --color-pethood-accent-100: var(--color-pethood-accent-100);
+  --color-pethood-accent-200: var(--color-pethood-accent-200);
+  --color-pethood-accent-300: var(--color-pethood-accent-300);
   --color-pethood-accent-400: var(--color-pethood-accent-400);
   --color-pethood-accent-500: var(--color-pethood-accent-500);
   --color-pethood-accent-600: var(--color-pethood-accent-600);
   --color-pethood-accent-700: var(--color-pethood-accent-700);
   --color-pethood-accent-800: var(--color-pethood-accent-800);
-  --color-pethood-gold: var(--color-pethood-gold);
+  --color-pethood-accent-900: var(--color-pethood-accent-900);
+  --color-pethood-amarillo: var(--color-pethood-amarillo);
   --color-pethood-badge: var(--color-pethood-badge);
   --color-pethood-success-100: var(--color-pethood-success-100);
   --color-pethood-success-600: var(--color-pethood-success-600);

@@ -46,8 +46,8 @@ export function ExportacionAdmin({ entidad, token }: { entidad: EntidadExportabl
       disabled={descargando}
       title={titulo}
       aria-label={titulo}
-      className={`shrink-0 rounded-md p-1.5 transition-colors hover:bg-pethood-orange/10 disabled:opacity-50 ${
-        error ? "text-red-500" : "text-pethood-orange/70 hover:text-pethood-orange-dark"
+      className={`shrink-0 rounded-md p-1.5 transition-colors hover:bg-pethood-accent-100 disabled:opacity-50 ${
+        error ? "text-red-500" : "text-pethood-accent-600 hover:text-pethood-accent-700"
       }`}
     >
       <Download className={`h-5 w-5 ${descargando ? "animate-pulse" : ""}`} strokeWidth={2} />

@@ -92,7 +92,7 @@ export function BuscadorRefugio({
                   setQuery(refugio.nombre);
                   setAbierto(false);
                 }}
-                className="block w-full px-3 py-2 text-left text-sm text-neutral-800 hover:bg-pethood-beige"
+                className="block w-full px-3 py-2 text-left text-sm text-neutral-800 hover:bg-pethood-accent-100"
               >
                 {refugio.nombre}
                 <span className="ml-1 text-xs text-neutral-400">#{refugio.id}</span>

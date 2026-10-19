@@ -27,7 +27,7 @@ export function BarList({ titulo, items, accion }: BarListProps) {
             </div>
             <div className="mt-1.5 h-2.5 rounded-full bg-neutral-200">
               <div
-                className="h-2.5 rounded-full bg-pethood-orange transition-[width] duration-500 ease-out"
+                className="h-2.5 rounded-full bg-pethood-accent-600 transition-[width] duration-500 ease-out"
                 style={{ width: `${(item.valor / max) * 100}%` }}
               />
             </div>

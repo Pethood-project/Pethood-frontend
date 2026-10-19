@@ -13,8 +13,8 @@ interface DonutChartProps {
 // Pendiente, En_Revision, Aprobada, Rechazada, Cancelada) — acá también les damos su etiqueta
 // en español, porque "En_Revision" es un valor técnico, no un texto para mostrar.
 const CONFIG_ESTADO: Record<string, { etiqueta: string; color: string }> = {
-  Pendiente: { etiqueta: "Pendiente", color: "var(--color-pethood-orange-dark)" },
-  En_Revision: { etiqueta: "En revisión", color: "var(--color-pethood-gold)" },
+  Pendiente: { etiqueta: "Pendiente", color: "var(--color-pethood-accent-600)" },
+  En_Revision: { etiqueta: "En revisión", color: "var(--color-pethood-amarillo)" },
   Aprobada: { etiqueta: "Aprobada", color: "var(--color-pethood-success-600)" },
   Rechazada: { etiqueta: "Rechazada", color: "var(--color-red-500)" },
   Cancelada: { etiqueta: "Cancelada", color: "var(--color-neutral-400)" },

@@ -1,5 +1,4 @@
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
-import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import type { SolicitudDemorada } from "@/types/dashboard";
 
@@ -7,12 +6,11 @@ import type { SolicitudDemorada } from "@/types/dashboard";
 // actual del backlog (no depende del período elegido en pantalla).
 export function AlertasSolicitudes({ items }: { items: SolicitudDemorada[] }) {
   return (
-    <Card>
+    // Toda la tarjeta lleva al listado con el filtro especial (mismo criterio en el back).
+    <Card href="/refugio/solicitudes?estado=demoradas">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h2 className="text-lg font-semibold text-neutral-900">Solicitudes que necesitan atención</h2>
-        <Link href="/refugio/solicitudes" className="text-sm font-medium text-pethood-orange-dark hover:underline">
-          Ver todas
-        </Link>
+        <span className="text-sm font-medium text-pethood-accent-700">Ver solicitudes demoradas</span>
       </div>
       {items.length === 0 ? (
         <div className="mt-4 flex items-center gap-2 text-base text-neutral-600">

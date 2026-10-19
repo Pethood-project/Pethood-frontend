@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import { logoutAction } from "@/app/actions";
+import { BotonCerrarSesion } from "./BotonCerrarSesion";
 import { useMenuMovil } from "./MenuMovil";
 
 export interface SidebarLink {
@@ -78,23 +78,21 @@ export function Sidebar({ links }: SidebarProps) {
                 {link.label}
               </Link>
             ))}
-            <form
-              action={logoutAction}
+            <div
               style={{ transitionDelay: abierto ? `${links.length * 30}ms` : "0ms" }}
               className={`w-80 max-w-[85vw] transition-all duration-200 ${
                 abierto ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
               }`}
             >
-              <button
-                type="submit"
+              <BotonCerrarSesion
                 tabIndex={abierto ? 0 : -1}
                 style={estiloItem(0)}
                 className={`${ITEM_MOVIL} w-full justify-center border-white/10 bg-white/5 text-red-400`}
               >
                 <LogOut />
                 Salir
-              </button>
-            </form>
+              </BotonCerrarSesion>
+            </div>
             <button
               type="button"
               onClick={() => setAbierto(false)}

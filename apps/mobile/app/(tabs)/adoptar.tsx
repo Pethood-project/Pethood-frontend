@@ -275,10 +275,14 @@ function MazoAdopcion() {
           >
             {filtrosActivos > 0 ? (
               <>
-                <CustomButton title="Modificar filtros" onPress={() => setModalFiltros(true)} />
+                <CustomButton
+                  title="Modificar filtros"
+                  variant="acento"
+                  onPress={() => setModalFiltros(true)}
+                />
                 <CustomButton
                   title="Quitar todos los filtros"
-                  variant="secondary"
+                  variant="acento-borde"
                   onPress={() => {
                     setBusqueda('');
                     setFiltros(SIN_FILTROS);

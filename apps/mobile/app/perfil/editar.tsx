@@ -119,6 +119,8 @@ export default function EditarPerfilScreen() {
   const [confirmarSalida, setConfirmarSalida] = useState(false);
   const [confirmarBaja, setConfirmarBaja] = useState(false);
   const [dandoDeBaja, setDandoDeBaja] = useState(false);
+  const [confirmarCierre, setConfirmarCierre] = useState(false);
+  const [cerrandoSesion, setCerrandoSesion] = useState(false);
 
   const hayCambios =
     JSON.stringify(form) !== JSON.stringify(inicial) ||
@@ -227,7 +229,12 @@ export default function EditarPerfilScreen() {
   // /login. Un `router.replace('/login')` encima montaba una segunda pantalla de login
   // deslizándose sobre la primera.
   const salir = async (): Promise<void> => {
-    await cerrarSesion();
+    setCerrandoSesion(true);
+    try {
+      await cerrarSesion();
+    } finally {
+      setCerrandoSesion(false);
+    }
   };
 
   const confirmarDarDeBaja = async (): Promise<void> => {
@@ -617,7 +624,7 @@ export default function EditarPerfilScreen() {
               <View className="mt-6 gap-3">
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => void salir()}
+                  onPress={() => setConfirmarCierre(true)}
                   style={FORMA_BOTON_ORGANIC}
                   className="flex-row items-center justify-center gap-2 border border-organic-neutral-300 bg-organic-neutral-100 py-4 active:opacity-80"
                 >
@@ -660,6 +667,22 @@ export default function EditarPerfilScreen() {
         textoCancelar="Seguir editando"
         onConfirmar={salirSinGuardar}
         onCerrar={() => setConfirmarSalida(false)}
+      />
+
+      {/* Un toque errado en "Cerrar sesión" no debería sacarte de la app de una. */}
+      <ConfirmDialog
+        visible={confirmarCierre}
+        tono="advertencia"
+        icono="log-out-outline"
+        titulo="¿Cerrar sesión?"
+        mensaje="Vas a tener que volver a ingresar con tu correo y contraseña."
+        textoConfirmar="Cerrar sesión"
+        textoCancelar="Cancelar"
+        cargando={cerrandoSesion}
+        onConfirmar={() => void salir()}
+        onCerrar={() => {
+          if (!cerrandoSesion) setConfirmarCierre(false);
+        }}
       />
 
       <ConfirmDialog

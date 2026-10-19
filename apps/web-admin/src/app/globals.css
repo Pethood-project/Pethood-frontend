@@ -37,6 +37,16 @@
   --color-pethood-success-100: #f0fae1;
   --color-pethood-success-600: #728157;
   --color-pethood-success-700: #56633f;
+  /*
+   * Verde claro y llamativo solo para donaciones del dashboard de refugio (barras del flujo y
+   * tarjeta "Donación del período"): a propósito NO es el success oliva, para que la plata
+   * recaudada salte a la vista sobre el resto de la paleta cálida.
+   */
+  --color-pethood-donacion-300: #86efac;
+  --color-pethood-donacion-400: #4ade80;
+  --color-pethood-donacion-500: #22c55e;
+  --color-pethood-donacion-600: #16a34a;
+  --color-pethood-donacion-900: #14532d;
 }
 
 @theme inline {
@@ -57,6 +67,11 @@
   --color-pethood-success-100: var(--color-pethood-success-100);
   --color-pethood-success-600: var(--color-pethood-success-600);
   --color-pethood-success-700: var(--color-pethood-success-700);
+  --color-pethood-donacion-300: var(--color-pethood-donacion-300);
+  --color-pethood-donacion-400: var(--color-pethood-donacion-400);
+  --color-pethood-donacion-500: var(--color-pethood-donacion-500);
+  --color-pethood-donacion-600: var(--color-pethood-donacion-600);
+  --color-pethood-donacion-900: var(--color-pethood-donacion-900);
   --font-sans: var(--font-figtree);
   --font-heading: var(--font-caprasimo);
   --font-mono: var(--font-geist-mono);

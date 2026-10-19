@@ -395,7 +395,7 @@ export function EditorFotoModal({ visible, uri, onCancelar, onConfirmar }: Edito
                 accessibilityState={{ busy: procesando }}
                 disabled={procesando || !listo}
                 onPress={() => void confirmar()}
-                className={`flex-1 items-center justify-center rounded-2xl bg-pethood-orange py-3.5 active:opacity-90 ${
+                className={`flex-1 items-center justify-center rounded-2xl bg-organic-accent-600 py-3.5 active:opacity-90 ${
                   procesando || !listo ? 'opacity-60' : ''
                 }`}
               >

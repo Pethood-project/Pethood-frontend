@@ -118,7 +118,7 @@ export default function VerificacionIdentidadScreen() {
 
         {cargando ? (
           <View className="flex-1 items-center justify-center">
-            <ActivityIndicator color={PALETA.pethood.naranja} />
+            <ActivityIndicator color={PALETA.accent[600]} />
           </View>
         ) : errorCarga || !perfil ? (
           <View className="flex-1 items-center justify-center gap-4 px-8">
@@ -127,7 +127,7 @@ export default function VerificacionIdentidadScreen() {
             </Text>
             <CustomButton
               title="Reintentar"
-              variant="secondary"
+              variant="acento-borde"
               onPress={() => {
                 setCargando(true);
                 void cargar();
@@ -196,6 +196,7 @@ export default function VerificacionIdentidadScreen() {
 
             <CustomButton
               title={enRevision ? 'Reemplazar documentación' : 'Enviar para revisión'}
+              variant="acento"
               loading={enviando}
               disabled={!puedeEnviar}
               onPress={() => void enviar()}

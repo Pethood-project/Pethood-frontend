@@ -1,7 +1,8 @@
-import { LogOut, PawPrint, UserRound } from "lucide-react";
+import { LogOut, UserRound } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import { BotonCerrarSesion } from "./BotonCerrarSesion";
 import { BotonMenu } from "./MenuMovil";
-import { logoutAction } from "@/app/actions";
 
 interface TopbarProps {
   rol: string;
@@ -17,7 +18,7 @@ export function Topbar({ rol }: TopbarProps) {
           title="Ir al inicio"
           className="flex items-center gap-2 font-heading text-lg text-pethood-accent-700"
         >
-          <PawPrint className="h-6 w-6" strokeWidth={2} />
+          <Image src="/img/logo.png" alt="Logo PetHood" width={32} height={32} />
           PetHood
         </Link>
       </div>
@@ -26,15 +27,12 @@ export function Topbar({ rol }: TopbarProps) {
           <UserRound className="h-5 w-5" strokeWidth={2} />
         </span>
         <span className="hidden sm:inline">{rol}</span>
-        <form action={logoutAction}>
-          <button
-            type="submit"
-            className="flex items-center gap-1 rounded-md px-2 py-1.5 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-neutral-800"
-            title="Cerrar sesión"
-          >
-            <LogOut className="h-5 w-5" strokeWidth={2} />
-          </button>
-        </form>
+        <BotonCerrarSesion
+          className="flex items-center gap-1 rounded-md px-2 py-1.5 text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-neutral-800"
+          title="Cerrar sesión"
+        >
+          <LogOut className="h-5 w-5" strokeWidth={2} />
+        </BotonCerrarSesion>
       </div>
     </header>
   );

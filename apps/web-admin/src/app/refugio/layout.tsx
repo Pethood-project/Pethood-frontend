@@ -4,6 +4,7 @@ import { AUTH_COOKIE, decodeSesion, tieneRol } from "@/lib/auth";
 import { RefugioSidebar } from "@/components/layout/RefugioSidebar";
 import { MenuMovilProvider } from "@/components/layout/MenuMovil";
 import { Topbar } from "@/components/layout/Topbar";
+import { ToastProvider } from "@/components/ui/Toast";
 
 // El proxy (src/proxy.ts) ya filtra por UX; esta verificación server-side es la segunda
 // capa recomendada por Next.js para no depender solo del proxy (ver docs/proxy.md).
@@ -20,6 +21,7 @@ export default async function RefugioLayout({
 
   return (
     <MenuMovilProvider>
+      <ToastProvider>
       <div className="flex h-screen flex-col">
         <Topbar rol="Refugio" />
         <div className="flex min-h-0 flex-1">
@@ -29,6 +31,7 @@ export default async function RefugioLayout({
           </main>
         </div>
       </div>
+      </ToastProvider>
     </MenuMovilProvider>
   );
 }

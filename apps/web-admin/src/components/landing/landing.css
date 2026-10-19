@@ -1,9 +1,8 @@
 .lp {
   --bg: var(--background);
   --text: var(--foreground);
-  --orange: var(--color-pethood-orange);
-  --orange-dark: var(--color-pethood-orange-dark);
-  --beige: var(--color-pethood-beige);
+  --accent-100: var(--color-pethood-accent-100);
+  --accent-300: var(--color-pethood-accent-300);
   --input: var(--color-pethood-input);
   --badge: var(--color-pethood-badge);
   --accent-400: var(--color-pethood-accent-400);
@@ -161,20 +160,20 @@
     sans-serif;
   text-align: center;
   cursor: pointer;
-  background: var(--orange);
+  background: var(--accent-600);
   color: #fff;
   transition: background 0.15s;
 }
 .lp .btn:hover {
-  background: var(--orange-dark);
+  background: var(--accent-700);
 }
 .lp .btn.sec {
-  background: #fff;
-  color: var(--n-900);
-  border: 1px solid var(--n-300);
+  background: var(--n-100);
+  color: var(--accent-700);
+  border: 1px solid var(--accent-600);
 }
 .lp .btn.sec:hover {
-  background: var(--n-100);
+  background: var(--accent-100);
 }
 .lp nav .btn {
   padding: 8px 16px;
@@ -206,7 +205,7 @@
   position: relative;
   overflow: hidden;
   border-radius: var(--radius);
-  background: var(--beige);
+  background: var(--n-100);
   border: 1px solid var(--n-200);
   min-height: 540px;
   display: flex;
@@ -301,7 +300,7 @@
   padding: 16px;
   border: 2px dashed var(--accent-400);
   border-radius: 14px;
-  background: var(--beige);
+  background: var(--n-100);
   color: var(--accent-600);
   font-size: 14px;
 }
@@ -346,7 +345,7 @@
   height: 10px;
   margin-top: 7px;
   border-radius: 50%;
-  background: var(--orange);
+  background: var(--accent-400);
 }
 
 /* Por qué existe / Quiénes somos */
@@ -433,8 +432,8 @@
 }
 .lp input:focus,
 .lp textarea:focus {
-  outline: 2px solid var(--orange);
-  border-color: var(--orange);
+  outline: 2px solid var(--accent-600);
+  border-color: var(--accent-600);
 }
 .lp input[aria-invalid="true"],
 .lp textarea[aria-invalid="true"] {
@@ -502,7 +501,7 @@
   color: var(--n-500);
 }
 .lp footer h4 a:hover {
-  color: var(--orange);
+  color: var(--accent-300);
 }
 
 /* Páginas internas (/faq, /equipo) */
@@ -538,7 +537,7 @@
 }
 .lp summary::after {
   content: "+";
-  color: var(--orange);
+  color: var(--accent-600);
   transition: transform 0.15s;
 }
 .lp details[open] summary::after {

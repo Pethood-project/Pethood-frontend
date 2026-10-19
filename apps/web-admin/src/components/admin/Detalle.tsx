@@ -21,7 +21,7 @@ export const Dato = ({ k, v }: { k: string; v: string | null | undefined }) =>
 export const Chips = ({ items }: { items: string[] }) => (
   <div className="flex flex-wrap gap-1.5">
     {items.map((i) => (
-      <span key={i} className="rounded-full bg-pethood-beige px-2.5 py-0.5 text-xs text-neutral-700">
+      <span key={i} className="rounded-full bg-pethood-accent-100 px-2.5 py-0.5 text-xs text-neutral-700">
         {i}
       </span>
     ))}
@@ -66,7 +66,7 @@ export function Galeria({ fotos, alt }: { fotos: string[]; alt: string }) {
               type="button"
               onClick={() => setActual(i)}
               aria-label={`Ver foto ${i + 1}`}
-              className={`overflow-hidden rounded-lg border-2 ${i === actual ? "border-pethood-orange" : "border-transparent opacity-70"}`}
+              className={`overflow-hidden rounded-lg border-2 ${i === actual ? "border-pethood-accent-600" : "border-transparent opacity-70"}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={urlArchivo(f)} alt="" className="h-10 w-10 object-cover" />
@@ -263,7 +263,7 @@ export function FotosVerificacion({ fotos = {} }: { fotos?: FotosVerificacionUsu
                 className={`flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-lg transition-colors ${
                   url
                     ? "bg-neutral-100"
-                    : "border-2 border-dashed border-neutral-300 bg-neutral-50 text-neutral-400 group-hover:border-pethood-orange"
+                    : "border-2 border-dashed border-neutral-300 bg-neutral-50 text-neutral-400 group-hover:border-pethood-accent-600"
                 }`}
               >
                 {url ? (

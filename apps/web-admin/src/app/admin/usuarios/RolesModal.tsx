@@ -85,14 +85,14 @@ export function RolesModal({
                 disabled={rol.valor === "ADOPTANTE"}
                 className={`flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors ${
                   activo
-                    ? "border-pethood-orange bg-pethood-beige"
+                    ? "border-pethood-accent-600 bg-pethood-accent-100"
                     : "border-neutral-200 bg-white hover:border-neutral-300"
                 } ${rol.valor === "ADOPTANTE" ? "cursor-not-allowed opacity-80" : ""}`}
               >
                 <span className="flex items-center gap-2">
                   <Icono
                     size={16}
-                    className={activo ? "text-pethood-orange-dark" : "text-neutral-400"}
+                    className={activo ? "text-pethood-accent-700" : "text-neutral-400"}
                   />
                   <span className={`text-sm font-medium ${activo ? "text-neutral-900" : "text-neutral-700"}`}>
                     {rol.etiqueta}

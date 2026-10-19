@@ -15,14 +15,14 @@ export function Topbar({ rol }: TopbarProps) {
         <Link
           href="/"
           title="Ir al inicio"
-          className="flex items-center gap-2 font-heading text-lg text-pethood-orange-dark"
+          className="flex items-center gap-2 font-heading text-lg text-pethood-accent-700"
         >
           <PawPrint className="h-6 w-6" strokeWidth={2} />
           PetHood
         </Link>
       </div>
       <div className="flex items-center gap-3 text-base text-neutral-700">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-pethood-orange/10 text-pethood-orange-dark">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-pethood-accent-200 bg-pethood-accent-100 text-pethood-accent-700">
           <UserRound className="h-5 w-5" strokeWidth={2} />
         </span>
         <span className="hidden sm:inline">{rol}</span>

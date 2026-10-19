@@ -14,7 +14,7 @@ import { loginAction, type EstadoLogin } from "./actions";
 const ESTADO_INICIAL: EstadoLogin = {};
 
 const INPUT =
-  "w-full rounded-lg border border-neutral-300 bg-pethood-input px-3.5 py-2.5 text-base text-neutral-900 outline-none transition-colors focus:border-pethood-orange focus:ring-2 focus:ring-pethood-orange/30";
+  "w-full rounded-lg border border-neutral-300 bg-pethood-input px-3.5 py-2.5 text-base text-neutral-900 outline-none transition-colors focus:border-pethood-accent-600 focus:ring-2 focus:ring-pethood-accent-600/30";
 
 function BotonIngresar() {
   const { pending } = useFormStatus();

@@ -47,14 +47,19 @@ export default async function DashboardRefugioPage({
         <KpiCard etiqueta="En refugio" href="/refugio/mascotas" valor={dashboard.kpis.animalesEnRefugio} icono={PawPrint} color="naranja" />
         <KpiCard
           etiqueta="Donación del período" href="/refugio/campanas"
-          valor={`$${dashboard.kpis.montoDonado.toLocaleString("es-AR")}`}
+          valor={`$${Math.round(dashboard.kpis.montoDonado).toLocaleString("es-AR")}`}
           icono={HeartHandshake}
           color="verde"
           destacado
-          nota={`Objetivo: $${dashboard.kpis.objetivoDonaciones.toLocaleString("es-AR")}`}
+          nota={`Objetivo: $${Math.round(dashboard.kpis.objetivoDonaciones).toLocaleString("es-AR")}`}
+          progreso={
+            dashboard.kpis.objetivoDonaciones > 0
+              ? dashboard.kpis.montoDonado / dashboard.kpis.objetivoDonaciones
+              : undefined
+          }
         />
         <KpiCard
-          etiqueta="Solicitudes demoradas" href="/refugio/solicitudes"
+          etiqueta="Solicitudes demoradas" href="/refugio/solicitudes?estado=demoradas"
           valor={dashboard.kpis.solicitudesDemoradas}
           icono={AlertTriangle}
           color={dashboard.kpis.solicitudesDemoradas > 0 ? "rojo" : "verde"}

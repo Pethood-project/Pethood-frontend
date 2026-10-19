@@ -31,7 +31,7 @@ export function PeriodoSelector({ periodo }: { periodo: PeriodoDashboard }) {
           type="month"
           value={desde}
           onChange={(e) => setDesde(e.target.value)}
-          className="min-w-0 flex-1 rounded border border-transparent bg-transparent text-base font-medium text-neutral-900 outline-none hover:border-neutral-300 focus:border-pethood-orange"
+          className="min-w-0 flex-1 rounded border border-transparent bg-transparent text-base font-medium text-neutral-900 outline-none hover:border-neutral-300 focus:border-pethood-accent-600"
           aria-label="Mes desde"
         />
         <span className="text-neutral-500">–</span>
@@ -39,13 +39,13 @@ export function PeriodoSelector({ periodo }: { periodo: PeriodoDashboard }) {
           type="month"
           value={hasta}
           onChange={(e) => setHasta(e.target.value)}
-          className="min-w-0 flex-1 rounded border border-transparent bg-transparent text-base font-medium text-neutral-900 outline-none hover:border-neutral-300 focus:border-pethood-orange"
+          className="min-w-0 flex-1 rounded border border-transparent bg-transparent text-base font-medium text-neutral-900 outline-none hover:border-neutral-300 focus:border-pethood-accent-600"
           aria-label="Mes hasta"
         />
         <button
           type="button"
           onClick={aplicar}
-          className="ml-auto rounded-md bg-pethood-orange px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-pethood-orange-dark"
+          className="ml-auto rounded-md bg-pethood-accent-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-pethood-accent-700"
         >
           Aplicar
         </button>

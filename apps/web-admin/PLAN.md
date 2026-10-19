@@ -35,7 +35,7 @@ Crear `src/components/ui/Input.tsx`.
 
 - Props: `label`, `error` (string | null), `obligatorio`, `disabled`, `placeholder`, iconos opcionales.
 - Label arriba (uppercase, small), marca `*` si es obligatorio, texto de error abajo en rojo.
-- Estados: default, focus (borde naranja), error (borde rojo), disabled (opacity).
+- Estados: default, focus (borde terracota `pethood-accent-600`), error (borde rojo), disabled (opacity).
 - Companion: `src/components/ui/Select.tsx` para dropdowns nativos (`<select>`), y `src/components/ui/TextArea.tsx` con contador de caracteres.
 
 ### A4. Badge de estado

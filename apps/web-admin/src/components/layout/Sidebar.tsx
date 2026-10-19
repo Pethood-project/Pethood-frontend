@@ -70,7 +70,7 @@ export function Sidebar({ links }: SidebarProps) {
                 style={estiloItem(i * 30)}
                 className={`${ITEM_MOVIL} ${
                   pathname.startsWith(link.href)
-                    ? "border-pethood-orange/40 bg-pethood-orange/15 text-pethood-orange-dark"
+                    ? "border-pethood-accent-600 bg-pethood-accent-600 text-white"
                     : "border-white/10 bg-white/5 text-white/80"
                 } ${abierto ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"}`}
               >
@@ -100,7 +100,7 @@ export function Sidebar({ links }: SidebarProps) {
               onClick={() => setAbierto(false)}
               tabIndex={abierto ? 0 : -1}
               style={estiloItem((links.length + 1) * 30)}
-              className={`${ITEM_MOVIL} justify-center border-pethood-orange bg-pethood-orange text-white ${
+              className={`${ITEM_MOVIL} justify-center border-pethood-accent-100 bg-pethood-accent-100 text-pethood-accent-800 ${
                 abierto ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
               }`}
             >
@@ -125,7 +125,7 @@ export function Sidebar({ links }: SidebarProps) {
                 title={colapsado ? link.label : undefined}
                 className={`${fila} ${
                   activo
-                    ? "bg-pethood-orange/15 text-pethood-orange-dark"
+                    ? "bg-pethood-accent-600 text-white"
                     : "text-white/40 hover:bg-white/5 hover:text-white/70"
                 }`}
               >

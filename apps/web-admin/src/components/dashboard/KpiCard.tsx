@@ -49,23 +49,24 @@ export function KpiCard({ etiqueta, valor, icono: Icono, color, href, destacado 
     return (
       <Card
         href={href}
-        // Terracota oscuro (accent-700): la tarjeta oscura de campaña de la app.
-        superficie="border border-transparent bg-pethood-accent-700"
-        className="@container min-w-0 text-white"
+        // Verde claro de donaciones (globals.css) con texto verde oscuro: el blanco no llega a
+        // contraste legible sobre un verde tan claro.
+        superficie="border border-transparent bg-pethood-donacion-400"
+        className="@container min-w-0 text-pethood-donacion-900"
       >
         <div className="flex items-start justify-between gap-2">
-          <p className="min-w-0 break-words text-xs font-semibold uppercase tracking-wide text-white/90 sm:text-sm @max-[8rem]:text-[11px] @max-[8rem]:tracking-normal">{etiqueta}</p>
-          <span className="flex h-9 w-9 shrink-0 @max-[8rem]:hidden sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-white/15">
+          <p className="min-w-0 break-words text-xs font-semibold uppercase tracking-wide text-pethood-donacion-900/80 sm:text-sm @max-[8rem]:text-[11px] @max-[8rem]:tracking-normal">{etiqueta}</p>
+          <span className="flex h-9 w-9 shrink-0 @max-[8rem]:hidden sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-white/40">
             <Icono className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={2} />
           </span>
         </div>
         <p className={VALOR} style={estilo} title={String(valor)}>{valor}</p>
-        {nota && <p className="mt-1 break-words text-xs font-medium sm:text-sm text-white/90">{nota}</p>}
+        {nota && <p className="mt-1 break-words text-xs font-medium sm:text-sm text-pethood-donacion-900/80">{nota}</p>}
         {progreso !== undefined && (
           // Decorativa: la nota ya dice el objetivo en texto.
-          <div aria-hidden className="mt-3 h-2 rounded-full bg-pethood-accent-800">
+          <div aria-hidden className="mt-3 h-2 rounded-full bg-pethood-donacion-600/50">
             <div
-              className="h-2 rounded-full bg-pethood-accent-100 transition-[width] duration-500 ease-out"
+              className="h-2 rounded-full bg-white transition-[width] duration-500 ease-out"
               style={{ width: `${Math.min(1, Math.max(0, progreso)) * 100}%` }}
             />
           </div>

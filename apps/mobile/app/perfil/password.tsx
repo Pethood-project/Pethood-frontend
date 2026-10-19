@@ -86,7 +86,7 @@ export default function CambiarPasswordScreen() {
 
         {cargando ? (
           <View className="flex-1 items-center justify-center">
-            <ActivityIndicator color={PALETA.pethood.naranja} />
+            <ActivityIndicator color={PALETA.accent[600]} />
           </View>
         ) : (
           <FormularioConTeclado
@@ -119,6 +119,7 @@ export default function CambiarPasswordScreen() {
                 }
                 onRightIconPress={() => setShowActual((prev) => !prev)}
                 required
+                organic
               />
             ) : null}
 
@@ -141,6 +142,7 @@ export default function CambiarPasswordScreen() {
               }
               onRightIconPress={() => setShowNueva((prev) => !prev)}
               required
+              organic
             />
 
             <CustomInput
@@ -162,12 +164,14 @@ export default function CambiarPasswordScreen() {
               }
               onRightIconPress={() => setShowConfirmacion((prev) => !prev)}
               required
+              organic
             />
 
             {formError ? <Text className="mb-3 text-sm text-red-500">{formError}</Text> : null}
 
             <CustomButton
               title="Guardar contraseña"
+              variant="acento"
               loading={guardando}
               onPress={() => void guardar()}
             />

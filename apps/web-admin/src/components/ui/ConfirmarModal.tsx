@@ -13,6 +13,8 @@ export interface Confirmacion {
   /** Línea extra de advertencia (consecuencias que no se ven a simple vista). */
   detalle?: string;
   textoConfirmar: string;
+  /** Texto del botón mientras corre la acción. Por defecto "Guardando…". */
+  textoEnviando?: string;
   /** `peligro` pinta el botón de rojo: la acción no se puede deshacer. */
   peligro?: boolean;
 }
@@ -61,7 +63,7 @@ export function ConfirmarModal({
             onClick={confirmar}
             disabled={enviando}
           >
-            {enviando ? "Guardando…" : confirmacion.textoConfirmar}
+            {enviando ? (confirmacion.textoEnviando ?? "Guardando…") : confirmacion.textoConfirmar}
           </Button>
         </div>
       }

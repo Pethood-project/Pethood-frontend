@@ -178,12 +178,12 @@ export function SelectField<T extends string | number>({
                       className={`flex-row items-center justify-between px-6 active:bg-gray-50 ${grande ? 'py-5' : 'py-4'}`}
                     >
                       <Text
-                        className={`${grande ? 'text-xl' : 'text-base'} ${activa ? 'font-semibold text-pethood-orange' : 'text-gray-800'}`}
+                        className={`${grande ? 'text-xl' : 'text-base'} ${activa ? 'font-semibold text-organic-accent-600' : 'text-gray-800'}`}
                       >
                         {item.etiqueta}
                       </Text>
                       {activa ? (
-                        <Ionicons name="checkmark" size={grande ? 24 : 20} color={PALETA.pethood.naranja} />
+                        <Ionicons name="checkmark" size={grande ? 24 : 20} color={PALETA.accent[600]} />
                       ) : null}
                     </Pressable>
                   );

@@ -279,14 +279,14 @@ function FilaOpcion({
       className={`flex-row items-center justify-between px-6 active:bg-gray-50 ${grande ? 'py-4' : 'py-3.5'}`}
     >
       <Text
-        className={`flex-1 ${tamanioTexto} ${activa ? 'font-semibold text-pethood-orange' : 'text-gray-800'}`}
+        className={`flex-1 ${tamanioTexto} ${activa ? 'font-semibold text-organic-accent-600' : 'text-gray-800'}`}
       >
         {etiqueta}
       </Text>
       <Ionicons
         name={activa ? 'checkbox' : 'square-outline'}
         size={grande ? 24 : 22}
-        color={activa ? PALETA.pethood.naranja : PALETA.gris[400]}
+        color={activa ? PALETA.accent[600] : PALETA.gris[400]}
       />
     </Pressable>
   );

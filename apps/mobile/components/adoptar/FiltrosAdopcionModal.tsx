@@ -387,13 +387,11 @@ export function FiltrosAdopcionModal({
             <Seccion titulo="Compatible con" className="mb-5">
               <View className="gap-3.5 rounded-2xl bg-white p-3.5">
                 <ToggleField
-                  acento
                   label="Chicos"
                   valor={borrador.compatibleNinios ?? false}
                   onChange={(valor) => setBorrador({ ...borrador, compatibleNinios: valor })}
                 />
                 <ToggleField
-                  acento
                   label="Otras mascotas"
                   valor={borrador.compatibleOtrasMascotas ?? false}
                   onChange={(valor) =>
@@ -401,7 +399,6 @@ export function FiltrosAdopcionModal({
                   }
                 />
                 <ToggleField
-                  acento
                   label="Castrado / esterilizado"
                   valor={borrador.castrado ?? false}
                   onChange={(valor) => setBorrador({ ...borrador, castrado: valor })}

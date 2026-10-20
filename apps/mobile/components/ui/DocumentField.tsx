@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { ActivityIndicator, Alert, Image, Pressable, Text, View } from 'react-native';
+import { PALETA } from '@/constants/theme';
 import { LIMITES } from '@/shared/validation/limits';
 import { useState } from 'react';
 
@@ -189,7 +190,7 @@ export function DocumentField({
         } ${error ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-gray-50'}`}
       >
         {cargando ? (
-          <ActivityIndicator color="#FF9D5C" />
+          <ActivityIndicator color={PALETA.accent[600]} />
         ) : hayArchivo ? (
           documento?.esImagen ? (
             <Image
@@ -198,15 +199,15 @@ export function DocumentField({
             />
           ) : (
             <View
-              className={`items-center justify-center rounded-lg bg-pethood-orange ${
+              className={`items-center justify-center rounded-lg bg-organic-accent-600 ${
                 grande ? 'h-11 w-11' : 'h-8 w-8'
               }`}
             >
-              <Ionicons name="document-text" size={grande ? 20 : 16} color="#FFFFFF" />
+              <Ionicons name="document-text" size={grande ? 20 : 16} color={PALETA.blanco} />
             </View>
           )
         ) : (
-          <Ionicons name="cloud-upload-outline" size={grande ? 23 : 18} color="#9CA3AF" />
+          <Ionicons name="cloud-upload-outline" size={grande ? 23 : 18} color={PALETA.gris[400]} />
         )}
 
         <Text
@@ -225,7 +226,7 @@ export function DocumentField({
             onPress={() => onChange(null)}
             hitSlop={8}
           >
-            <Ionicons name="close-circle" size={grande ? 21 : 18} color="#9CA3AF" />
+            <Ionicons name="close-circle" size={grande ? 21 : 18} color={PALETA.gris[400]} />
           </Pressable>
         ) : null}
       </Pressable>

@@ -60,7 +60,7 @@ export function FechaNacimientoPicker({
             <Text className="text-base text-gray-500">Cancelar</Text>
           </Pressable>
           <Pressable onPress={() => onSelect(fechaInterna)} accessibilityRole="button">
-            <Text className="text-base font-semibold text-pethood-orange">Listo</Text>
+            <Text className="text-base font-semibold text-organic-accent-600">Listo</Text>
           </Pressable>
         </>
       }

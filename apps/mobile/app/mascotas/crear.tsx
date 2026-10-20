@@ -589,6 +589,7 @@ export default function CrearMascotaScreen() {
                       marcarTocado('destino');
                     }}
                     error={errorDe('destino')}
+                    variante="organica"
                     grande
                   />
                 </FormCardRow>

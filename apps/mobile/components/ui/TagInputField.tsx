@@ -81,7 +81,7 @@ export function TagInputField({
           disabled={!borrador.trim()}
           onPress={agregar}
           className={`flex-row items-center gap-1 rounded-full px-3 py-1.5 ${
-            borrador.trim() ? 'bg-pethood-orange active:opacity-80' : 'bg-gray-100'
+            borrador.trim() ? 'bg-organic-accent-600 active:opacity-80' : 'bg-gray-100'
           }`}
         >
           <Ionicons name="add" size={grande ? 17 : 15} color={borrador.trim() ? PALETA.blanco : PALETA.gris[400]} />
@@ -98,9 +98,9 @@ export function TagInputField({
           {etiquetas.map((etiqueta) => (
             <View
               key={etiqueta}
-              className="flex-row items-center gap-1.5 rounded-full bg-pethood-orange/10 py-1.5 pl-3 pr-2"
+              className="flex-row items-center gap-1.5 rounded-full bg-organic-accent-100 py-1.5 pl-3 pr-2"
             >
-              <Text className={`${grande ? 'text-base' : 'text-sm'} text-pethood-orange`}>{etiqueta}</Text>
+              <Text className={`${grande ? 'text-base' : 'text-sm'} text-organic-accent-700`}>{etiqueta}</Text>
 
               <Pressable
                 accessibilityRole="button"
@@ -108,7 +108,7 @@ export function TagInputField({
                 onPress={() => quitar(etiqueta)}
                 hitSlop={6}
               >
-                <Ionicons name="close-circle" size={grande ? 18 : 16} color={PALETA.pethood.naranja} />
+                <Ionicons name="close-circle" size={grande ? 18 : 16} color={PALETA.accent[600]} />
               </Pressable>
             </View>
           ))}

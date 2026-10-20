@@ -341,25 +341,25 @@ export function EditorFotoModal({ visible, uri, onCancelar, onConfirmar }: Edito
                 <GestureDetector gesture={gestoEsquina('tl')}>
                   <Animated.View
                     style={estiloHandleTL}
-                    className="h-6 w-6 rounded-full border-2 border-white bg-pethood-orange"
+                    className="h-6 w-6 rounded-full border-2 border-white bg-organic-accent-600"
                   />
                 </GestureDetector>
                 <GestureDetector gesture={gestoEsquina('tr')}>
                   <Animated.View
                     style={estiloHandleTR}
-                    className="h-6 w-6 rounded-full border-2 border-white bg-pethood-orange"
+                    className="h-6 w-6 rounded-full border-2 border-white bg-organic-accent-600"
                   />
                 </GestureDetector>
                 <GestureDetector gesture={gestoEsquina('bl')}>
                   <Animated.View
                     style={estiloHandleBL}
-                    className="h-6 w-6 rounded-full border-2 border-white bg-pethood-orange"
+                    className="h-6 w-6 rounded-full border-2 border-white bg-organic-accent-600"
                   />
                 </GestureDetector>
                 <GestureDetector gesture={gestoEsquina('br')}>
                   <Animated.View
                     style={estiloHandleBR}
-                    className="h-6 w-6 rounded-full border-2 border-white bg-pethood-orange"
+                    className="h-6 w-6 rounded-full border-2 border-white bg-organic-accent-600"
                   />
                 </GestureDetector>
               </View>

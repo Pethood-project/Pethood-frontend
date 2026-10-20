@@ -148,9 +148,9 @@ export function PhotoPicker({
           onPress={elegir}
           className={`items-center justify-center rounded-3xl border-2 border-dashed ${
             grande ? 'h-40' : 'h-32'
-          } ${error ? 'border-red-300 bg-red-50' : 'border-pethood-orange/40 bg-white/60'}`}
+          } ${error ? 'border-red-300 bg-red-50' : 'border-organic-accent-300 bg-organic-surface'}`}
         >
-          <Ionicons name="camera-outline" size={grande ? 36 : 28} color={PALETA.pethood.naranja} />
+          <Ionicons name="camera-outline" size={grande ? 36 : 28} color={PALETA.accent[600]} />
           <Text className={`mt-1.5 font-medium text-gray-500 ${grande ? 'text-base' : 'text-sm'}`}>
             Agregar fotos
           </Text>

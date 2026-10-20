@@ -91,7 +91,7 @@ export function DateField({
           onCerrar={cerrar}
           pie={
             <Pressable accessibilityRole="button" onPress={cerrar}>
-              <Text className={`font-semibold text-pethood-orange ${grande ? 'text-lg' : 'text-base'}`}>
+              <Text className={`font-semibold text-organic-accent-600 ${grande ? 'text-lg' : 'text-base'}`}>
                 Listo
               </Text>
             </Pressable>

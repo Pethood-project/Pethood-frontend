@@ -273,6 +273,8 @@ export default function DetalleSolicitudScreen() {
                   tamanio={52}
                   nombre={solicitud.solicitante.nombre}
                   apellido={solicitud.solicitante.apellido}
+                  variante="organic"
+                  tono="neutro"
                 />
                 <View className="flex-1">
                   <Text className="font-cuerpo-semi text-[17px] text-organic-neutral-900">

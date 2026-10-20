@@ -166,7 +166,7 @@ export function ConfirmDialog({
                   <Pressable
                     accessibilityRole="button"
                     onPress={onCerrar}
-                    className="items-center justify-center rounded-2xl bg-pethood-orange py-3.5 active:opacity-90"
+                    className="items-center justify-center rounded-2xl bg-organic-accent-600 py-3.5 active:opacity-90"
                   >
                     <Text className="text-base font-semibold text-white">Entendido</Text>
                   </Pressable>

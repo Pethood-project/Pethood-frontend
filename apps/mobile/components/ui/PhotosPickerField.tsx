@@ -169,14 +169,14 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
           onPress={elegir}
           disabled={cargando}
           className={`h-40 items-center justify-center rounded-3xl border-2 border-dashed ${
-            error ? 'border-red-300 bg-red-50' : 'border-pethood-orange/40 bg-white/60'
+            error ? 'border-red-300 bg-red-50' : 'border-organic-accent-300 bg-organic-surface'
           }`}
         >
           {cargando ? (
-            <ActivityIndicator color={PALETA.pethood.naranja} />
+            <ActivityIndicator color={PALETA.accent[600]} />
           ) : (
             <>
-              <Ionicons name="camera-outline" size={36} color={PALETA.pethood.naranja} />
+              <Ionicons name="camera-outline" size={36} color={PALETA.accent[600]} />
               <Text className="mt-2 text-base font-medium text-gray-500">Agregar fotos</Text>
               <Text className="mt-0.5 text-sm text-gray-400">Hasta {maximo}</Text>
             </>
@@ -191,7 +191,7 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
                   <Image source={{ uri: foto.uri }} className="h-36 w-36 rounded-2xl" />
 
                   {indice === 0 ? (
-                    <View className="absolute left-2 top-2 rounded-full bg-pethood-orange px-2.5 py-1">
+                    <View className="absolute left-2 top-2 rounded-full bg-organic-accent-600 px-2.5 py-1">
                       <Text className="text-xs font-semibold text-white">Portada</Text>
                     </View>
                   ) : null}
@@ -243,13 +243,13 @@ export function PhotosPickerField({ fotos, onChange, maximo, error }: PhotosPick
                 accessibilityLabel="Agregar otra foto"
                 onPress={elegir}
                 disabled={cargando}
-                className="mx-1 h-36 w-36 items-center justify-center rounded-2xl border-2 border-dashed border-pethood-orange/40 bg-white/60"
+                className="mx-1 h-36 w-36 items-center justify-center rounded-2xl border-2 border-dashed border-organic-accent-300 bg-organic-surface"
               >
                 {cargando ? (
-                  <ActivityIndicator color={PALETA.pethood.naranja} />
+                  <ActivityIndicator color={PALETA.accent[600]} />
                 ) : (
                   <>
-                    <Ionicons name="add" size={30} color={PALETA.pethood.naranja} />
+                    <Ionicons name="add" size={30} color={PALETA.accent[600]} />
                     <Text className="mt-1 text-sm text-gray-500">Agregar</Text>
                   </>
                 )}

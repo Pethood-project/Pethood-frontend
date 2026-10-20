@@ -15,7 +15,7 @@ export type VarianteChip =
   | 'suave'
   /** Etiqueta informativa encima de una foto: translúcida y con texto blanco. */
   | 'sobre-imagen'
-  /** Opción de selección única: se rellena de naranja cuando está activa. */
+  /** Opción de selección única: se rellena de `accent-600` cuando está activa. */
   | 'seleccion'
   /** Opción de selección múltiple: al activarse muestra un tilde. */
   | 'multiple'
@@ -26,7 +26,7 @@ export type VarianteChip =
   | 'filtro'
   /** Dato corto de una tarjeta ("Macho", "Mediano"): beige liso, sin borde, con ícono opcional. */
   | 'dato'
-  /** Etiqueta informativa con la paleta Organic: la de `suave`, pero en marrón y no en naranja. */
+  /** Etiqueta informativa con la paleta Organic: la de `suave`, con la tipografía del rediseño. */
   | 'organica';
 
 interface EstiloChip {
@@ -37,8 +37,8 @@ interface EstiloChip {
 /** Clases por variante y estado. Tenerlas juntas evita que cada pantalla invente la suya. */
 const ESTILOS: Record<VarianteChip, { activa: EstiloChip; inactiva: EstiloChip }> = {
   suave: {
-    activa: { contenedor: 'bg-orange-50', texto: 'text-pethood-orange-dark font-medium' },
-    inactiva: { contenedor: 'bg-orange-50', texto: 'text-pethood-orange-dark font-medium' },
+    activa: { contenedor: 'bg-organic-accent-100', texto: 'text-organic-accent-700 font-medium' },
+    inactiva: { contenedor: 'bg-organic-accent-100', texto: 'text-organic-accent-700 font-medium' },
   },
   'sobre-imagen': {
     activa: {
@@ -52,15 +52,15 @@ const ESTILOS: Record<VarianteChip, { activa: EstiloChip; inactiva: EstiloChip }
   },
   seleccion: {
     activa: {
-      contenedor: 'border border-pethood-orange bg-pethood-orange',
+      contenedor: 'border border-organic-accent-600 bg-organic-accent-600',
       texto: 'text-white font-semibold',
     },
     inactiva: { contenedor: 'border border-gray-200 bg-white', texto: 'text-gray-600' },
   },
   multiple: {
     activa: {
-      contenedor: 'border border-pethood-orange bg-pethood-orange/10',
-      texto: 'text-pethood-orange-dark font-semibold',
+      contenedor: 'border border-organic-accent-600 bg-organic-accent-100',
+      texto: 'text-organic-accent-700 font-semibold',
     },
     inactiva: { contenedor: 'border border-gray-200 bg-white', texto: 'text-gray-600' },
   },
@@ -169,7 +169,7 @@ export function Chip({
     <>
       {icono ? <Ionicons name={icono} size={tamanioTilde} color={PALETA.neutral[600]} /> : null}
       {variante === 'multiple' && activa ? (
-        <Ionicons name="checkmark" size={tamanioTilde} color={PALETA.pethood.naranjaIntensa} />
+        <Ionicons name="checkmark" size={tamanioTilde} color={PALETA.accent[600]} />
       ) : null}
       {texto}
     </>

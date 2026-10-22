@@ -45,5 +45,7 @@ function EscucharToquePush({ notificaciones }: { notificaciones: ModuloNotificac
 }
 
 export function AbrirNotificacionPush(): ReactElement | null {
+  // En web el hook lanza `getLastNotificationResponse is not available on web`: no se monta.
+  if (Platform.OS === 'web') return null;
   return Notificaciones ? <EscucharToquePush notificaciones={Notificaciones} /> : null;
 }

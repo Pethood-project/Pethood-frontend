@@ -3,6 +3,9 @@ import type { RolUsuario } from "@/types/auth";
 // Nombre de la cookie donde se guarda el JWT emitido por POST /api/v1/auth/login (spec 001).
 export const AUTH_COOKIE = "phd_token";
 
+// Nonce del login con Google: ata el código del callback al navegador que arrancó el flujo.
+export const OAUTH_NONCE_COOKIE = "phd_oauth_nonce";
+
 export interface Sesion {
   id: number;
   roles: RolUsuario[];
@@ -45,4 +48,15 @@ export function tokenExp(token: string): number {
   } catch {
     return 0;
   }
+}
+
+/** Atributos de la cookie de sesión: viven lo que le queda de vida al JWT. */
+export function opcionesCookieSesion(token: string) {
+  return {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: Math.max(tokenExp(token) - Math.floor(Date.now() / 1000), 0),
+  };
 }

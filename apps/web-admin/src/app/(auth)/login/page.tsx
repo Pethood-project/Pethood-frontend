@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useActionState, useState } from "react";
+import { use, useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -12,6 +12,16 @@ import { validarEmail, validarPasswordIngreso } from "@/lib/validation";
 import { loginAction, type EstadoLogin } from "./actions";
 
 const ESTADO_INICIAL: EstadoLogin = {};
+
+// Códigos que devuelve el backend en `/login?error=` tras el login con Google.
+const ERRORES_GOOGLE: Record<string, string> = {
+  sin_permisos_panel: "Este panel es exclusivo para administradores y refugios verificados.",
+  usuario_no_registrado: "No encontramos una cuenta con ese correo. Registrate primero desde la app.",
+  usuario_suspendido: "Tu cuenta está suspendida. Escribinos a soporte para más información.",
+  refugio_no_verificado: "Tu refugio todavía no está verificado o no está activo.",
+  google_cancelado: "Cancelaste el ingreso con Google.",
+};
+const ERROR_GOOGLE_GENERICO = "No pudimos ingresar con Google. Intentá de nuevo.";
 
 const INPUT =
   "w-full rounded-lg border border-neutral-300 bg-pethood-input px-3.5 py-2.5 text-base text-neutral-900 outline-none transition-colors focus:border-pethood-accent-600 focus:ring-2 focus:ring-pethood-accent-600/30";
@@ -27,7 +37,15 @@ function BotonIngresar() {
 
 // GUI-02 equivalente para web-admin — un único login para Admin y Refugio;
 // el backend devuelve los roles del usuario y el server action reenvía al dashboard correspondiente.
-export default function LoginPage() {
+export default function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error: codigoGoogle } = use(searchParams);
+  // Se guarda en estado y se limpia la URL: así el código no queda en la barra ni en el historial.
+  const [errorGoogle] = useState(() =>
+    codigoGoogle ? (ERRORES_GOOGLE[codigoGoogle] ?? ERROR_GOOGLE_GENERICO) : undefined,
+  );
+  useEffect(() => {
+    if (codigoGoogle) window.history.replaceState(null, "", "/login");
+  }, [codigoGoogle]);
   const [estado, formAction] = useActionState(loginAction, ESTADO_INICIAL);
   const [verPassword, setVerPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -144,14 +162,32 @@ export default function LoginPage() {
               <ErrorCampo id="password" error={ver("password", errorPassword)} />
             </div>
 
-            {estado.error && (
+            {(estado.error ?? errorGoogle) && (
               <p role="alert" className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                {estado.error}
+                {estado.error ?? errorGoogle}
               </p>
             )}
 
             <BotonIngresar />
           </form>
+
+          <div className="my-5 flex items-center gap-3 text-xs text-neutral-500">
+            <span className="h-px flex-1 bg-neutral-200" />o<span className="h-px flex-1 bg-neutral-200" />
+          </div>
+          <a
+            href="/auth/google"
+            className="flex w-full items-center justify-center gap-3 rounded-md border border-neutral-300 bg-white px-5 py-2.5 text-base font-medium text-neutral-800 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pethood-accent-600/45 focus-visible:ring-offset-1"
+          >
+            {/* ds-allow-hardcode:start colores de marca de Google, no entran en la paleta */}
+            <svg aria-hidden="true" viewBox="0 0 48 48" className="h-5 w-5 shrink-0">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+              <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+            </svg>
+            {/* ds-allow-hardcode:end */}
+            Continuar con Google
+          </a>
         </div>
       </main>
     </div>

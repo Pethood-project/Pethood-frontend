@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AUTH_COOKIE, decodeSesion, tieneRol, tokenExp } from "@/lib/auth";
+import { AUTH_COOKIE, decodeSesion, opcionesCookieSesion, tieneRol } from "@/lib/auth";
 import { ApiError } from "@/services/api";
 import { login } from "@/services/auth";
 
@@ -43,16 +43,7 @@ export async function loginAction(_estadoPrevio: EstadoLogin, formData: FormData
     redirect("/en-revision");
   }
 
-  const exp = tokenExp(respuesta.token);
-  const maxAge = Math.max(exp - Math.floor(Date.now() / 1000), 0);
-
-  (await cookies()).set(AUTH_COOKIE, respuesta.token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge,
-  });
+  (await cookies()).set(AUTH_COOKIE, respuesta.token, opcionesCookieSesion(respuesta.token));
 
   redirect(esAdmin ? "/admin/dashboard" : "/refugio/dashboard");
 }

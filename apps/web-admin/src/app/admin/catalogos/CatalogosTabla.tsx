@@ -6,6 +6,7 @@ import { useState } from "react";
 import { ChevronDown, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { AccionButton } from "@/components/ui/AccionButton";
 import { Button } from "@/components/ui/Button";
+import { ConfirmarModal } from "@/components/ui/ConfirmarModal";
 import { Feedback } from "@/components/ui/Feedback";
 import { Pagination } from "@/components/ui/Pagination";
 import { useTablaAdmin } from "@/lib/useTablaAdmin";
@@ -19,8 +20,8 @@ import { CATALOGOS } from "@/types/admin-catalogos";
 import type { BodyCatalogo, Catalogo, FiltrosCatalogo, ItemCatalogo, ListaCatalogo } from "@/types/admin-catalogos";
 import { CatalogoFormModal } from "./CatalogoFormModal";
 
-// Solo estos dos admiten reactivar (api-admin-catalogos.md).
-const REACTIVABLES: Catalogo[] = ["especies", "razas"];
+// Solo estos admiten reactivar (api-admin-catalogos.md).
+const REACTIVABLES: Catalogo[] = ["especies", "razas", "vacunas"];
 
 const CAMPO = "w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 sm:w-auto";
 
@@ -44,7 +45,13 @@ function CatalogoContenido({
     catalogo,
   });
   const [modal, setModal] = useState<{ item: ItemCatalogo | null } | null>(null);
+  const [aDarDeBaja, setADarDeBaja] = useState<ItemCatalogo | null>(null);
   const { permisos } = lista;
+
+  async function darDeBaja(item: ItemCatalogo) {
+    await ejecutar(item.id, () => bajaItemCatalogo(catalogo, item.id, token), "Ítem dado de baja correctamente.");
+    setADarDeBaja(null);
+  }
 
   async function guardar(body: BodyCatalogo) {
     const item = modal?.item;
@@ -117,13 +124,14 @@ function CatalogoContenido({
               const deBaja = item.fechaBaja !== null;
               const bloqueo = item.bloqueoBaja;
               const detalle = [
-                typeof item.especie === "string" ? item.especie : item.especie?.nombre,
+                item.especie?.nombre,
+                item.especies?.map((e) => e.nombre).join(", "),
                 item.secuenciaDias ? `cada ${item.secuenciaDias} días` : null,
               ]
                 .filter(Boolean)
                 .join(" · ");
               return (
-                <tr key={`${item.id}-${typeof item.especie === "string" ? item.especie : ""}`} className="border-b border-neutral-100 last:border-0">
+                <tr key={item.id} className="border-b border-neutral-100 last:border-0">
                   <td data-label="Nombre" className="px-4 py-3 text-center text-neutral-900">{item.nombre}</td>
                   <td data-label="Descripción" className="px-4 py-3 text-center text-neutral-600">{item.descripcion ?? "—"}</td>
                   <td data-label="Detalle" className="px-4 py-3 text-center text-neutral-600">{detalle || "—"}</td>
@@ -155,9 +163,7 @@ function CatalogoContenido({
                           tono="peligro"
                           disabled={!item.puedeDarseDeBaja || cargando === item.id}
                           title={bloqueo?.mensaje}
-                          onClick={() =>
-                            ejecutar(item.id, () => bajaItemCatalogo(catalogo, item.id, token), "Ítem dado de baja correctamente.")
-                          }
+                          onClick={() => setADarDeBaja(item)}
                         >
                           Dar de baja
                         </AccionButton>
@@ -172,6 +178,25 @@ function CatalogoContenido({
       </div>
 
       <Pagination page={lista.page} limit={lista.limit} total={lista.total} onCambiar={irAPagina} />
+
+      {aDarDeBaja && (
+        <ConfirmarModal
+          confirmacion={{
+            titulo: "Dar de baja",
+            mensaje: `¿Querés dar de baja «${aDarDeBaja.nombre}»?`,
+            // Una vacuna en uso se puede dar de baja (spec 029): avisar qué pasa con quien ya la tiene.
+            detalle:
+              catalogo === "vacunas" && aDarDeBaja.cantidadUsos > 0
+                ? `Ya está cargada en ${aDarDeBaja.cantidadUsos} registro(s) de historia clínica: esas medallas se siguen viendo, pero deja de ofrecerse al cargar vacunas nuevas.`
+                : "Deja de ofrecerse en los formularios. Podés reactivarlo después.",
+            textoConfirmar: "Dar de baja",
+            textoEnviando: "Dando de baja…",
+            peligro: true,
+          }}
+          onConfirmar={() => darDeBaja(aDarDeBaja)}
+          onCerrar={() => setADarDeBaja(null)}
+        />
+      )}
 
       {modal && (
         <CatalogoFormModal

@@ -13,7 +13,8 @@ export interface EstiloVacuna {
   tinta: string;
 }
 
-const ESTILOS: Record<TipoVacuna, EstiloVacuna> = {
+/** Las 7 vacunas del plan original. Una vacuna nueva del catálogo cae en el estilo por defecto. */
+const ESTILOS: Record<TipoVacuna, EstiloVacuna | undefined> = {
   PRIMOVACUNACION: PALETA.vacuna.primovacunacion,
   MULTIPLE: PALETA.vacuna.multiple,
   REFUERZO_MULTIPLE: PALETA.vacuna.refuerzoMultiple,
@@ -23,7 +24,7 @@ const ESTILOS: Record<TipoVacuna, EstiloVacuna> = {
   REFUERZO_LEUCEMIA: PALETA.vacuna.refuerzoLeucemia,
 };
 
-/** Un tipo que el backend sume antes que la app cae en el acento de marca, no en blanco. */
+/** Un tipo que el admin sume al catálogo cae en el acento de marca, no en blanco. */
 export function estiloDeVacuna(tipo: TipoVacuna): EstiloVacuna {
   return ESTILOS[tipo] ?? PALETA.vacuna.primovacunacion;
 }

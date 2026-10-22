@@ -22,8 +22,8 @@ export default async function CatalogosAdminPage({ searchParams }: PageProps) {
 
   const [lista, especies] = await Promise.all([
     listarCatalogo(catalogo, filtros, token),
-    // Las razas se crean sobre una especie: el modal necesita el listado.
-    catalogo === "razas" ? listarCatalogo("especies", { limit: 50 }, token) : null,
+    // Las razas y las vacunas se crean sobre especies: el modal necesita el listado.
+    catalogo === "razas" || catalogo === "vacunas" ? listarCatalogo("especies", { limit: 50 }, token) : null,
   ]);
 
   return (

@@ -8,15 +8,11 @@
  */
 import { get } from './api';
 
-/** Tiene que coincidir con el enum `TipoVacuna` de `schema.prisma`. */
-export type TipoVacuna =
-  | 'PRIMOVACUNACION'
-  | 'MULTIPLE'
-  | 'REFUERZO_MULTIPLE'
-  | 'TRIVALENTE_FELINA'
-  | 'REFUERZO_TRIVALENTE_LEUCEMIA'
-  | 'REFUERZO_LEUCEMIA'
-  | 'ANTIRRABICA';
+/**
+ * Código estable de la vacuna (spec 029 del backend). Desde que el plan es un catálogo que el
+ * admin edita, puede llegar uno nuevo que la app no conoce: por eso es `string` y no una unión.
+ */
+export type TipoVacuna = string;
 
 /** Una opción del plan de vacunación de una especie. */
 export interface VacunaCatalogo {

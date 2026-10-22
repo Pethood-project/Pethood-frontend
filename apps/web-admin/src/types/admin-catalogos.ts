@@ -27,8 +27,7 @@ export const CATALOGOS: { id: Catalogo; label: string }[] = [
 export type CodigoBloqueoBaja = "CATALOGO_SIN_BAJA" | "CATALOGO_EN_USO" | "YA_DE_BAJA";
 
 export interface ItemCatalogo {
-  /** string solo en `vacunas` (el tipo, ej. "ANTIRRABICA"). */
-  id: number | string;
+  id: number;
   nombre: string;
   descripcion: string | null;
   fechaAlta: string | null;
@@ -36,9 +35,12 @@ export interface ItemCatalogo {
   cantidadUsos: number;
   puedeDarseDeBaja: boolean;
   bloqueoBaja: { codigo: CodigoBloqueoBaja; mensaje: string } | null;
-  /** razas: objeto; vacunas: "Perro" | "Gato". */
-  especie?: { id: number; nombre: string } | string;
+  /** Solo razas. */
+  especie?: { id: number; nombre: string };
   secuenciaDias?: number;
+  /** Solo vacunas (spec 029): código estable, no editable, y especies vigentes. */
+  codigo?: string;
+  especies?: { id: number; nombre: string }[];
 }
 
 export interface ListaCatalogo {
@@ -63,4 +65,6 @@ export interface BodyCatalogo {
   descripcion?: string;
   especieId?: number;
   secuenciaDias?: number;
+  /** Solo vacunas: reemplaza la lista completa de especies. */
+  especieIds?: number[];
 }

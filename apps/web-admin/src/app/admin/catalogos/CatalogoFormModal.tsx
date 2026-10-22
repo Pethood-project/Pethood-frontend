@@ -32,11 +32,17 @@ export function CatalogoFormModal({
   const tieneNombre = !esEstado && catalogo !== "tipos-solicitud";
   const tieneDescripcion = catalogo !== "razas";
   const tieneEspecie = catalogo === "razas" && !item;
+  // Vacunas (spec 029): varias especies, en alta y en edición; la descripción es obligatoria.
+  const tieneEspecies = catalogo === "vacunas";
   const tieneSecuencia = catalogo === "tipos-solicitud";
 
   const [nombre, setNombre] = useState(item?.nombre ?? "");
   const [descripcion, setDescripcion] = useState(item?.descripcion ?? "");
   const [especieId, setEspecieId] = useState("");
+  // Solo las que siguen activas: una especie dada de baja no se puede volver a mandar.
+  const [especieIds, setEspecieIds] = useState<number[]>(
+    () => item?.especies?.map((e) => e.id).filter((id) => especies.some((e) => e.id === id)) ?? [],
+  );
   const [secuencia, setSecuencia] = useState(String(item?.secuenciaDias ?? ""));
   const [enviando, setEnviando] = useState(false);
 
@@ -45,7 +51,10 @@ export function CatalogoFormModal({
   const errores = {
     nombre: tieneNombre ? validarTexto(nombre, { etiqueta: "El nombre", ...L.nombre }) : null,
     especie: tieneEspecie && !especieId ? "Elegí una especie para continuar." : null,
-    descripcion: tieneDescripcion ? validarTexto(descripcion, { etiqueta: "La descripción", ...L.descripcion, obligatorio: false }) : null,
+    especies: tieneEspecies && especieIds.length === 0 ? "Elegí al menos una especie para continuar." : null,
+    descripcion: tieneDescripcion
+      ? validarTexto(descripcion, { etiqueta: "La descripción", ...L.descripcion, obligatorio: tieneEspecies })
+      : null,
     secuencia: tieneSecuencia ? validarEntero(secuencia, { etiqueta: "La secuencia", ...L.secuenciaDias }) : null,
   };
 
@@ -57,6 +66,7 @@ export function CatalogoFormModal({
     if (tieneNombre) body.nombre = nombre.trim();
     if (tieneDescripcion) body.descripcion = descripcion.trim();
     if (tieneEspecie) body.especieId = Number(especieId);
+    if (tieneEspecies) body.especieIds = especieIds;
     if (tieneSecuencia) body.secuenciaDias = Number(secuencia);
     try {
       await onGuardar(body);
@@ -93,6 +103,27 @@ export function CatalogoFormModal({
             </select>
             <ErrorCampo id="especieId" error={ver("especie", errores.especie)} />
           </div>
+        )}
+        {tieneEspecies && (
+          <fieldset aria-describedby="especieIds-error" aria-invalid={!!ver("especies", errores.especies)}>
+            <legend className="mb-1 block text-sm font-medium text-neutral-700">Especies</legend>
+            <div className="flex flex-wrap gap-4">
+              {especies.map((e) => (
+                <label key={e.id} className="flex items-center gap-2 text-sm text-neutral-800">
+                  <input
+                    type="checkbox"
+                    checked={especieIds.includes(e.id)}
+                    onChange={(ev) => {
+                      tocar("especies");
+                      setEspecieIds((ids) => (ev.target.checked ? [...ids, e.id] : ids.filter((id) => id !== e.id)));
+                    }}
+                  />
+                  {e.nombre}
+                </label>
+              ))}
+            </div>
+            <ErrorCampo id="especieIds" error={ver("especies", errores.especies)} />
+          </fieldset>
         )}
         {tieneDescripcion && (
           <CampoTexto id="descripcion" label="Descripción" rows={3} value={descripcion} onChange={setDescripcion} onBlur={() => tocar("descripcion")} error={ver("descripcion", errores.descripcion)} maxLength={L.descripcion.max} />

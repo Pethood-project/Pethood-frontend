@@ -4,18 +4,28 @@
  *
  * Se usa en los perfiles, en la ficha de una publicación y en la revisión de una solicitud,
  * para no repetir el pedido ni el estado de carga en cada pantalla.
+ *
+ * Con `limiteInicial` no baja todo el historial: muestra solo las últimas N reseñas y, si hay
+ * más, un botón "Ver más reseñas". Ese botón lleva a otra pantalla (`onVerMas`) o, sin
+ * `onVerMas`, pide la página siguiente (de a `TAMANIO_PAGINA`) y la agrega abajo.
  */
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
+import { useToast } from '@/components/feedback/Toast';
 import { DesgloseEstrellas } from '@/components/resenas/DesgloseEstrellas';
 import { ListaResenas } from '@/components/resenas/ListaResenas';
 import { PALETA } from '@/constants/theme';
 import {
   obtenerResenasDeRefugio,
   obtenerResenasDeUsuario,
+  type OpcionesPaginaResenas,
+  type Resena,
   type ResumenResenas,
 } from '@/services/resenas';
+
+/** Cuántas reseñas se suman cada vez que se toca "Ver más reseñas" en modo paginador. */
+const TAMANIO_PAGINA = 10;
 
 interface ResumenReputacionProps {
   tipo: 'usuario' | 'refugio';
@@ -24,7 +34,21 @@ interface ResumenReputacionProps {
   titulo?: string;
   /** Con `true`, debajo del desglose se listan las reseñas con sus comentarios. */
   mostrarLista?: boolean;
+  /** Muestra solo las últimas N reseñas y pagina el resto (ver arriba). Requiere `mostrarLista`. */
+  limiteInicial?: number;
+  /** Con `limiteInicial`: en vez de paginar acá, el botón "Ver más reseñas" llama a esto. */
+  onVerMas?: () => void;
   className?: string;
+}
+
+function pedirResenas(
+  tipo: 'usuario' | 'refugio',
+  id: number,
+  opciones?: OpcionesPaginaResenas,
+): Promise<ResumenResenas> {
+  return tipo === 'refugio'
+    ? obtenerResenasDeRefugio(id, opciones)
+    : obtenerResenasDeUsuario(id, opciones);
 }
 
 export function ResumenReputacion({
@@ -32,21 +56,29 @@ export function ResumenReputacion({
   id,
   titulo,
   mostrarLista = false,
+  limiteInicial,
+  onVerMas,
   className = '',
 }: ResumenReputacionProps) {
+  const toast = useToast();
   const [resumen, setResumen] = useState<ResumenResenas | null>(null);
+  const [resenas, setResenas] = useState<Resena[]>([]);
+  const [hayMas, setHayMas] = useState(false);
+  const [proximoCursor, setProximoCursor] = useState<number | null>(null);
   const [cargando, setCargando] = useState(true);
+  const [cargandoMas, setCargandoMas] = useState(false);
 
   useEffect(() => {
     let vigente = true;
     setCargando(true);
 
-    const pedido =
-      tipo === 'refugio' ? obtenerResenasDeRefugio(id) : obtenerResenasDeUsuario(id);
-
-    void pedido
+    void pedirResenas(tipo, id, limiteInicial ? { limite: limiteInicial } : undefined)
       .then((respuesta) => {
-        if (vigente) setResumen(respuesta);
+        if (!vigente) return;
+        setResumen(respuesta);
+        setResenas(respuesta.resenas);
+        setHayMas(respuesta.hayMas ?? false);
+        setProximoCursor(respuesta.proximoCursor ?? null);
       })
       // Silencioso: la reputación es información secundaria; si falla, la pantalla sigue.
       .catch(() => {
@@ -59,7 +91,27 @@ export function ResumenReputacion({
     return () => {
       vigente = false;
     };
-  }, [tipo, id]);
+  }, [tipo, id, limiteInicial]);
+
+  const cargarMas = useCallback(async (): Promise<void> => {
+    if (cargandoMas || proximoCursor === null) return;
+
+    setCargandoMas(true);
+    try {
+      const pagina = await pedirResenas(tipo, id, { limite: TAMANIO_PAGINA, cursor: proximoCursor });
+      setResenas((actuales) => [...actuales, ...pagina.resenas]);
+      setHayMas(pagina.hayMas ?? false);
+      setProximoCursor(pagina.proximoCursor ?? null);
+    } catch (err) {
+      toast.mostrarError(
+        err instanceof Error ? err.message : 'No pudimos cargar más reseñas. Intentalo de nuevo.',
+      );
+    } finally {
+      setCargandoMas(false);
+    }
+  }, [cargandoMas, proximoCursor, tipo, id, toast]);
+
+  const restantes = resumen ? Math.max(resumen.cantidad - resenas.length, 0) : 0;
 
   return (
     <View className={className}>
@@ -88,7 +140,26 @@ export function ResumenReputacion({
           />
           {mostrarLista ? (
             <View className="mt-2.5">
-              <ListaResenas resenas={resumen.resenas} />
+              <ListaResenas resenas={resenas} />
+
+              {hayMas ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Ver más reseñas"
+                  disabled={cargandoMas}
+                  onPress={onVerMas ?? (() => void cargarMas())}
+                  className="mt-2.5 min-h-[46px] items-center justify-center rounded-2xl border border-organic-accent-600 px-4 py-3 active:opacity-80"
+                >
+                  {cargandoMas ? (
+                    <ActivityIndicator color={PALETA.accent[600]} />
+                  ) : (
+                    <Text className="font-cuerpo-semi text-[14px] text-organic-accent-600">
+                      Ver más reseñas
+                      {!onVerMas && restantes > 0 ? ` (${restantes} más)` : ''}
+                    </Text>
+                  )}
+                </Pressable>
+              ) : null}
             </View>
           ) : null}
         </>

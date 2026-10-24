@@ -46,6 +46,10 @@ export interface ResumenResenas {
   cantidad: number;
   distribucion: DistribucionEstrellas[];
   resenas: Resena[];
+  /** Solo cuando se pidió una página (limite/cursor): si quedan reseñas por pedir. */
+  hayMas?: boolean;
+  /** Solo con paginación: cursor de la página siguiente, null si no hay más. */
+  proximoCursor?: number | null;
 }
 
 export interface ContraparteResena {
@@ -71,12 +75,39 @@ export interface NuevaResena {
   comentario?: string;
 }
 
-export function obtenerResenasDeUsuario(usuarioId: number): Promise<ResumenResenas> {
-  return get(`/resenas/usuario/${usuarioId}`);
+/**
+ * Paginación por cursor opcional: con `limite` o `cursor` el backend responde una página y
+ * suma `hayMas`/`proximoCursor`; el promedio y el desglose siguen siendo de todas las reseñas.
+ * Sin opciones devuelve el historial completo.
+ */
+export interface OpcionesPaginaResenas {
+  limite?: number;
+  cursor?: number | null;
 }
 
-export function obtenerResenasDeRefugio(refugioId: number): Promise<ResumenResenas> {
-  return get(`/resenas/refugio/${refugioId}`);
+function queryDePagina(opciones?: OpcionesPaginaResenas): string {
+  const partes: string[] = [];
+
+  if (opciones?.limite !== undefined) partes.push(`limite=${opciones.limite}`);
+  if (opciones?.cursor !== undefined && opciones.cursor !== null) {
+    partes.push(`cursor=${opciones.cursor}`);
+  }
+
+  return partes.length > 0 ? `?${partes.join('&')}` : '';
+}
+
+export function obtenerResenasDeUsuario(
+  usuarioId: number,
+  opciones?: OpcionesPaginaResenas,
+): Promise<ResumenResenas> {
+  return get(`/resenas/usuario/${usuarioId}${queryDePagina(opciones)}`);
+}
+
+export function obtenerResenasDeRefugio(
+  refugioId: number,
+  opciones?: OpcionesPaginaResenas,
+): Promise<ResumenResenas> {
+  return get(`/resenas/refugio/${refugioId}${queryDePagina(opciones)}`);
 }
 
 /** Transacciones concretadas que el perfil activo todavía puede reseñar. */

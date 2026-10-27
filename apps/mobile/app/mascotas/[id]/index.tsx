@@ -8,8 +8,7 @@
  * Copia el formato de la ficha de la publicación (`publicaciones/[id]/index.tsx`): foto
  * arriba y una tarjeta montada encima con las mismas secciones y piezas
  * (`components/publicaciones/FichaPublicacion.tsx`). No hay CTA de solicitud ni favoritos:
- * es la mascota en sí y no un anuncio, y en Salud solo va castrado (desparasitado es de la
- * publicación).
+ * es la mascota en sí y no un anuncio.
  */
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -169,12 +168,16 @@ export default function FichaMascotaScreen() {
             <GrillaDatos datos={datosDeMascota(mascota)} />
           </SeccionFicha>
 
-          {/* Solo castrado: desparasitado es de la publicación, así que el cuadrante ocupa
-              todo el ancho. Las vacunas salen de la historia clínica: se suman cargando un
-              registro de tipo "Vacuna". */}
+          {/* Castrado y desparasitado son de la mascota y se leen juntos. Las vacunas salen de
+              la historia clínica: se suman cargando un registro de tipo "Vacuna". */}
           <SeccionFicha icono="heart-pulse" titulo="Salud">
-            <View className="flex-row">
+            <View className="flex-row gap-2.5">
               <CuadranteSalud tipo="CASTRADO" activo={mascota.castrado} genero={mascota.genero} />
+              <CuadranteSalud
+                tipo="DESPARASITADO"
+                activo={mascota.desparasitado}
+                genero={mascota.genero}
+              />
             </View>
             <Subtitulo texto="Vacunas" />
             <VacunasMascota vacunas={mascota.vacunas} grande />

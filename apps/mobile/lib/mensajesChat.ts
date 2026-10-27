@@ -94,6 +94,8 @@ export interface ItemChat {
   tipo: TipoMensaje;
   /** Sólo en los de tipo `SOLICITUD`. */
   solicitud: SolicitudEnChat | null;
+  /** Sólo en los de tipo `SOLICITUD`: la envió quien mira, así que la tarjeta va de su lado. */
+  solicitudPropia: boolean;
   /** Sólo en los de tipo `ANIMAL_PERDIDO` (HU-13.2). */
   aviso: AvisoEnChat | null;
   /** Sólo en los de tipo `MASCOTA`: la mascota compartida. */
@@ -340,6 +342,7 @@ export function aItems(
       leido: false,
       tipo: 'TEXTO' as const,
       solicitud: null,
+      solicitudPropia: false,
       aviso: null,
       mascota: null,
       ubicacion: null,
@@ -368,6 +371,7 @@ export function aItems(
     leido: mensaje.leido,
     tipo: mensaje.tipo,
     solicitud: mensaje.solicitud,
+    solicitudPropia: mensaje.solicitud?.usuarioId === miUsuarioId,
     aviso: mensaje.aviso,
     mascota: mensaje.mascota ?? null,
     ubicacion: mensaje.ubicacion ?? null,

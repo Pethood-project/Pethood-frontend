@@ -2,9 +2,10 @@
  * Bloque principal de Inicio del refugio: cuántas solicitudes hay por revisar, cómo se
  * reparten por estado y las dos últimas que llegaron.
  *
- * "Por revisar" es Pendiente + En revisión: las que todavía esperan una respuesta del
- * refugio. La barrita suma además las aprobadas del mes, para que se vea lo que ya salió;
- * las de meses anteriores no, porque con el tiempo taparían todo lo demás.
+ * "Por revisar" es Pendiente + En revisión: las que todavía no se terminaron de mirar. Las
+ * revisadas esperan solo la decisión y se cuentan aparte. La barrita suma además las
+ * aprobadas del mes, para que se vea lo que ya salió; las de meses anteriores no, porque con
+ * el tiempo taparían todo lo demás.
  */
 import { useRouter } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
@@ -23,6 +24,7 @@ export interface ResumenSolicitudesRefugio {
   /** Las pendientes, la más nueva primero: de acá salen las dos filas. */
   pendientes: ListaSolicitudesRecibidas;
   enRevision: number;
+  revisadas: number;
   aprobadasDelMes: number;
   llegadasHoy: number;
 }
@@ -36,12 +38,18 @@ export function PanelSolicitudesRefugio({ resumen, error }: PanelSolicitudesRefu
   const router = useRouter();
   const pendientes = resumen?.pendientes.total ?? 0;
   const enRevision = resumen?.enRevision ?? 0;
+  const revisadas = resumen?.revisadas ?? 0;
   const aprobadas = resumen?.aprobadasDelMes ?? 0;
   const porRevisar = pendientes + enRevision;
 
   const tramos = [
     { cantidad: pendientes, color: PALETA.tabCentral.amarillo, texto: conPlural(pendientes, 'pendiente', 'pendientes') },
     { cantidad: enRevision, color: PALETA.accent[400], texto: `${enRevision} en revisión` },
+    {
+      cantidad: revisadas,
+      color: PALETA.accent[300],
+      texto: conPlural(revisadas, 'revisada', 'revisadas'),
+    },
     {
       cantidad: aprobadas,
       color: PALETA.accent[100],

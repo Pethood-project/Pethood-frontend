@@ -15,7 +15,7 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import type { ImagePickerAsset } from 'expo-image-picker';
-import { useNavigation, useRouter } from 'expo-router';
+import { usePreventRemove, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -130,7 +130,6 @@ const CAMPOS: (keyof Formulario)[] = ['nombre', 'descripcion', 'calleAltura', 't
 
 export default function DatosRefugioScreen() {
   const router = useRouter();
-  const navigation = useNavigation();
   const toast = useToast();
   const { token } = useSesion();
 
@@ -146,7 +145,6 @@ export default function DatosRefugioScreen() {
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
   const [confirmarSalida, setConfirmarSalida] = useState(false);
-  const permitirSalir = useRef(false);
 
   const hayCambios =
     JSON.stringify(form) !== JSON.stringify(inicial) ||
@@ -200,20 +198,23 @@ export default function DatosRefugioScreen() {
   }, [token, toast]);
 
   // Mismo criterio que `/perfil/editar`: el diálogo propio cubre también el atrás del sistema.
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('beforeRemove', (evento) => {
-      if (permitirSalir.current || !hayCambios) return;
-      if (evento.data.action.type !== 'GO_BACK' && evento.data.action.type !== 'POP') return;
+  // Con cambios sin guardar, volver (botón, gesto o atrás del sistema) pide confirmación. Lo
+  // que no es volver, como cerrar sesión, pasa de largo.
+  const desactivarBloqueo = useRef<() => void>(() => undefined);
+  desactivarBloqueo.current = usePreventRemove(hayCambios, ({ data, repeat }) => {
+    const tipo = data.action.type;
 
-      evento.preventDefault();
-      setConfirmarSalida(true);
-    });
+    if (tipo !== 'GO_BACK' && tipo !== 'POP') {
+      desactivarBloqueo.current();
+      repeat();
+      return;
+    }
 
-    return unsubscribe;
-  }, [hayCambios, navigation]);
+    setConfirmarSalida(true);
+  });
 
   const salirSinGuardar = (): void => {
-    permitirSalir.current = true;
+    desactivarBloqueo.current();
     setConfirmarSalida(false);
     router.back();
   };
@@ -323,7 +324,7 @@ export default function DatosRefugioScreen() {
         },
         fotoNueva,
       );
-      permitirSalir.current = true;
+      desactivarBloqueo.current();
       toast.mostrarExito('Los datos del refugio se guardaron con éxito');
       router.back();
     } catch (error) {

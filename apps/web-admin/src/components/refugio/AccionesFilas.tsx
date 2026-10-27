@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Check, CircleStop, Pause, Play, X } from "lucide-react";
-import { cambiarEstadoCampania, cambiarEstadoPublicacion, resolverSolicitud } from "@/services/refugio";
+import { Check, CheckCheck, CircleStop, Pause, Play, X } from "lucide-react";
+import {
+  cambiarEstadoCampania,
+  cambiarEstadoPublicacion,
+  marcarSolicitudRevisada,
+  resolverSolicitud,
+} from "@/services/refugio";
+import { ESTADOS_SOLICITUD_ABIERTA, MOTIVOS_RECHAZO, type MotivoRechazo } from "@/types/refugio";
 import { AccionesConConfirmacion, type AccionFila } from "./AccionesConConfirmacion";
 
 // Acciones por fila de Publicaciones, Solicitudes y Campañas. Qué acción se ofrece en cada
@@ -66,7 +72,7 @@ export function AccionesPublicacion({ id, estado, token }: { id: number; estado:
   return <AccionesConConfirmacion acciones={acciones} />;
 }
 
-// --- Solicitudes (PATCH /solicitudes/:id/estado, HU-7.4) ----------------------------------
+// --- Solicitudes (PATCH /solicitudes/:id/estado) -------------------------------------------
 
 export function AccionesSolicitud({
   id,
@@ -85,9 +91,12 @@ export function AccionesSolicitud({
   token: string;
 }) {
   const [comentario, setComentario] = useState("");
+  const [motivo, setMotivo] = useState<MotivoRechazo | "">("");
 
-  // El back solo resuelve solicitudes Pendiente.
-  if (estado !== "Pendiente") return <AccionesConConfirmacion acciones={[]} />;
+  // El back resuelve cualquier solicitud abierta; las finales ya no se tocan.
+  if (!(ESTADOS_SOLICITUD_ABIERTA as readonly string[]).includes(estado)) {
+    return <AccionesConConfirmacion acciones={[]} />;
+  }
 
   const campoComentario = (
     <label className="block text-sm font-medium text-neutral-700">
@@ -106,44 +115,86 @@ export function AccionesSolicitud({
     </label>
   );
 
-  const acciones: AccionFila[] = [
-    {
-      clave: "aceptar",
-      etiqueta: "Aceptar",
-      icono: Check,
-      tono: "exito",
-      confirmacion: {
-        titulo: `¿Aceptar a ${solicitante}?`,
-        mensaje: `La solicitud sobre ${mascota} va a quedar marcada como Aprobada.`,
-        detalle:
-          tipo === "Adopcion"
-            ? `${mascota} pasa a Adoptado, la publicación se finaliza y se rechazan las demás solicitudes pendientes. Esta acción no se puede deshacer.`
-            : "Esta acción no se puede deshacer.",
-        textoConfirmar: "Aceptar",
-      },
-      exito: `Aceptaste la solicitud de ${solicitante}.`,
-      ejecutar: () => resolverSolicitud(id, "Aprobada", comentario, token),
-      extra: campoComentario,
-      alAbrir: () => setComentario(""),
+  const campoMotivo = (
+    <label className="block text-sm font-medium text-neutral-700">
+      <span className="mb-1 block">¿Por qué la rechazás?</span>
+      <select
+        value={motivo}
+        onChange={(e) => setMotivo(e.target.value as MotivoRechazo | "")}
+        className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm font-normal text-neutral-900"
+      >
+        <option value="">Elegí un motivo</option>
+        {MOTIVOS_RECHAZO.map((opcion) => (
+          <option key={opcion.valor} value={opcion.valor}>
+            {opcion.etiqueta}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+
+  // Aceptar exige haberla marcado como revisada; hasta entonces solo se puede revisar o rechazar.
+  const revisar: AccionFila = {
+    clave: "revisada",
+    etiqueta: "Marcar revisada",
+    icono: CheckCheck,
+    tono: "info",
+    confirmacion: {
+      titulo: `¿Marcar como revisada la solicitud de ${solicitante}?`,
+      mensaje: `${solicitante} va a ver que ya revisaste su solicitud sobre ${mascota}. Después podés aceptarla o rechazarla.`,
+      textoConfirmar: "Marcar revisada",
     },
-    {
-      clave: "rechazar",
-      etiqueta: "Rechazar",
-      icono: X,
-      tono: "peligro",
-      confirmacion: {
-        titulo: `¿Rechazar a ${solicitante}?`,
-        mensaje: `La solicitud sobre ${mascota} va a quedar marcada como Rechazada.`,
-        detalle: "Esta acción no se puede deshacer.",
-        textoConfirmar: "Rechazar",
-        peligro: true,
-      },
-      exito: `Rechazaste la solicitud de ${solicitante}.`,
-      ejecutar: () => resolverSolicitud(id, "Rechazada", comentario, token),
-      extra: campoComentario,
-      alAbrir: () => setComentario(""),
+    exito: `Marcaste como revisada la solicitud de ${solicitante}.`,
+    ejecutar: () => marcarSolicitudRevisada(id, token),
+  };
+
+  const aceptar: AccionFila = {
+    clave: "aceptar",
+    etiqueta: "Aceptar",
+    icono: Check,
+    tono: "exito",
+    confirmacion: {
+      titulo: `¿Aceptar a ${solicitante}?`,
+      mensaje: `La solicitud sobre ${mascota} va a quedar marcada como Aprobada.`,
+      detalle:
+        tipo === "Adopcion"
+          ? `${mascota} pasa a Adoptado, la publicación se finaliza y las demás solicitudes abiertas se cierran con un aviso. Esta acción no se puede deshacer.`
+          : "Esta acción no se puede deshacer.",
+      textoConfirmar: "Aceptar",
     },
-  ];
+    exito: `Aceptaste la solicitud de ${solicitante}.`,
+    ejecutar: () => resolverSolicitud(id, "Aprobada", comentario, token),
+    extra: campoComentario,
+    alAbrir: () => setComentario(""),
+  };
+
+  const rechazar: AccionFila = {
+    clave: "rechazar",
+    etiqueta: "Rechazar",
+    icono: X,
+    tono: "peligro",
+    confirmacion: {
+      titulo: `¿Rechazar a ${solicitante}?`,
+      mensaje: `La solicitud sobre ${mascota} va a quedar marcada como Rechazada.`,
+      detalle: "Esta acción no se puede deshacer.",
+      textoConfirmar: "Rechazar",
+      peligro: true,
+    },
+    exito: `Rechazaste la solicitud de ${solicitante}.`,
+    ejecutar: () => resolverSolicitud(id, "Rechazada", comentario, token, motivo || undefined),
+    extra: (
+      <div className="space-y-3">
+        {campoMotivo}
+        {campoComentario}
+      </div>
+    ),
+    alAbrir: () => {
+      setComentario("");
+      setMotivo("");
+    },
+  };
+
+  const acciones = estado === "Revisada" ? [aceptar, rechazar] : [revisar, rechazar];
 
   return <AccionesConConfirmacion acciones={acciones} />;
 }

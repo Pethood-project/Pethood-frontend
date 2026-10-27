@@ -119,6 +119,7 @@ export default function CrearMascotaScreen() {
   const [especieId, setEspecieId] = useState<number | null>(null);
   const [razaId, setRazaId] = useState<number | null>(null);
   const [castrado, setCastrado] = useState(false);
+  const [desparasitado, setDesparasitado] = useState(false);
   const [descripcion, setDescripcion] = useState('');
   const [destino, setDestino] = useState<Destino | null>(paraPublicar ? 'ADOPCION' : null);
   const [estadoMascotaId, setEstadoMascotaId] = useState<number | null>(null);
@@ -376,6 +377,7 @@ export default function CrearMascotaScreen() {
         especieId: especieId!,
         razaId: razaId!,
         castrado,
+        desparasitado,
         descripcion: descripcion.trim(),
         destino: vistaRefugio ? undefined : destino!,
         estadoMascotaId: vistaRefugio ? estadoMascotaId! : undefined,
@@ -536,6 +538,15 @@ export default function CrearMascotaScreen() {
                   label={textoSegunGenero(genero, 'Castrado / Esterilizado', 'Castrada / Esterilizada')}
                   valor={castrado}
                   onChange={setCastrado}
+                  grande
+                />
+              </FormCardRow>
+
+              <FormCardRow>
+                <ToggleField
+                  label={textoSegunGenero(genero, 'Desparasitado', 'Desparasitada')}
+                  valor={desparasitado}
+                  onChange={setDesparasitado}
                   grande
                 />
               </FormCardRow>

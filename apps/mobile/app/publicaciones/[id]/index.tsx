@@ -39,7 +39,11 @@ import {
 } from '@/components/publicaciones/FichaPublicacion';
 import { BotonReportar } from '@/components/reportes/BotonReportar';
 import { ResumenReputacion } from '@/components/resenas/ResumenReputacion';
-import { BotonSolicitar, solicitudEnviadaDe } from '@/components/solicitudes/BotonSolicitar';
+import {
+  BotonSolicitar,
+  olvidarEnviada,
+  solicitudEnviadaDe,
+} from '@/components/solicitudes/BotonSolicitar';
 import { ConfirmDialog, type TonoDialogo } from '@/components/ui/ConfirmDialog';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { VacunasMascota } from '@/components/vacunas/VacunasMascota';
@@ -181,6 +185,10 @@ export default function FichaPublicacionScreen() {
         // devolver otro código y aún así traer la solicitud ya mandada.
         if (elegibilidad.solicitudAbiertaId != null) {
           setSolicitudAbiertaId(elegibilidad.solicitudAbiertaId);
+        } else {
+          // Sin solicitud abierta: si antes había una, se retiró o se cerró.
+          setSolicitudAbiertaId(null);
+          olvidarEnviada(publicacionId);
         }
       })
       .catch(() => undefined);

@@ -1,9 +1,15 @@
 /** Pastilla de estado de solicitud, con el color que le corresponde a cada estado. */
 import { Text, View } from 'react-native';
-import { estiloDeEstadoSolicitud } from '../../constants/EstadosSolicitud';
+import { estiloDeEstadoSolicitud, type VistaSolicitud } from '../../constants/EstadosSolicitud';
 
-export function EstadoSolicitudBadge({ estado }: { estado: string }) {
-  const { fondo, texto, etiqueta } = estiloDeEstadoSolicitud(estado);
+interface EstadoSolicitudBadgeProps {
+  estado: string;
+  /** Quién mira: el rótulo cambia ("Enviada" para quien pidió, "Por revisar" para quien recibe). */
+  vista?: VistaSolicitud;
+}
+
+export function EstadoSolicitudBadge({ estado, vista = 'refugio' }: EstadoSolicitudBadgeProps) {
+  const { fondo, texto, etiqueta } = estiloDeEstadoSolicitud(estado, vista);
 
   return (
     <View className={`self-start rounded-full border px-3 py-1.5 ${fondo}`}>

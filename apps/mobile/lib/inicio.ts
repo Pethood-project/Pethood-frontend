@@ -22,17 +22,19 @@ export function tituloAdoptar(total: number): string {
 }
 
 /**
- * Cuántos de los tres tramos de la barrita de "Mis solicitudes" van pintados: enviada,
- * en revisión, aprobada. Una rechazada o cancelada no está en curso y no tiene barra.
+ * Cuántos de los cuatro tramos de la barrita de "Mis solicitudes" van pintados: enviada,
+ * en revisión, revisada, aprobada. Una rechazada, cancelada o cerrada no avanzó hasta el
+ * final y no tiene barra.
  */
 export function pasoDeSolicitud(estado: EstadoSolicitudNombre): number {
   if (estado === 'Pendiente') return 1;
   if (estado === 'En_Revision') return 2;
-  if (estado === 'Aprobada') return 3;
+  if (estado === 'Revisada') return 3;
+  if (estado === 'Aprobada') return 4;
   return 0;
 }
 
-export const PASOS_SOLICITUD = 3;
+export const PASOS_SOLICITUD = 4;
 
 const MESES_CORTOS = [
   'ENE',

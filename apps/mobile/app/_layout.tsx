@@ -10,6 +10,7 @@ import { useFonts } from 'expo-font';
 import { NavigationBar } from 'expo-navigation-bar';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -19,6 +20,7 @@ import { BarraNavegacionSistema } from '@/components/BarraNavegacionSistema';
 import { ToastProvider } from '@/components/feedback/Toast';
 import { AbrirNotificacionPush } from '@/components/notificaciones/AbrirNotificacionPush';
 import { SesionProvider, useSesion } from '@/hooks/useSesion';
+import { cargarPreferenciaVibraciones } from '@/lib/haptics';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -58,6 +60,12 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const { autenticado, cargando } = useSesion();
+
+  // Si la persona apagó las vibraciones en Mi perfil, se respeta desde el primer toque.
+  useEffect(() => {
+    void cargarPreferenciaVibraciones();
+  }, []);
+
   // Caprasimo para títulos y Figtree para el resto. Hasta que estén, no se dibuja nada:
   // el sistema sustituiría por la fuente por defecto y la pantalla saltaría al cargar.
   const [fuentesListas] = useFonts({
@@ -114,6 +122,10 @@ function RootNavigator() {
             eliminar una mascota con solicitudes abiertas. */}
         <Stack.Screen name="solicitudes" options={{ presentation: 'card' }} />
         <Stack.Screen name="solicitudes/[id]" options={{ presentation: 'card' }} />
+        {/* Preguntas propias del refugio para el formulario de solicitud: se entra desde el
+            Perfil en la vista de refugio. */}
+        <Stack.Screen name="preguntas-adopcion/index" />
+        <Stack.Screen name="preguntas-adopcion/[id]" options={{ presentation: 'card' }} />
         <Stack.Screen name="perfil/editar" options={{ presentation: 'card' }} />
         <Stack.Screen name="perfil/password" options={{ presentation: 'card' }} />
         {/* Spec 002.1. DNI + selfie para verificar la identidad; se entra desde el menú de Perfil. */}

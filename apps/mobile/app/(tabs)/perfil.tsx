@@ -35,9 +35,11 @@ import { Chip } from '@/components/ui/Chip';
 import { HojaOpciones } from '@/components/ui/HojaOpciones';
 import { LogoRefugio } from '@/components/ui/LogoRefugio';
 import { SwitchRefugio } from '@/components/ui/SwitchRefugio';
+import { ToggleField } from '@/components/ui/ToggleField';
 import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
+import { useVibraciones } from '@/lib/haptics';
 import { ApiError, urlAbsoluta } from '@/services/api';
 import { actualizarUbicacionRefugio, obtenerPerfilRefugio } from '@/services/refugio';
 import { actualizarUbicacion, obtenerPerfil } from '@/services/usuarios';
@@ -91,6 +93,11 @@ const MENU_REFUGIO: ItemMenu[] = [
     label: 'Solicitudes recibidas',
     ruta: { pathname: '/solicitudes', params: { vista: 'recibidas' } },
   },
+  {
+    icono: 'chatbubbles-outline',
+    label: 'Preguntas para adoptantes',
+    ruta: '/preguntas-adopcion' as Href,
+  },
   { icono: 'footsteps-outline', label: 'Seguimientos', ruta: '/seguimientos' },
   { icono: 'star-outline', label: 'Reseñas del refugio', ruta: '/resenas' as Href },
   {
@@ -117,6 +124,7 @@ function Contador({
 }: {
   valor: string | number;
   etiqueta: string;
+  /** Con esto el número se toca y lleva a la lista que cuenta. */
   onPress?: () => void;
 }) {
   const contenido = (
@@ -137,7 +145,7 @@ function Contador({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Ver reseñas (${etiqueta})`}
+      accessibilityLabel={`Ver ${etiqueta.toLowerCase()}`}
       onPress={onPress}
       className="flex-1 items-center active:opacity-70"
     >
@@ -156,6 +164,7 @@ function TarjetaRefugio({
   onGuardarUbicacion: (mapaUrl: string) => Promise<void>;
   onVerResenas: () => void;
 }) {
+  const router = useRouter();
   const { promedio, cantidad } = refugio.valoracion;
 
   return (
@@ -207,11 +216,30 @@ function TarjetaRefugio({
       <FilaUbicacion mapaUrl={refugio.mapaUrl} onGuardar={onGuardarUbicacion} />
 
       <View className="mt-5 flex-row border-t border-organic-neutral-200 pt-5">
-        <Contador valor={refugio.estadisticas.enRefugio} etiqueta="En el refugio" />
-        <Contador valor={refugio.estadisticas.adopciones} etiqueta="Adopciones" />
+        <Contador
+          valor={refugio.estadisticas.enRefugio}
+          etiqueta="Mascotas en el refugio"
+          onPress={() => router.push('/(tabs)/mis-mascotas')}
+        />
+        <Contador
+          valor={refugio.estadisticas.adopciones}
+          etiqueta="Adopciones"
+          onPress={() =>
+            router.push({
+              pathname: '/solicitudes',
+              params: { vista: 'recibidas', estados: 'Aprobada', tipo: 'Adopcion' },
+            })
+          }
+        />
         <Contador
           valor={refugio.estadisticas.solicitudesAbiertas}
           etiqueta="Solicitudes abiertas"
+          onPress={() =>
+            router.push({
+              pathname: '/solicitudes',
+              params: { vista: 'recibidas', estados: 'Pendiente,En_Revision,Revisada' },
+            })
+          }
         />
       </View>
     </View>
@@ -221,6 +249,7 @@ function TarjetaRefugio({
 export default function PerfilScreen() {
   const router = useRouter();
   const toast = useToast();
+  const [vibraciones, cambiarVibraciones] = useVibraciones();
   const {
     usuario,
     token,
@@ -453,6 +482,16 @@ export default function PerfilScreen() {
                   <Ionicons name="chevron-forward" size={20} color={PALETA.neutral[400]} />
                 </Pressable>
               ))}
+            </View>
+
+            <View className="mt-4">
+              <ToggleField
+                label="Vibraciones"
+                valor={vibraciones}
+                onChange={cambiarVibraciones}
+                variante="caja"
+                grande
+              />
             </View>
           </ScrollView>
         )}

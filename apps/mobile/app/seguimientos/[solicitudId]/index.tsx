@@ -16,7 +16,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View, type ScrollViewInstance } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CustomButton } from '@/components/CustomButton';
@@ -149,7 +149,7 @@ export default function SeguimientoSolicitudScreen() {
   const [ahora, setAhora] = useState(() => new Date());
   const [confirmarDescarte, setConfirmarDescarte] = useState(false);
   const [descartando, setDescartando] = useState(false);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
 
   useEffect(() => {
     const intervalo = setInterval(() => setAhora(new Date()), REFRESCO_TEXTOS_MS);

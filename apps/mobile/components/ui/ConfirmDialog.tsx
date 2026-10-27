@@ -14,13 +14,14 @@
  * - sin ninguno de los dos: un único "Entendido", para informar un bloqueo sin salida.
  */
 import { Ionicons } from '@expo/vector-icons';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { ActivityIndicator, Modal, Pressable, Text, View } from 'react-native';
 // El de la librería y no el de React Native: con edge-to-edge en Android el nativo no se
 // entera del teclado y no mueve nada.
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
 import { PALETA } from '@/constants/theme';
+import { vibrar } from '@/lib/haptics';
 
 export type TonoDialogo = 'peligro' | 'advertencia' | 'exito' | 'bloqueo';
 
@@ -50,30 +51,34 @@ interface ConfirmDialogProps {
   children?: ReactNode;
 }
 
-const ESTILOS: Record<TonoDialogo, { icono: keyof typeof Ionicons.glyphMap; color: string; fondo: string; boton: string }> = {
+/** Cada tono: el círculo del ícono (fondo y trazo) y el color del botón de confirmar. */
+const ESTILOS: Record<
+  TonoDialogo,
+  { icono: keyof typeof Ionicons.glyphMap; trazo: string; fondo: string; boton: string }
+> = {
   peligro: {
     icono: 'trash-outline',
-    color: PALETA.estado.error,
-    fondo: 'bg-red-50',
-    boton: 'bg-red-600',
+    trazo: PALETA.estado.error,
+    fondo: PALETA.accent[100],
+    boton: PALETA.estado.error,
   },
   advertencia: {
     icono: 'alert-circle-outline',
-    color: PALETA.estado.advertencia,
-    fondo: 'bg-amber-50',
-    boton: 'bg-amber-500',
+    trazo: PALETA.accent[700],
+    fondo: PALETA.calido.amarilloClaro,
+    boton: PALETA.accent[600],
   },
   exito: {
     icono: 'checkmark-circle-outline',
-    color: PALETA.estado.exito,
-    fondo: 'bg-emerald-50',
-    boton: 'bg-emerald-600',
+    trazo: PALETA.estado.exito,
+    fondo: PALETA.accent[100],
+    boton: PALETA.estado.exito,
   },
   bloqueo: {
     icono: 'alert-circle-outline',
-    color: PALETA.accent[700],
-    fondo: 'bg-organic-accent-200',
-    boton: 'bg-organic-accent-600',
+    trazo: PALETA.accent[700],
+    fondo: PALETA.accent[200],
+    boton: PALETA.accent[600],
   },
 };
 
@@ -94,6 +99,12 @@ export function ConfirmDialog({
   children,
 }: ConfirmDialogProps) {
   const estilo = ESTILOS[tono];
+
+  // Lo destructivo avisa con el cuerpo antes de que haga falta leerlo.
+  useEffect(() => {
+    if (visible && (tono === 'peligro' || tono === 'advertencia')) vibrar.advertencia();
+  }, [visible, tono]);
+
   const esConfirmacion = onConfirmar !== undefined;
   const esBloqueo = !esConfirmacion && accionPrincipal !== undefined;
 
@@ -127,16 +138,28 @@ export function ConfirmDialog({
               onPress={cerrarSiSePuede}
               className="absolute inset-0"
             />
-            <View className="z-10 w-full rounded-3xl bg-white p-6" accessibilityViewIsModal>
-              <View className={`mb-4 h-14 w-14 items-center justify-center self-center rounded-full ${estilo.fondo}`}>
-                <Ionicons name={icono ?? estilo.icono} size={28} color={estilo.color} />
+            <View
+              className="z-10 w-full rounded-[28px] border border-organic-neutral-300 bg-organic-surface p-6"
+              accessibilityViewIsModal
+            >
+              <View
+                style={{ backgroundColor: estilo.fondo }}
+                className="mb-4 h-16 w-16 items-center justify-center self-center rounded-full"
+              >
+                <Ionicons name={icono ?? estilo.icono} size={30} color={estilo.trazo} />
               </View>
 
-              <Text className="text-center text-lg font-bold text-gray-900">{titulo}</Text>
-              <Text className="mt-2 text-center text-base leading-6 text-gray-600">{mensaje}</Text>
+              <Text className="text-center font-titulo text-[22px] leading-[27px] text-organic-neutral-900">
+                {titulo}
+              </Text>
+              <Text className="mt-2 text-center font-cuerpo text-[16px] leading-6 text-organic-neutral-700">
+                {mensaje}
+              </Text>
 
               {detalle ? (
-                <Text className="mt-3 text-center text-sm leading-5 text-gray-500">{detalle}</Text>
+                <Text className="mt-3 text-center font-cuerpo text-[14px] leading-5 text-organic-neutral-600">
+                  {detalle}
+                </Text>
               ) : null}
 
               {children ? <View className="mt-4">{children}</View> : null}
@@ -147,9 +170,10 @@ export function ConfirmDialog({
                     <Pressable
                       accessibilityRole="button"
                       onPress={accionPrincipal!.onPress}
-                      className={`items-center justify-center rounded-2xl py-3.5 active:opacity-90 ${estilo.boton}`}
+                      style={{ backgroundColor: estilo.boton, borderRadius: 20 }}
+                      className="items-center justify-center py-3.5 active:opacity-90"
                     >
-                      <Text className="text-base font-semibold text-white">
+                      <Text className="font-cuerpo-semi text-base text-white">
                         {accionPrincipal!.etiqueta}
                       </Text>
                     </Pressable>
@@ -159,16 +183,19 @@ export function ConfirmDialog({
                       onPress={onCerrar}
                       className="items-center justify-center py-1 active:opacity-60"
                     >
-                      <Text className="text-[15px] text-organic-neutral-600">{textoDescartar}</Text>
+                      <Text className="font-cuerpo text-[15px] text-organic-neutral-600">
+                        {textoDescartar}
+                      </Text>
                     </Pressable>
                   </>
                 ) : !esConfirmacion ? (
                   <Pressable
                     accessibilityRole="button"
                     onPress={onCerrar}
-                    className="items-center justify-center rounded-2xl bg-organic-accent-600 py-3.5 active:opacity-90"
+                    style={{ borderRadius: 20 }}
+                    className="items-center justify-center bg-organic-accent-600 py-3.5 active:opacity-90"
                   >
-                    <Text className="text-base font-semibold text-white">Entendido</Text>
+                    <Text className="font-cuerpo-semi text-base text-white">Entendido</Text>
                   </Pressable>
                 ) : (
                   <>
@@ -176,9 +203,12 @@ export function ConfirmDialog({
                       accessibilityRole="button"
                       disabled={cargando}
                       onPress={onCerrar}
-                      className="flex-1 items-center justify-center rounded-2xl border border-gray-300 py-3.5 active:opacity-80"
+                      style={{ borderRadius: 20 }}
+                      className="flex-1 items-center justify-center border border-organic-neutral-300 bg-organic-surface py-3.5 active:opacity-80"
                     >
-                      <Text className="text-base font-semibold text-gray-700">{textoCancelar}</Text>
+                      <Text className="font-cuerpo-semi text-base text-organic-neutral-700">
+                        {textoCancelar}
+                      </Text>
                     </Pressable>
 
                     <Pressable
@@ -186,12 +216,15 @@ export function ConfirmDialog({
                       accessibilityState={{ busy: cargando }}
                       disabled={cargando}
                       onPress={onConfirmar}
-                      className={`flex-1 items-center justify-center rounded-2xl py-3.5 active:opacity-90 ${estilo.boton} ${cargando ? 'opacity-60' : ''}`}
+                      style={{ backgroundColor: estilo.boton, borderRadius: 20 }}
+                      className={`flex-1 items-center justify-center py-3.5 active:opacity-90 ${cargando ? 'opacity-60' : ''}`}
                     >
                       {cargando ? (
                         <ActivityIndicator color={PALETA.blanco} />
                       ) : (
-                        <Text className="text-base font-semibold text-white">{textoConfirmar}</Text>
+                        <Text className="font-cuerpo-semi text-base text-white">
+                          {textoConfirmar}
+                        </Text>
                       )}
                     </Pressable>
                   </>

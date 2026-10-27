@@ -1,10 +1,12 @@
 /** Paso 1 de GUI-7.1.1: adoptar o transitar, y el período si es tránsito. */
+import { Text } from 'react-native';
+
 import { DateField } from '@/components/ui/DateField';
 import { Nota } from '@/components/ui/Nota';
-import { SegmentedField } from '@/components/ui/SegmentedField';
-import { OPCIONES_TIPO_SOLICITUD, PREGUNTAS } from '@/constants/Solicitudes';
+import { PREGUNTAS } from '@/constants/Solicitudes';
 
 import { ResumenMascota } from './ResumenMascota';
+import { SelectorTipoSolicitud } from './SelectorTipoSolicitud';
 import type { PasoProps } from './PasoProps';
 
 /**
@@ -27,15 +29,14 @@ export function PasoTipo({ borrador, errores, mascota, editar }: PasoProps) {
         subtitulo={mascota.subtitulo}
       />
 
-      <SegmentedField
-        label={PREGUNTAS.tipoSolicitud}
-        opciones={OPCIONES_TIPO_SOLICITUD}
+      <Text className="font-cuerpo-semi text-[16px] text-organic-neutral-900">
+        {PREGUNTAS.tipoSolicitud}
+      </Text>
+
+      <SelectorTipoSolicitud
         valor={borrador.tipoSolicitud}
         onChange={(valor) => editar('tipoSolicitud', valor)}
-        obligatorio
         error={errores.tipoSolicitud}
-        variante="tarjetas"
-        varianteCampo="pregunta"
       />
 
       {esTransito ? (

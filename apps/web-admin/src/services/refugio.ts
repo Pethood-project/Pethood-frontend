@@ -10,6 +10,7 @@ import type {
   PerfilPublicoRefugio,
   PerfilRefugio,
   PublicacionRefugio,
+  MotivoRechazo,
   ResolucionSolicitud,
   ResumenResenas,
 } from "@/types/refugio";
@@ -97,16 +98,22 @@ export function cambiarEstadoPublicacion(id: number, accion: AccionPublicacion, 
   return apiFetch(`/publicaciones/${id}/estado`, { method: "PATCH", token, body: { accion } });
 }
 
+/** Paso previo a aceptar: la persona ve que la solicitud ya fue revisada. */
+export function marcarSolicitudRevisada(id: number, token: string): Promise<unknown> {
+  return apiFetch(`/solicitudes/${id}/revisada`, { method: "POST", token });
+}
+
 export function resolverSolicitud(
   id: number,
   estado: ResolucionSolicitud,
   comentario: string,
   token: string,
+  motivo?: MotivoRechazo,
 ): Promise<unknown> {
   return apiFetch(`/solicitudes/${id}/estado`, {
     method: "PATCH",
     token,
-    body: { estado, comentario: comentario.trim() || undefined },
+    body: { estado, comentario: comentario.trim() || undefined, motivo },
   });
 }
 

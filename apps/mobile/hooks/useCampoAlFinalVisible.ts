@@ -12,10 +12,10 @@
  * campo. Sin foco no hace nada: no le pelea el scroll al usuario.
  */
 import { useCallback, useMemo, useRef } from 'react';
-import type { ScrollView } from 'react-native';
+import type { ScrollViewInstance } from 'react-native';
 
 export function useCampoAlFinalVisible() {
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
   const enfocado = useRef(false);
 
   const bajar = useCallback((): void => {

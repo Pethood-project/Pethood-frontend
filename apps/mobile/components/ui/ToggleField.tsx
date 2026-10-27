@@ -2,6 +2,7 @@
 import { Switch, Text, View } from 'react-native';
 
 import { PALETA } from '@/constants/theme';
+import { vibrar } from '@/lib/haptics';
 
 export type VarianteToggle =
   /** Etiqueta chica en mayúsculas, sin contorno: va dentro de una fila de `FormCard`. */
@@ -47,7 +48,10 @@ export function ToggleField({
 
       <Switch
         value={valor}
-        onValueChange={onChange}
+        onValueChange={(siguiente) => {
+          vibrar.seleccion();
+          onChange(siguiente);
+        }}
         accessibilityLabel={label}
         trackColor={{ false: PALETA.gris[200], true: PALETA.accent[600] }}
         thumbColor={PALETA.blanco}

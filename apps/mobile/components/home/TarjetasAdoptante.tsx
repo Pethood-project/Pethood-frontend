@@ -130,7 +130,7 @@ function ProgresoSolicitud({ solicitud }: { solicitud: SolicitudResumen }) {
         </Text>
         {/* El estado no se achica: si no entra, se corta el nombre de la mascota. */}
         <Text className="shrink-0 font-cuerpo text-[12px]" style={{ color: PALETA.neutral[700] }}>
-          {estiloDeEstadoSolicitud(solicitud.estado.nombre).etiqueta}
+          {estiloDeEstadoSolicitud(solicitud.estado.nombre, 'adoptante').etiqueta}
         </Text>
       </View>
       <View className="mt-1 flex-row gap-[3px]">

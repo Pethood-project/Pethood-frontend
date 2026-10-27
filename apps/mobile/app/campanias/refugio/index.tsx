@@ -21,7 +21,9 @@ import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { BotonFlotante } from '@/components/ui/BotonFlotante';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { DateField } from '@/components/ui/DateField';
-import { FiltroEstados, type OpcionEstado } from '@/components/ui/FiltroEstados';
+import { FiltrosCampaniasModal, contarFiltrosCampanias } from '@/components/campanias/FiltrosCampaniasModal';
+import { BotonCircular } from '@/components/ui/BotonCircular';
+import { type OpcionEstado } from '@/components/ui/FiltroEstados';
 import { estiloDeEstadoCampania } from '@/constants/EstadosCampania';
 import { PALETA } from '@/constants/theme';
 import { usePaginacionCursor } from '@/hooks/usePaginacionCursor';
@@ -109,6 +111,7 @@ export default function MisCampaniasScreen() {
 
   const [catalogo, setCatalogo] = useState<OpcionCatalogo[]>([]);
   const [filtros, setFiltros] = useState<FiltrosMisCampanias>(SIN_FILTROS_CAMPANIAS);
+  const [modalFiltros, setModalFiltros] = useState(false);
   const [confirmando, setConfirmando] = useState<{
     campania: CampaniaRefugio;
     accion: AccionCampania;
@@ -224,53 +227,20 @@ export default function MisCampaniasScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <EncabezadoPantalla barra titulo="Mis Campañas" onVolver={volver} />
+        <EncabezadoPantalla
+          barra
+          titulo="Mis Campañas"
+          onVolver={volver}
+          derecha={
+            <BotonCircular
+              icono="options-outline"
+              etiqueta="Filtros"
+              contador={contarFiltrosCampanias(filtros)}
+              onPress={() => setModalFiltros(true)}
+            />
+          }
+        />
 
-        <View className="gap-2 pt-3">
-          <FiltroEstados
-            opciones={estados}
-            seleccionados={filtros.estados}
-            onChange={(seleccionados) => setFiltros((f) => ({ ...f, estados: seleccionados }))}
-          />
-          <View className="flex-row items-end gap-2 px-[22px] pb-2">
-            <View className="flex-1">
-              <DateField
-                label="Inicio desde"
-                placeholder="Elegí"
-                valor={filtros.fechaDesde ?? null}
-                onChange={(fecha) => setFiltros((f) => ({ ...f, fechaDesde: fecha }))}
-                fechaMaxima={new Date(2100, 0, 1)}
-                mostrarEdad={false}
-              />
-            </View>
-            {/* La HU pide «desde» obligatorio: sin él, un «hasta» suelto no filtraría nada. */}
-            {filtros.fechaDesde ? (
-              <View className="flex-1">
-                <DateField
-                  label="Hasta (opcional)"
-                  placeholder="Elegí"
-                  valor={filtros.fechaHasta ?? null}
-                  onChange={(fecha) => setFiltros((f) => ({ ...f, fechaHasta: fecha }))}
-                  fechaMinima={filtros.fechaDesde}
-                  fechaMaxima={new Date(2100, 0, 1)}
-                  mostrarEdad={false}
-                />
-              </View>
-            ) : null}
-            {filtros.fechaDesde ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setFiltros((f) => ({ estados: f.estados }))}
-                hitSlop={8}
-                className="pb-3 active:opacity-60"
-              >
-                <Text className="font-cuerpo-bold text-[13px] text-organic-accent-600">
-                  Limpiar
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
-        </View>
 
         {lista.cargando ? (
           <EstadoCargando />
@@ -294,7 +264,7 @@ export default function MisCampaniasScreen() {
                 <View className="items-center py-5">
                   <ActivityIndicator color={PALETA.accent[600]} />
                 </View>
-              ) : null
+              ) : undefined
             }
             onEndReached={lista.cargarMas}
             onEndReachedThreshold={0.5}
@@ -314,6 +284,17 @@ export default function MisCampaniasScreen() {
           onPress={() => void nuevaCampania()}
         />
       </SafeAreaView>
+
+      <FiltrosCampaniasModal
+        visible={modalFiltros}
+        estados={estados}
+        filtros={filtros}
+        onAplicar={(nuevos) => {
+          setFiltros(nuevos);
+          setModalFiltros(false);
+        }}
+        onCerrar={() => setModalFiltros(false)}
+      />
 
       <ConfirmDialog
         visible={confirmando !== null}

@@ -18,14 +18,22 @@ type NombreIcono = keyof typeof Ionicons.glyphMap;
  */
 type VarianteBoton = 'organic' | 'neutro' | 'clasico';
 
+/** Amarillo de la marca con borde e ícono en el marrón oscuro: el botón de acción del rediseño. */
+const ESTILO_ORGANIC = {
+  backgroundColor: PALETA.tabCentral.amarillo,
+  borderColor: PALETA.accent[800],
+  borderWidth: 1.5,
+};
+
 const VARIANTES: Record<
   VarianteBoton,
-  { contenedor: string; color: string; tamanoIcono: number }
+  { contenedor: string; color: string; tamanoIcono: number; estilo?: object }
 > = {
   organic: {
-    contenedor: 'h-[42px] w-[42px] border border-organic-accent-300 bg-organic-accent-100',
-    color: PALETA.accent[700],
-    tamanoIcono: 19,
+    contenedor: 'h-[42px] w-[42px]',
+    color: PALETA.accent[800],
+    tamanoIcono: 20,
+    estilo: ESTILO_ORGANIC,
   },
   neutro: {
     contenedor: 'h-[42px] w-[42px] border border-organic-neutral-300 bg-organic-neutral-100',
@@ -42,12 +50,13 @@ const VARIANTES: Record<
 /** Mismas variantes, un 20% más grandes: pantallas más densas como Favoritos la piden. */
 const VARIANTES_GRANDE: Record<
   VarianteBoton,
-  { contenedor: string; color: string; tamanoIcono: number }
+  { contenedor: string; color: string; tamanoIcono: number; estilo?: object }
 > = {
   organic: {
-    contenedor: 'h-[50px] w-[50px] border border-organic-accent-300 bg-organic-accent-100',
-    color: PALETA.accent[700],
-    tamanoIcono: 23,
+    contenedor: 'h-[50px] w-[50px]',
+    color: PALETA.accent[800],
+    tamanoIcono: 24,
+    estilo: ESTILO_ORGANIC,
   },
   neutro: {
     contenedor: 'h-[50px] w-[50px] border border-organic-neutral-300 bg-organic-neutral-100',
@@ -81,7 +90,7 @@ export function BotonCircular({
   contador,
   grande = false,
 }: BotonCircularProps) {
-  const { contenedor, color, tamanoIcono } = (grande ? VARIANTES_GRANDE : VARIANTES)[variante];
+  const { contenedor, color, tamanoIcono, estilo } = (grande ? VARIANTES_GRANDE : VARIANTES)[variante];
   const clases = `${contenedor} items-center justify-center rounded-full`;
 
   const contenido = (
@@ -90,9 +99,9 @@ export function BotonCircular({
       {contador ? (
         <View
           className="absolute -right-0.5 -top-0.5 h-[18px] min-w-[18px] items-center justify-center rounded-full px-1"
-          style={{ backgroundColor: PALETA.accent[600] }}
+          style={{ backgroundColor: PALETA.accent[800] }}
         >
-          <Text className="font-cuerpo-bold text-[10px]" style={{ color: PALETA.accent[100] }}>
+          <Text className="font-cuerpo-bold text-[10px]" style={{ color: PALETA.tabCentral.amarillo }}>
             {contador}
           </Text>
         </View>
@@ -105,7 +114,12 @@ export function BotonCircular({
 
   if (!onPress) {
     return (
-      <View accessibilityRole="button" accessibilityLabel={etiquetaCompleta} className={clases}>
+      <View
+        accessibilityRole="button"
+        accessibilityLabel={etiquetaCompleta}
+        className={clases}
+        style={estilo}
+      >
         {contenido}
       </View>
     );
@@ -117,6 +131,7 @@ export function BotonCircular({
       accessibilityLabel={etiquetaCompleta}
       onPress={onPress}
       className={`${clases} active:opacity-70`}
+      style={estilo}
     >
       {contenido}
     </Pressable>

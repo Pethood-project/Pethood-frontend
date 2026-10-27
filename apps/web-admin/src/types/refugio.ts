@@ -35,7 +35,18 @@ export interface PublicacionRefugio {
 }
 
 /** Nombres del catálogo Estado_Solicitud, tal como los acepta `?estados=`. */
-export const ESTADOS_SOLICITUD = ["Pendiente", "En_Revision", "Aprobada", "Rechazada", "Cancelada"] as const;
+export const ESTADOS_SOLICITUD = [
+  "Pendiente",
+  "En_Revision",
+  "Revisada",
+  "Aprobada",
+  "Rechazada",
+  "Cancelada",
+  "Cerrada",
+] as const;
+
+/** Las que siguen esperando una decisión del refugio. */
+export const ESTADOS_SOLICITUD_ABIERTA = ["Pendiente", "En_Revision", "Revisada"] as const;
 
 export interface SolicitudRecibida {
   id: number;
@@ -64,8 +75,18 @@ export interface FiltrosSolicitudesRecibidas {
 /** Acciones manuales sobre una publicación (`PATCH /publicaciones/:id/estado`). */
 export type AccionPublicacion = "PAUSAR" | "REACTIVAR" | "FINALIZAR";
 
-/** Resolución de una solicitud Pendiente (`PATCH /solicitudes/:id/estado`). */
+/** Resolución de una solicitud abierta (`PATCH /solicitudes/:id/estado`). */
 export type ResolucionSolicitud = "Aprobada" | "Rechazada";
+
+/** Por qué se rechaza: es obligatorio al rechazar y se le dice a la persona con tacto. */
+export const MOTIVOS_RECHAZO = [
+  { valor: "NO_CUMPLE_REQUISITOS", etiqueta: "No cumple los requisitos" },
+  { valor: "MASCOTA_CON_HOGAR", etiqueta: "La mascota ya tiene hogar" },
+  { valor: "SIN_CONTACTO", etiqueta: "No pudimos contactarla" },
+  { valor: "OTRO", etiqueta: "Otro" },
+] as const;
+
+export type MotivoRechazo = (typeof MOTIVOS_RECHAZO)[number]["valor"];
 
 /** Estados a los que el refugio lleva una campaña a mano (`PATCH /refugio/campanias/:id/estado`). */
 export type EstadoManualCampania = "Pausada" | "Activa" | "Finalizada";

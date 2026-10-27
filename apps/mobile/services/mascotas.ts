@@ -13,6 +13,7 @@ export interface Mascota {
   peso: number | null;
   tamanio: Tamanio | null;
   castrado: boolean;
+  desparasitado: boolean;
   descripcion: string | null;
   imagenUrl: string | null;
   especie: { id: number; nombre: string };
@@ -32,6 +33,7 @@ export interface DatosNuevaMascota {
   especieId: number;
   razaId: number;
   castrado: boolean;
+  desparasitado: boolean;
   descripcion: string;
   /** Solo el adoptante lo manda: indica si la mascota es propia o para adopción. */
   destino?: Destino;
@@ -56,6 +58,7 @@ export async function crearMascota(datos: DatosNuevaMascota): Promise<Mascota> {
   formData.append('especieId', String(datos.especieId));
   formData.append('razaId', String(datos.razaId));
   formData.append('castrado', String(datos.castrado));
+  formData.append('desparasitado', String(datos.desparasitado));
   formData.append('descripcion', datos.descripcion);
 
   if (datos.destino) formData.append('destino', datos.destino);
@@ -132,6 +135,7 @@ export interface CambiosMascota {
   especieId?: number;
   razaId?: number;
   castrado?: boolean;
+  desparasitado?: boolean;
   /** Una cadena vacía borra la descripción; `undefined` la deja intacta. */
   descripcion?: string;
   foto?: { uri: string; nombre: string; tipo: string };
@@ -152,6 +156,9 @@ export async function editarMascota(id: number, cambios: CambiosMascota): Promis
   if (cambios.especieId !== undefined) formData.append('especieId', String(cambios.especieId));
   if (cambios.razaId !== undefined) formData.append('razaId', String(cambios.razaId));
   if (cambios.castrado !== undefined) formData.append('castrado', String(cambios.castrado));
+  if (cambios.desparasitado !== undefined) {
+    formData.append('desparasitado', String(cambios.desparasitado));
+  }
   if (cambios.descripcion !== undefined) formData.append('descripcion', cambios.descripcion);
 
   if (cambios.foto) {
@@ -181,7 +188,6 @@ export interface DatosNuevaPublicacion {
   longitud?: number;
   requisitos: string[];
   personalidad: string[];
-  desparasitado: boolean;
   /** En orden: la primera es la portada. Si va vacío se usa la foto de la mascota. */
   fotos: { uri: string; nombre: string; tipo: string }[];
 }
@@ -193,7 +199,6 @@ export interface Publicacion {
   ubicacion: string | null;
   requisitos: string[];
   personalidad: string[];
-  desparasitado: boolean;
   imagenes: string[];
   mascotaId: number;
   usuarioId: number;
@@ -205,7 +210,6 @@ export async function crearPublicacion(datos: DatosNuevaPublicacion): Promise<Pu
   formData.append('mascotaId', String(datos.mascotaId));
   formData.append('descripcion', datos.descripcion);
   formData.append('ubicacion', datos.ubicacion);
-  formData.append('desparasitado', String(datos.desparasitado));
   // Las coordenadas habilitan el filtro por cercanía; si no se capturaron, no viajan.
   if (datos.latitud !== undefined && datos.longitud !== undefined) {
     formData.append('latitud', String(datos.latitud));

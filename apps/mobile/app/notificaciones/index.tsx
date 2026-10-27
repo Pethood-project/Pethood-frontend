@@ -190,7 +190,7 @@ export default function NotificacionesScreen() {
                     No se pudo cargar más — reintentar
                   </Text>
                 </Pressable>
-              ) : null
+              ) : undefined
             }
             contentContainerClassName="px-3.5 py-1 pb-10"
             refreshing={lista.refrescando}

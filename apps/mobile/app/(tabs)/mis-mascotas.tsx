@@ -1,13 +1,13 @@
 /**
  * GUI-04 Mascotas Adoptante — listado de las mascotas del perfil activo (las personales, o
- * las del refugio desde la vista de refugio; ver `services/sesion.ts`), acceso a la creación y
- * punto de entrada a editar (HU-6.2). Eliminar (HU-6.3) no vive acá: se hace desde adentro
- * de la ficha de cada mascota (`mascotas/[id]/index.tsx`) para que la baja no quede a un
- * toque de distancia mientras se navega la lista.
+ * las del refugio desde la vista de refugio; ver `services/sesion.ts`) y acceso a la creación.
+ * Editar y eliminar no viven acá: se hacen desde adentro de la ficha de cada mascota
+ * (`mascotas/[id]/index.tsx`), para que la tarjeta quede chica y la baja no esté a un toque
+ * de distancia mientras se navega la lista.
  *
  * Solo en la vista de refugio, que suele tener muchas, hay un filtro por estado de la
- * mascota con selección múltiple ("Todos", o uno o varios estados). Filtra el backend
- * (`?estados=`).
+ * mascota con selección múltiple ("Todos", o uno o varios estados). Vive detrás del ícono de
+ * filtros del encabezado y filtra el backend (`?estados=`).
  */
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useFocusEffect, useRouter } from 'expo-router';
@@ -17,9 +17,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantalla';
 import { BotonFlotante } from '@/components/ui/BotonFlotante';
+import { useToast } from '@/components/feedback/Toast';
 import { Chip } from '@/components/ui/Chip';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
-import { FiltroEstados, type OpcionEstado } from '@/components/ui/FiltroEstados';
+import { FiltroEstadosBoton, type OpcionEstado } from '@/components/ui/FiltroEstados';
 import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { estiloDeEstado } from '@/constants/EstadosMascota';
 import { etiquetaEdad, etiquetaGenero, etiquetaTamanio } from '@/constants/Mascotas';
@@ -28,7 +29,7 @@ import { useSesion } from '@/hooks/useSesion';
 import { conRellenoDeFila, RELLENO } from '@/lib/grilla';
 import { urlAbsoluta } from '@/services/api';
 import { listarEstadosMascota } from '@/services/catalogos';
-import { listarMisMascotas, type Mascota } from '@/services/mascotas';
+import { listarMisMascotas, obtenerMascota, type Mascota } from '@/services/mascotas';
 
 /** Referencia estable para "sin filtro": un `[]` nuevo en cada render recrearía `cargar`. */
 const SIN_FILTRO: number[] = [];
@@ -68,19 +69,16 @@ function AccionTarjeta({
 
 interface TarjetaMascotaProps {
   mascota: Mascota;
-  /** Solo el creador del registro ve editar (misma regla que en publicaciones). */
-  esPropia: boolean;
   onVer: () => void;
-  onEditar: () => void;
   onVerHistoriaClinica: () => void;
+  onVerPublicacion: () => void;
 }
 
 function TarjetaMascota({
   mascota,
-  esPropia,
   onVer,
-  onEditar,
   onVerHistoriaClinica,
+  onVerPublicacion,
 }: TarjetaMascotaProps) {
   const foto = urlAbsoluta(mascota.imagenUrl);
   const nombre = mascota.nombre ?? 'esta mascota';
@@ -138,13 +136,16 @@ function TarjetaMascota({
             ) : null}
           </View>
 
-          <View className="mt-2 flex-row flex-wrap gap-1.5">
+          <View className="mt-2 flex-row">
             <Chip
               variante="dato"
               icono={mascota.genero === 'MACHO' ? 'male' : 'female'}
-              etiqueta={etiquetaGenero(mascota.genero)}
+              etiqueta={
+                tamanio
+                  ? `${etiquetaGenero(mascota.genero)} · ${tamanio}`
+                  : etiquetaGenero(mascota.genero)
+              }
             />
-            {tamanio ? <Chip variante="dato" etiqueta={tamanio} /> : null}
           </View>
 
           <View className="mt-2 flex-row items-center gap-1">
@@ -171,18 +172,14 @@ function TarjetaMascota({
             onPress={onVerHistoriaClinica}
           />
 
-          {/* Solo el creador del registro edita: si lo cargó otro miembro del refugio, la
-              historia clínica ocupa todo el ancho. */}
-          {esPropia ? (
-            <AccionTarjeta
-              etiqueta="Editar"
-              accessibilityLabel={`Editar a ${nombre}`}
-              icono={<Ionicons name="pencil" size={18} color={PALETA.neutral[700]} />}
-              claseFondo="bg-organic-neutral-200"
-              claseTexto="text-organic-neutral-700"
-              onPress={onEditar}
-            />
-          ) : null}
+          <AccionTarjeta
+            etiqueta="Publicación"
+            accessibilityLabel={`Publicación de ${nombre}`}
+            icono={<Ionicons name="megaphone-outline" size={19} color={PALETA.neutral[700]} />}
+            claseFondo="bg-organic-neutral-200"
+            claseTexto="text-organic-neutral-700"
+            onPress={onVerPublicacion}
+          />
         </View>
       </View>
     </View>
@@ -226,15 +223,16 @@ function ListaVaciaFiltrada() {
         No hay mascotas con esos estados
       </Text>
       <Text className="mt-2 text-center font-cuerpo text-[15px] leading-6 text-organic-neutral-600">
-        Probá con otros estados o tocá «Todos» para ver todas.
+        Probá con otros estados desde el ícono de filtros de arriba.
       </Text>
     </View>
   );
 }
 
 export default function MisMascotasScreen() {
-  const { vistaRefugio, usuario } = useSesion();
+  const { vistaRefugio } = useSesion();
   const router = useRouter();
+  const toast = useToast();
 
   const [mascotas, setMascotas] = useState<Mascota[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -289,6 +287,37 @@ export default function MisMascotasScreen() {
       .catch(() => undefined);
   }, [vistaRefugio]);
 
+  /**
+   * Si la mascota ya tiene un aviso activo se abre; si no, se arranca uno nuevo para ella. La
+   * lista no trae el aviso de cada mascota (serían tantas consultas como tarjetas), así que se
+   * resuelve al tocar.
+   */
+  const abrirPublicacion = useCallback(
+    async (mascota: Mascota): Promise<void> => {
+      try {
+        const ficha = await obtenerMascota(mascota.id);
+
+        if (ficha.publicacionActivaId !== null) {
+          router.push({
+            pathname: '/publicaciones/[id]',
+            params: { id: ficha.publicacionActivaId },
+          });
+          return;
+        }
+
+        router.push({
+          pathname: '/publicaciones/crear',
+          params: { mascotaId: String(mascota.id), origen: 'publicaciones' },
+        });
+      } catch (err) {
+        toast.mostrarError(
+          err instanceof Error ? err.message : 'No pudimos abrir la publicación. Intentalo de nuevo.',
+        );
+      }
+    },
+    [router, toast],
+  );
+
   // Se recarga al volver de crear, editar o eliminar una mascota, para reflejar los cambios, y
   // al cambiar el filtro (`cargar` cambia con él).
   useFocusEffect(
@@ -308,17 +337,17 @@ export default function MisMascotasScreen() {
               ? 'Cargando…'
               : `${mascotas.length} ${mascotas.length === 1 ? 'mascota' : 'mascotas'}`
           }
+          derecha={
+            vistaRefugio && opcionesEstado.length > 0 ? (
+              <FiltroEstadosBoton
+                titulo="Estado de la mascota"
+                opciones={opcionesEstado}
+                seleccionados={estadosElegidos}
+                onChange={setEstadosElegidos}
+              />
+            ) : undefined
+          }
         />
-
-        {vistaRefugio && opcionesEstado.length > 0 ? (
-          <View className="bg-organic-bg pt-3">
-            <FiltroEstados
-              opciones={opcionesEstado}
-              seleccionados={estadosElegidos}
-              onChange={setEstadosElegidos}
-            />
-          </View>
-        ) : null}
 
         {cargando ? (
           <EstadoCargando />
@@ -343,13 +372,10 @@ export default function MisMascotasScreen() {
               ) : (
                 <TarjetaMascota
                   mascota={item}
-                  esPropia={item.usuarioId === usuario?.id}
                   onVer={() =>
                     router.push({ pathname: '/mascotas/[id]', params: { id: item.id } })
                   }
-                  onEditar={() =>
-                    router.push({ pathname: '/mascotas/[id]/editar', params: { id: item.id } })
-                  }
+                  onVerPublicacion={() => void abrirPublicacion(item)}
                   onVerHistoriaClinica={() =>
                     router.push({
                       pathname: '/mascotas/[id]/historia-clinica',

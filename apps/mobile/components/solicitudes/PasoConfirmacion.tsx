@@ -1,7 +1,7 @@
 /**
- * Paso 4 de GUI-7.1.1: el resumen de lo respondido y la conformidad antes de mandarla.
+ * Último paso: el resumen de lo respondido y la conformidad antes de mandarla.
  *
- * No repite el formulario campo por campo: junta las respuestas en cinco renglones
+ * No repite el formulario campo por campo: junta las respuestas en pocos renglones
  * legibles. Para corregir algo se vuelve con "Atrás", que conserva todo lo cargado.
  */
 import { Text } from 'react-native';
@@ -18,13 +18,13 @@ import { aFechaVisible, duracionEnTexto } from '@/shared/validation/dates';
 
 import { ResumenMascota } from './ResumenMascota';
 import type { PasoProps } from './PasoProps';
-import type { Borrador } from './borrador';
+import { respuestaDe, type Borrador } from './borrador';
 
 const CONFORMIDAD =
   'Confirmo que los datos son correctos y acepto que el refugio se contacte conmigo.';
 
-/** Cuánto se recorta el motivo en el resumen: es un recordatorio, no el texto completo. */
-const LARGO_MOTIVO = 90;
+/** Cuánto se recorta el saludo en el resumen: es un recordatorio, no el texto completo. */
+const LARGO_SALUDO = 90;
 
 /** "Casa con patio · Av. Santa Fe 3450": el tipo de vivienda y el espacio, más la dirección. */
 function resumenHogar(borrador: Borrador): string {
@@ -62,8 +62,9 @@ function recortar(texto: string, largo: number): string {
   return limpio.length <= largo ? limpio : `${limpio.slice(0, largo).trimEnd()}…`;
 }
 
-export function PasoConfirmacion({ borrador, errores, mascota, editar }: PasoProps) {
+export function PasoConfirmacion({ borrador, errores, mascota, editar, preguntas }: PasoProps) {
   const periodo = resumenPeriodo(borrador);
+  const respondidas = preguntas.filter((pregunta) => respuestaDe(borrador, pregunta) !== '').length;
 
   return (
     <>
@@ -85,7 +86,18 @@ export function PasoConfirmacion({ borrador, errores, mascota, editar }: PasoPro
           etiqueta="Tiempo sola"
           valor={etiquetaHorasSolo(borrador.horasSolo) ?? 'Sin indicar'}
         />
-        <FilaDato etiqueta="Motivo" valor={recortar(borrador.motivacion, LARGO_MOTIVO)} ultima />
+        <FilaDato
+          etiqueta="Tu saludo"
+          valor={recortar(borrador.motivacion, LARGO_SALUDO)}
+          ultima={preguntas.length === 0}
+        />
+        {preguntas.length > 0 ? (
+          <FilaDato
+            etiqueta="Preguntas"
+            valor={`${respondidas} de ${preguntas.length} respondidas`}
+            ultima
+          />
+        ) : null}
       </TarjetaDatos>
 
       <Casilla

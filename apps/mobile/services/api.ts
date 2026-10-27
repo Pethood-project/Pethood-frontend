@@ -189,6 +189,16 @@ export async function patch<T>(ruta: string, cuerpo: unknown): Promise<T> {
   return procesarRespuesta<T>(respuesta);
 }
 
+export async function put<T>(ruta: string, cuerpo: unknown): Promise<T> {
+  const respuesta = await fetch(`${API_URL}${ruta}`, {
+    method: 'PUT',
+    headers: await cabeceras({ 'Content-Type': 'application/json' }),
+    body: JSON.stringify(cuerpo),
+  });
+
+  return procesarRespuesta<T>(respuesta);
+}
+
 /** `delete` es palabra reservada, así que el helper del verbo DELETE se llama `del`. */
 export async function del<T>(ruta: string): Promise<T> {
   const respuesta = await fetch(`${API_URL}${ruta}`, {

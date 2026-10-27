@@ -41,6 +41,7 @@ import { DeslizarParaResponder } from '@/components/chat/DeslizarParaResponder';
 import { GrillaAdjuntosMensaje } from '@/components/chat/GrillaAdjuntosMensaje';
 import { TarjetaAvisoChat } from '@/components/chat/TarjetaAvisoChat';
 import { TarjetaMascotaChat } from '@/components/chat/TarjetaMascotaChat';
+import { AvisoEstadoSolicitud } from '@/components/chat/AvisoEstadoSolicitud';
 import { TarjetaSolicitudChat } from '@/components/chat/TarjetaSolicitudChat';
 import { TarjetaUbicacionChat } from '@/components/chat/TarjetaUbicacionChat';
 import { entregaDe, TicksMensaje } from '@/components/chat/TicksMensaje';
@@ -252,15 +253,29 @@ export function BurbujaMensaje({
 }: BurbujaMensajeProps) {
   const { width: anchoPantalla } = useWindowDimensions();
 
-  // La tarjeta de la solicitud no es una burbuja: ocupa el ancho y no tiene lado.
+  // La tarjeta de la solicitud no es una burbuja, pero va del lado de quien la envió, como
+  // sus mensajes.
   if (item.tipo === 'SOLICITUD') {
     return item.solicitud ? (
       <TarjetaSolicitudChat
         solicitud={item.solicitud}
         fecha={item.fecha}
+        propia={item.solicitudPropia}
         onVerSolicitud={onVerSolicitud}
       />
     ) : null;
+  }
+
+  // El aviso de que la solicitud avanzó: una línea centrada, sin lado.
+  if (item.tipo === 'SOLICITUD_ESTADO') {
+    return (
+      <AvisoEstadoSolicitud
+        texto={item.contenido}
+        fecha={item.fecha}
+        solicitud={item.solicitud}
+        onVerSolicitud={onVerSolicitud}
+      />
+    );
   }
 
   // HU-13.2: el aviso reclamado, con el mismo tratamiento que la solicitud. Sin `aviso` no

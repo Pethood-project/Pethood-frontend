@@ -21,7 +21,7 @@ const MAXIMO_EN_CARRUSEL = 10;
 
 /** Colores de la pastilla en la paleta Organic; un estado desconocido cae en el neutro. */
 const PASTILLAS: Record<string, { fondo: string; tinta: string }> = {
-  [ESTADO_PUBLICACION.ACTIVA]: { fondo: PALETA.accent[200], tinta: PALETA.accent[700] },
+  [ESTADO_PUBLICACION.ACTIVA]: { fondo: PALETA.estado.exitoSuave, tinta: PALETA.estado.exitoTinta },
   [ESTADO_PUBLICACION.PAUSADA]: { fondo: PALETA.calido.amarilloClaro, tinta: PALETA.accent[800] },
 };
 const PASTILLA_NEUTRA = { fondo: PALETA.neutral[200], tinta: PALETA.neutral[700] };
@@ -49,7 +49,7 @@ export function PublicacionesInicio({ publicaciones, error }: PublicacionesInici
           titulo="Mis publicaciones"
           subtitulo={publicaciones ? conPlural(activas, 'activa', 'activas') : 'Cargando…'}
           colorTitulo={PALETA.accent[900]}
-          colorSubtitulo={PALETA.neutral[700]}
+          colorSubtitulo={PALETA.estado.exitoTinta}
           enlace={{
             texto: 'Ver todas',
             color: PALETA.accent[600],
@@ -74,7 +74,7 @@ export function PublicacionesInicio({ publicaciones, error }: PublicacionesInici
           accessibilityRole="button"
           accessibilityLabel="Nueva publicación"
           onPress={() => router.push('/publicaciones/crear')}
-          className="h-[156px] w-[104px] items-center justify-center gap-2 rounded-[20px] active:opacity-80"
+          className="h-[166px] w-[104px] items-center justify-center gap-2 rounded-[22px] active:opacity-80"
           style={{
             backgroundColor: PALETA.bg,
             borderWidth: 2,
@@ -97,7 +97,7 @@ export function PublicacionesInicio({ publicaciones, error }: PublicacionesInici
         </Pressable>
 
         {publicaciones && publicaciones.length === 0 ? (
-          <View className="h-[156px] w-[200px] justify-center">
+          <View className="h-[166px] w-[200px] justify-center">
             <Text className="font-cuerpo text-[13px] leading-[18px]" style={{ color: PALETA.neutral[700] }}>
               Publicá una mascota para que la vean los adoptantes.
             </Text>
@@ -123,10 +123,12 @@ function TarjetaPublicacion({ publicacion }: { publicacion: PublicacionPropia })
       accessibilityRole="button"
       accessibilityLabel={`${nombre}, publicación ${estiloDeEstadoPublicacion(publicacion.estado.nombre).etiqueta}`}
       onPress={() => router.push({ pathname: '/publicaciones/[id]', params: { id: publicacion.id } })}
-      className="w-[112px] active:opacity-85"
+      // Cada tarjeta lleva su propio borde: sin él, las fotos claras se pierden en el fondo.
+      className="w-[124px] rounded-[22px] p-1.5 active:opacity-85"
+      style={{ backgroundColor: PALETA.bg, borderWidth: 2, borderColor: PALETA.accent[400] }}
     >
       <View
-        className="h-[104px] w-[112px] overflow-hidden rounded-[18px]"
+        className="h-[104px] w-[112px] overflow-hidden rounded-[16px]"
         style={{ backgroundColor: PALETA.neutral[200] }}
       >
         {foto ? (

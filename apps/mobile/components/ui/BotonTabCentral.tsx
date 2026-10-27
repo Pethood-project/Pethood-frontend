@@ -22,6 +22,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { PALETA } from '@/constants/theme';
+import { vibrar } from '@/lib/haptics';
 
 const DIAMETRO = 64;
 
@@ -57,7 +58,10 @@ export function BotonTabCentral({ icono, etiqueta, activo, onPress }: BotonTabCe
       accessibilityRole="button"
       accessibilityLabel={etiqueta}
       accessibilityState={{ selected: activo }}
-      onPress={onPress}
+      onPress={(evento) => {
+        vibrar.toque();
+        onPress?.(evento);
+      }}
       onPressIn={() => {
         // Bajar rápido y volver con rebote: el golpe se siente inmediato y el retorno, vivo.
         presion.value = withTiming(1, { duration: 90 });

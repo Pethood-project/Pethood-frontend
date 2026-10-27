@@ -4,7 +4,7 @@ import { ExportacionRefugio } from "@/components/dashboard/ExportacionRefugio";
 import { periodoPorDefecto } from "@/lib/periodo";
 import { dia, diasDesde, etiquetaEstado } from "@/lib/formato";
 import { contarSolicitudesRecibidas, listarSolicitudesRecibidas, SOLICITUDES_POR_PAGINA } from "@/services/refugio";
-import { ESTADOS_SOLICITUD, type FiltrosSolicitudesRecibidas } from "@/types/refugio";
+import { ESTADOS_SOLICITUD, ESTADOS_SOLICITUD_ABIERTA, type FiltrosSolicitudesRecibidas } from "@/types/refugio";
 import { ConFoto, TablaListado } from "@/components/refugio/TablaListado";
 import { EstadoChip } from "@/components/refugio/EstadoChip";
 import { FiltroEstado, PaginacionUrl } from "@/components/refugio/FiltroEstado";
@@ -15,7 +15,7 @@ interface PageProps {
 }
 
 /** Las que siguen esperando respuesta: en esas tiene sentido contar los días (HU-14.2). */
-const ABIERTAS = new Set(["Pendiente", "En_Revision"]);
+const ABIERTAS = new Set<string>(ESTADOS_SOLICITUD_ABIERTA);
 
 /** Sin `?estado=` se ven las Pendiente: son las que el refugio tiene que resolver. */
 const POR_DEFECTO = "Pendiente";

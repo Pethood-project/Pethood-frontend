@@ -26,6 +26,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { PALETA } from '@/constants/theme';
+import { vibrar } from '@/lib/haptics';
 
 /** Cuánto hay que arrastrar para que al soltar se responda. */
 const UMBRAL = 56;
@@ -44,6 +45,7 @@ interface DeslizarParaResponderProps {
 
 export function DeslizarParaResponder({ onResponder, children }: DeslizarParaResponderProps) {
   const x = useSharedValue(0);
+  const umbralCruzado = useSharedValue(false);
 
   const responder = (): void => onResponder?.();
 
@@ -57,12 +59,20 @@ export function DeslizarParaResponder({ onResponder, children }: DeslizarParaRes
       const t = Math.max(0, evento.translationX);
       // Hasta el umbral sigue al dedo; después cuesta más, como un elástico.
       x.value = t <= UMBRAL ? t : Math.min(MAXIMO, UMBRAL + (t - UMBRAL) * 0.35);
+
+      // Un toque suave al llegar al umbral avisa que soltar ahora responde.
+      const supera = t >= UMBRAL;
+      if (supera !== umbralCruzado.value) {
+        umbralCruzado.value = supera;
+        if (supera) scheduleOnRN(vibrar.seleccion);
+      }
     })
     .onEnd(() => {
       if (x.value >= UMBRAL) scheduleOnRN(responder);
       x.value = withTiming(0, { duration: 180 });
     })
     .onFinalize(() => {
+      umbralCruzado.value = false;
       // Un gesto cancelado (lo ganó el scroll, entró una llamada) también vuelve a su lugar.
       if (x.value !== 0) x.value = withTiming(0, { duration: 180 });
     });

@@ -175,6 +175,7 @@ function TarjetaFavorita({
               estado: mascota.estado.nombre,
             }}
             solicitudAbiertaId={mascota.solicitudAbiertaId}
+            solicitudCanceladaId={mascota.solicitudCanceladaId}
             onCreada={onSolicitada}
           />
         ) : (

@@ -28,6 +28,7 @@ import {
   type Elegibilidad,
   type HogarSolicitante,
   type MotivoBloqueo,
+  type PreguntaAplicable,
   type SolicitudDetalle,
 } from '@/services/solicitudes';
 
@@ -59,6 +60,19 @@ function hidratarEnviadas(): void {
 export function solicitudEnviadaDe(publicacionId: number): number | undefined {
   hidratarEnviadas();
   return enviadasEnMemoria.get(Number(publicacionId));
+}
+
+/** La solicitud se retiró: lo recordado deja de valer y el botón vuelve a mirar al servidor. */
+export function olvidarEnviada(publicacionId: number): void {
+  hidratarEnviadas();
+  enviadasEnMemoria.delete(Number(publicacionId));
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(CLAVE_ENVIADAS, JSON.stringify([...enviadasEnMemoria.entries()]));
+    }
+  } catch {
+    // Native: alcanza la memoria del módulo.
+  }
 }
 
 function recordarEnviada(publicacionId: number, solicitudId: number): void {
@@ -131,6 +145,11 @@ interface BotonSolicitarProps {
    * conoce. Con valor, el botón muestra el estado enviado sin consultar nada.
    */
   solicitudAbiertaId?: number | null;
+  /**
+   * Si la última solicitud propia sobre esta publicación fue retirada: el botón lo dice en
+   * vez de ofrecer "Solicitar" como si nunca hubiera pedido.
+   */
+  solicitudCanceladaId?: number | null;
   /** Se avisa al crear, para que la pantalla refresque su listado. */
   onCreada?: (solicitud: SolicitudDetalle) => void;
 }
@@ -139,6 +158,7 @@ export function BotonSolicitar({
   mascota,
   variante = 'ficha',
   solicitudAbiertaId = null,
+  solicitudCanceladaId = null,
   onCreada,
 }: BotonSolicitarProps) {
   const router = useRouter();
@@ -152,6 +172,8 @@ export function BotonSolicitar({
   const [abierto, setAbierto] = useState(false);
   /** Lo que ya declaró en una solicitud anterior, si tiene. Viene de `/elegibilidad`. */
   const [hogarPrecargado, setHogarPrecargado] = useState<HogarSolicitante | null>(null);
+  /** Las preguntas propias del refugio para esta mascota. Vienen de `/elegibilidad`. */
+  const [preguntas, setPreguntas] = useState<PreguntaAplicable[]>([]);
 
   /**
    * Solicitud descubierta en esta pantalla: la que se acaba de crear, o la que devolvió el
@@ -162,11 +184,18 @@ export function BotonSolicitar({
   const [enviadaLocal, setEnviadaLocal] = useState<number | null>(
     () => solicitudEnviadaDe(mascota.publicacionId) ?? solicitudAbiertaId ?? null,
   );
-  const enviadaId =
-    solicitudAbiertaId ??
-    enviadaLocal ??
-    solicitudEnviadaDe(mascota.publicacionId) ??
-    null;
+  const recordada = enviadaLocal ?? solicitudEnviadaDe(mascota.publicacionId) ?? null;
+  // Lo recordado por esta sesión puede ser justo la solicitud que se retiró: el servidor
+  // manda. Una solicitud nueva (otro id) sí cuenta como enviada.
+  const retirada =
+    solicitudAbiertaId == null &&
+    solicitudCanceladaId != null &&
+    (recordada == null || recordada === solicitudCanceladaId);
+  const enviadaId = retirada ? null : (solicitudAbiertaId ?? recordada);
+
+  useEffect(() => {
+    if (retirada) olvidarEnviada(mascota.publicacionId);
+  }, [mascota.publicacionId, retirada]);
 
   /** Una vez abierto, el modal se deja montado: desmontarlo en web remonta la ficha. */
   const [modalMontado, setModalMontado] = useState(false);
@@ -216,6 +245,7 @@ export function BotonSolicitar({
 
       if (elegibilidad.puedeSolicitar || ignorarVerificacion) {
         setHogarPrecargado(elegibilidad.hogar);
+        setPreguntas(elegibilidad.preguntas ?? []);
         setModalMontado(true);
         setAbierto(true);
         return;
@@ -230,6 +260,16 @@ export function BotonSolicitar({
       setVerificando(false);
     }
   }, [marcarEnviada, mascota.publicacionId, toast]);
+
+  /** El refugio tocó sus preguntas con el formulario abierto: se piden de nuevo. */
+  const actualizarPreguntas = useCallback(async (): Promise<void> => {
+    try {
+      const elegibilidad = await obtenerElegibilidad(mascota.publicacionId);
+      setPreguntas(elegibilidad.preguntas ?? []);
+    } catch {
+      // Sin conexión queda lo que había: el próximo envío vuelve a avisar.
+    }
+  }, [mascota.publicacionId]);
 
   const resolverBloqueo = useCallback((): void => {
     const motivo = bloqueo?.motivo;
@@ -262,7 +302,9 @@ export function BotonSolicitar({
 
   return (
     <>
-      {enviadaId == null ? (
+      {retirada && variante !== 'ficha' ? (
+        <EstadoCancelada variante={variante} onVer={() => irASolicitud(solicitudCanceladaId)} />
+      ) : enviadaId == null ? (
         solicitable ? (
           <BotonAbrir variante={variante} cargando={verificando} onPress={() => void intentar()} />
         ) : null
@@ -293,6 +335,8 @@ export function BotonSolicitar({
           visible={abierto}
           mascota={mascota}
           hogarPrecargado={hogarPrecargado}
+          preguntas={preguntas}
+          onPreguntasDesactualizadas={() => void actualizarPreguntas()}
           onCerrar={(solicitudCreada) => {
             if (solicitudCreada) marcarEnviada(solicitudCreada);
             setAbierto(false);
@@ -305,10 +349,6 @@ export function BotonSolicitar({
           }}
           onIrAlChat={(chatId) => {
             setAbierto(false);
-            // El aviso sigue visible en la conversación: el provider vive en el layout raíz.
-            toast.mostrarExito(
-              `Enviamos tu solicitud a ${mascota.destinatario ?? 'el refugio'}. Suelen responder dentro de 48 horas.`,
-            );
             router.push({ pathname: '/chats/[chatId]', params: { chatId } });
           }}
         />
@@ -324,7 +364,7 @@ function detalleDe(elegibilidad: Elegibilidad): string | undefined {
   }
 
   if (elegibilidad.motivo === 'LIMITE_ALCANZADO') {
-    return `Ya tenés ${elegibilidad.pendientes} solicitudes abiertas al mismo tiempo. Cerrá alguna o esperá la respuesta del refugio para enviar una nueva.`;
+    return `Ya tenés ${elegibilidad.pendientes} solicitudes abiertas al mismo tiempo. Podés retirar alguna o esperar la respuesta del refugio para enviar una nueva.`;
   }
 
   return undefined;
@@ -415,6 +455,43 @@ function BotonAbrir({ variante, cargando, onPress }: BotonAbrirProps) {
   );
 }
 
+/** Lo que reemplaza al botón cuando la persona retiró su solicitud: gris, para que no se confunda. */
+function EstadoCancelada({
+  variante,
+  onVer,
+}: {
+  variante: Exclude<VarianteBotonSolicitar, 'ficha'>;
+  onVer: () => void;
+}) {
+  if (variante === 'inicio') {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Solicitud cancelada. Ver solicitud"
+        onPress={onVer}
+        className="h-[38px] flex-row items-center justify-center gap-1.5 rounded-full border border-organic-neutral-300 bg-organic-neutral-100 px-2 active:opacity-80"
+      >
+        <Ionicons name="arrow-undo" size={14} color={PALETA.neutral[500]} />
+        <Text numberOfLines={1} className="font-cuerpo-bold text-[13px] text-organic-neutral-500">
+          Cancelada
+        </Text>
+      </Pressable>
+    );
+  }
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="Solicitud cancelada. Ver solicitud"
+      onPress={onVer}
+      className="flex-row items-center justify-center gap-1.5 rounded-full border border-organic-neutral-300 bg-organic-neutral-100 py-3 active:opacity-80"
+    >
+      <Ionicons name="arrow-undo" size={16} color={PALETA.neutral[500]} />
+      <Text className="font-cuerpo-semi text-[15px] text-organic-neutral-500">Cancelada</Text>
+    </Pressable>
+  );
+}
+
 /** Lo que reemplaza al botón cuando ya hay una solicitud viva por esa mascota. */
 function EstadoEnviada({
   variante,
@@ -442,7 +519,7 @@ function EstadoEnviada({
     return (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Ya solicitada. Ver mi solicitud"
+        accessibilityLabel="Ya solicitada. Ver solicitud"
         onPress={onVer}
         className="h-[38px] flex-row items-center justify-center gap-1.5 rounded-full bg-organic-neutral-200 px-2 active:opacity-80"
       >
@@ -457,7 +534,7 @@ function EstadoEnviada({
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Ya solicitada. Ver mi solicitud"
+      accessibilityLabel="Ya solicitada. Ver solicitud"
       onPress={onVer}
       className="flex-row items-center justify-center gap-1.5 rounded-full border border-organic-accent-300 bg-organic-accent-100 py-3 active:opacity-80"
     >

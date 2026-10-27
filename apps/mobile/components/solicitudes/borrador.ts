@@ -1,17 +1,21 @@
 /**
- * El formulario de solicitud (GUI-7.1.1) en curso: su forma, su estado inicial, la
- * validación de cada paso y cómo se traduce al cuerpo que espera el backend.
+ * El formulario de solicitud en curso: su forma, su estado inicial, la validación de cada
+ * paso y cómo se traduce al cuerpo que espera el backend.
  *
- * Vive aparte de los componentes porque lo comparten los cuatro pasos y el modal que los
- * orquesta. Son funciones puras: se pueden probar sin montar una sola pantalla.
+ * Vive aparte de los componentes porque lo comparten los pasos y el modal que los orquesta.
+ * Son funciones puras: se pueden probar sin montar una sola pantalla.
  *
- * La validación de acá es solo de UX — la fuente de verdad es el backend (HU-7.1).
+ * Los pasos no son fijos: si el refugio tiene preguntas propias para esta mascota se suma
+ * uno, entre el saludo y la confirmación.
+ *
+ * La validación de acá es solo de UX — la fuente de verdad es el backend.
  */
 import type {
   EspacioExterior,
   HogarSolicitante,
   HorasSolo,
   NuevaSolicitud,
+  PreguntaAplicable,
   TipoSolicitud,
   TipoVivienda,
 } from '@/services/solicitudes';
@@ -19,10 +23,27 @@ import { aFechaISO, esPasada } from '@/shared/validation/dates';
 import { LIMITES } from '@/shared/validation/limits';
 import { validarTexto } from '@/shared/validation/text';
 
-export const TOTAL_PASOS = 4;
+/** Cada paso del formulario, por lo que es y no por su posición (que cambia con las preguntas). */
+export type ClavePaso = 'tipo' | 'hogar' | 'saludo' | 'preguntas' | 'confirmacion';
 
-/** Título de cada paso, en el orden en que se recorren. */
-export const TITULOS_PASOS = ['Tipo de solicitud', 'Tu hogar', 'Motivo', 'Confirmación'];
+const TITULOS_PASOS: Record<ClavePaso, string> = {
+  tipo: 'Tipo de solicitud',
+  hogar: 'Tu hogar',
+  saludo: 'Tu saludo',
+  preguntas: 'Preguntas del refugio',
+  confirmacion: 'Confirmación',
+};
+
+export function tituloDelPaso(clave: ClavePaso): string {
+  return TITULOS_PASOS[clave];
+}
+
+/** Los pasos en el orden en que se recorren. El de preguntas solo existe si hay preguntas. */
+export function pasosDe(preguntas: PreguntaAplicable[]): ClavePaso[] {
+  return preguntas.length > 0
+    ? ['tipo', 'hogar', 'saludo', 'preguntas', 'confirmacion']
+    : ['tipo', 'hogar', 'saludo', 'confirmacion'];
+}
 
 /**
  * Texto literal que exige HU-7.1 cuando falta una punta del período de tránsito. No es el
@@ -59,12 +80,20 @@ export interface Borrador {
   experienciaPrevia: boolean;
   horasSolo: HorasSolo | null;
   descripcion: string;
+  /** El saludo, que sale como primer mensaje del chat. */
   motivacion: string;
+  /** Lo respondido a las preguntas del refugio, por id de pregunta. */
+  respuestas: Record<number, string>;
   conforme: boolean;
 }
 
-/** Un mensaje por campo con problema. Un paso avanza cuando su porción queda vacía. */
-export type Errores = Partial<Record<keyof Borrador, string>>;
+/**
+ * Un mensaje por campo con problema. Un paso avanza cuando su porción queda vacía. Las
+ * preguntas del refugio llevan el suyo por id.
+ */
+export type Errores = Partial<Record<Exclude<keyof Borrador, 'respuestas'>, string>> & {
+  respuestas?: Record<number, string>;
+};
 
 /**
  * Con `hogarPrecargado` (lo que ya declaró la vez pasada, vía `/elegibilidad`), el paso 2
@@ -86,6 +115,7 @@ export function borradorInicial(hogarPrecargado?: HogarSolicitante | null): Borr
     horasSolo: (hogarPrecargado?.horasSolo as HorasSolo | null) ?? null,
     descripcion: hogarPrecargado?.descripcion ?? '',
     motivacion: '',
+    respuestas: {},
     conforme: false,
   };
 }
@@ -174,36 +204,84 @@ function validarHogar(borrador: Borrador): Errores {
   return errores;
 }
 
-/** Paso 3: la motivación, que es lo único obligatorio del paso. */
-function validarMotivo(borrador: Borrador): Errores {
+/** Paso del saludo: es lo único obligatorio del paso. */
+function validarSaludo(borrador: Borrador): Errores {
   const motivacion = validarTexto(borrador.motivacion, {
     ...LIMITES.solicitud.motivacion,
-    etiqueta: 'La motivación',
+    etiqueta: 'El saludo',
   });
 
   return motivacion ? { motivacion } : {};
 }
 
-/** Paso 4: la conformidad explícita antes de mandarla. */
+/** Lo que se contesta a una pregunta, sin espacios de más. */
+export function respuestaDe(borrador: Borrador, pregunta: PreguntaAplicable): string {
+  return (borrador.respuestas[pregunta.id] ?? '').trim();
+}
+
+/** Paso de las preguntas del refugio: las obligatorias no pueden quedar en blanco. */
+function validarPreguntas(borrador: Borrador, preguntas: PreguntaAplicable[]): Errores {
+  const porPregunta: Record<number, string> = {};
+
+  for (const pregunta of preguntas) {
+    const respuesta = respuestaDe(borrador, pregunta);
+
+    if (respuesta === '') {
+      if (pregunta.obligatoria) porPregunta[pregunta.id] = 'Respondé esta pregunta';
+      continue;
+    }
+
+    if (respuesta.length > LIMITES.preguntaAdopcion.respuesta.max) {
+      porPregunta[pregunta.id] = `Hasta ${LIMITES.preguntaAdopcion.respuesta.max} caracteres`;
+    }
+  }
+
+  return Object.keys(porPregunta).length > 0 ? { respuestas: porPregunta } : {};
+}
+
+/** Último paso: la conformidad explícita antes de mandarla. */
 function validarConfirmacion(borrador: Borrador): Errores {
   return borrador.conforme ? {} : { conforme: 'Marcá la casilla para confirmar la solicitud' };
 }
 
-/** En el orden de los pasos: el índice 0 valida el paso 1. */
-export const VALIDADORES = [validarTipo, validarHogar, validarMotivo, validarConfirmacion];
+/** Valida solo el paso indicado: el usuario no tiene que llegar al final para enterarse. */
+export function validarPaso(
+  clave: ClavePaso,
+  borrador: Borrador,
+  preguntas: PreguntaAplicable[],
+): Errores {
+  switch (clave) {
+    case 'tipo':
+      return validarTipo(borrador);
+    case 'hogar':
+      return validarHogar(borrador);
+    case 'saludo':
+      return validarSaludo(borrador);
+    case 'preguntas':
+      return validarPreguntas(borrador, preguntas);
+    case 'confirmacion':
+      return validarConfirmacion(borrador);
+  }
+}
 
 /**
- * Traduce el borrador al cuerpo del `POST`. Solo se llama con los cuatro pasos ya
- * validados, así que los campos obligatorios están cargados.
+ * Traduce el borrador al cuerpo del `POST`. Solo se llama con todos los pasos ya validados,
+ * así que los campos obligatorios están cargados.
  *
- * Dos normalizaciones: las fechas viajan solo si el tipo es tránsito, y los textos
- * opcionales vacíos viajan como `null` en vez de como cadena vacía.
+ * Tres normalizaciones: las fechas viajan solo si el tipo es tránsito, los textos opcionales
+ * vacíos viajan como `null` en vez de como cadena vacía, y las preguntas del refugio sin
+ * responder no viajan.
  */
 export function aNuevaSolicitud(
   borrador: Borrador,
   publicacionId: number,
+  preguntas: PreguntaAplicable[],
 ): NuevaSolicitud {
   const esTransito = borrador.tipoSolicitud === 'Transito';
+
+  const respuestas = preguntas
+    .map((pregunta) => ({ preguntaId: pregunta.id, respuesta: respuestaDe(borrador, pregunta) }))
+    .filter(({ respuesta }) => respuesta !== '');
 
   return {
     publicacionId,
@@ -226,5 +304,6 @@ export function aNuevaSolicitud(
       horasSolo: borrador.horasSolo!,
       descripcion: borrador.descripcion.trim() || null,
     },
+    ...(respuestas.length > 0 ? { respuestas } : {}),
   };
 }

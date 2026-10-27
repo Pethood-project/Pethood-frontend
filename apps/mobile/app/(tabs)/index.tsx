@@ -44,7 +44,7 @@ const FOTOS_ADOPTAR = 3;
 const CARGADORES_ADOPTANTE = {
   feed: () => listarFeed(SIN_FILTROS, 0, FOTOS_ADOPTAR),
   favoritos: listarFavoritos,
-  solicitudes: () => listarMias({ estados: ['Pendiente', 'En_Revision'] }),
+  solicitudes: () => listarMias({ estados: ['Pendiente', 'En_Revision', 'Revisada'] }),
   seguimientos: listarMisSeguimientos,
 };
 
@@ -56,9 +56,10 @@ async function resumenSolicitudesRefugio(): Promise<ResumenSolicitudesRefugio> {
   const hoy = new Date();
   const inicioDeMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
 
-  const [pendientes, enRevision, aprobadas, deHoy] = await Promise.all([
+  const [pendientes, enRevision, revisadas, aprobadas, deHoy] = await Promise.all([
     listarRecibidas({ estados: ['Pendiente'] }),
     listarRecibidas({ estados: ['En_Revision'] }),
+    listarRecibidas({ estados: ['Revisada'] }),
     listarRecibidas({ estados: ['Aprobada'], fechaDesde: inicioDeMes, fechaHasta: hoy }),
     listarRecibidas({ fechaDesde: hoy, fechaHasta: hoy }),
   ]);
@@ -66,6 +67,7 @@ async function resumenSolicitudesRefugio(): Promise<ResumenSolicitudesRefugio> {
   return {
     pendientes,
     enRevision: enRevision.total,
+    revisadas: revisadas.total,
     aprobadasDelMes: aprobadas.total,
     llegadasHoy: deHoy.total,
   };

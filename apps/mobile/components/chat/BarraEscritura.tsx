@@ -18,11 +18,12 @@
  */
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, TextInput, View } from 'react-native';
+import { Image, Pressable, TextInput, View, type TextInputInstance } from 'react-native';
 
 import { CitaMensaje } from '@/components/chat/CitaMensaje';
 import { PALETA } from '@/constants/theme';
 import { esMimeDeVideo } from '@/lib/adjuntos';
+import { vibrar } from '@/lib/haptics';
 import type { CitaChat } from '@/lib/mensajesChat';
 import type { ArchivoAdjunto } from '@/services/api';
 import { LIMITES } from '@/shared/validation/limits';
@@ -63,7 +64,7 @@ export function BarraEscritura({
 }: BarraEscrituraProps) {
   const [texto, setTexto] = useState('');
   const [alto, setAlto] = useState(ALTO_MINIMO);
-  const campo = useRef<TextInput>(null);
+  const campo = useRef<TextInputInstance>(null);
 
   // Deslizar para responder deja el teclado listo: el gesto ya dice "quiero contestar esto".
   const citaId = respondiendoA?.cita.id ?? null;
@@ -79,6 +80,7 @@ export function BarraEscritura({
   const enviar = (): void => {
     if (!puedeEnviar) return;
 
+    vibrar.toque();
     onEnviar(texto.trim());
 
     // El campo se limpia AL ENVIAR y no al confirmar: con el update optimista la burbuja ya

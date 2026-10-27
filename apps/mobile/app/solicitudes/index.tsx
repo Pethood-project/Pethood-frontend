@@ -1,14 +1,16 @@
 /**
  * GUI-27 Solicitudes — las dos puntas del módulo en una sola pantalla:
  *
- * - "Enviadas": lo que el usuario solicitó (HU-7.3). Entra desde la tarjeta "Mis
- *   solicitudes" del Inicio y desde la pantalla de éxito de HU-7.1.
- * - "Recibidas": lo que le llegó sobre sus mascotas publicadas (HU-7.5), con aceptar y
- *   rechazar (HU-7.4). "Quien publicó la mascota" no es siempre un refugio (spec 003 §6.2):
- *   un adoptante particular que ofreció una mascota propia también entra acá a resolver.
+ * - "Enviadas": lo que el usuario solicitó. Entra desde la tarjeta "Mis solicitudes" del
+ *   Inicio y desde la pantalla de éxito del formulario.
+ * - "Recibidas": lo que le llegó sobre sus mascotas publicadas, que quien publicó revisa y
+ *   resuelve. "Quien publicó la mascota" no es siempre un refugio: un adoptante particular
+ *   que ofreció una mascota propia también entra acá.
  *
  * Cuál se abre primero sale del parámetro `vista`, o sea de por dónde entró el usuario. Las
  * dos comparten tarjeta y filtro por estado: es la misma entidad mirada desde los dos lados.
+ * Lo recibido se ordena en tres pestañas —por revisar, revisadas y resueltas— para que quien
+ * publica distinga de un vistazo lo que le falta mirar de lo que ya miró.
  *
  * Desde la vista de refugio solo existe "Recibidas" (las de las mascotas del refugio): el
  * refugio no solicita nada, así que no hay "Enviadas" ni selector.
@@ -27,11 +29,14 @@ import { ResolverSolicitudModal } from '@/components/solicitudes/ResolverSolicit
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { EstadoSolicitudBadge } from '@/components/ui/EstadoSolicitudBadge';
+import { EtiquetaTipoSolicitud } from '@/components/ui/EtiquetaTipoSolicitud';
 import { Nota } from '@/components/ui/Nota';
 import { Segmentado } from '@/components/ui/Segmentado';
-import { etiquetaTipoSolicitud } from '@/constants/Solicitudes';
+import { ESTADOS_DE_PESTANIA, pestaniaDe, type Pestania } from '@/constants/PestaniasSolicitud';
+import type { VistaSolicitud } from '@/constants/EstadosSolicitud';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
+import { vibrar } from '@/lib/haptics';
 import { ApiError, urlAbsoluta } from '@/services/api';
 import {
   contarFiltrosActivosSolicitudes,
@@ -41,6 +46,7 @@ import {
   type EstadoResolucion,
   type EstadoSolicitudNombre,
   type FiltrosSolicitudes,
+  type MotivoRechazo,
   type SolicitudResumen,
 } from '@/services/solicitudes';
 import { aFechaVisible, parsearFecha } from '@/shared/validation/dates';
@@ -53,11 +59,31 @@ const OPCIONES_VISTA = [
   { valor: 'recibidas' as const, etiqueta: 'Recibidas' },
 ];
 
-function subtitulo(total: number, estados: EstadoSolicitudNombre[] | undefined): string {
-  if (estados?.length === 1 && estados[0] === 'Pendiente') {
-    return total === 0 ? 'Ninguna pendiente' : `${total} pendiente${total === 1 ? '' : 's'}`;
-  }
-  if (total === 0) return 'Sin resultados';
+/** Lo que se ve al entrar: lo que falta mirar, o todo lo que pidió quien envió. */
+function filtrosIniciales(vista: Vista): FiltrosSolicitudes {
+  return vista === 'recibidas' ? { estados: ESTADOS_DE_PESTANIA.porRevisar } : {};
+}
+
+/**
+ * Los filtros con los que se abre si alguien llega desde un contador (por ejemplo las
+ * adopciones del perfil del refugio): estados separados por coma y un tipo.
+ */
+function filtrosDeEntrada(vista: Vista, estados?: string, tipo?: string): FiltrosSolicitudes {
+  const lista = (estados ?? '').split(',').filter(Boolean) as EstadoSolicitudNombre[];
+  const tipoValido = tipo === 'Adopcion' || tipo === 'Transito' ? tipo : undefined;
+
+  if (lista.length === 0 && !tipoValido) return filtrosIniciales(vista);
+
+  return {
+    ...(lista.length > 0 ? { estados: lista } : {}),
+    ...(tipoValido ? { tipo: tipoValido } : {}),
+  };
+}
+
+function subtitulo(total: number, vista: Vista, pestania: Pestania | null): string {
+  if (total === 0) return pestania === 'porRevisar' ? 'Nada por revisar' : 'Sin resultados';
+  if (pestania === 'porRevisar') return `${total} por revisar`;
+  if (pestania === 'revisadas') return `${total} esperando tu decisión`;
   return `${total} solicitud${total === 1 ? '' : 'es'}`;
 }
 
@@ -71,20 +97,26 @@ interface TarjetaSolicitudProps {
 function TarjetaSolicitud({ solicitud, vista, onVerDetalle, onResolver }: TarjetaSolicitudProps) {
   const foto = urlAbsoluta(solicitud.mascota.imagenUrl);
   const fecha = parsearFecha(solicitud.fechaAlta);
-  // Solo se resuelve del lado de quien publicó: en "Enviadas" el usuario es el solicitante.
-  const sePuedeResolver = vista === 'recibidas' && solicitud.estado.nombre === 'Pendiente';
+  const quienMira: VistaSolicitud = vista === 'recibidas' ? 'refugio' : 'adoptante';
+  const estado = solicitud.estado.nombre;
+
+  // Aceptar y rechazar a mano solo cuando ya está revisada; antes se revisa (la pantalla de
+  // detalle abre la revisión y deja marcar, rechazar o aceptar).
+  const sePuedeResolver = vista === 'recibidas' && estado === 'Revisada';
+  const faltaRevisar = vista === 'recibidas' && (estado === 'Pendiente' || estado === 'En_Revision');
 
   // En "Recibidas" lo que identifica la solicitud es quién la mandó; en "Enviadas" eso
-  // sería el propio usuario, así que ahí lo útil es si pidió adopción o tránsito.
+  // sería el propio usuario, así que ahí alcanza con la fecha.
   const referencia =
-    vista === 'recibidas'
-      ? `${solicitud.solicitante.nombre} ${solicitud.solicitante.apellido}`
-      : etiquetaTipoSolicitud(solicitud.tipoSolicitud);
+    vista === 'recibidas' ? `${solicitud.solicitante.nombre} ${solicitud.solicitante.apellido}` : '';
 
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={onVerDetalle}
+      onPress={() => {
+        vibrar.toque();
+        onVerDetalle();
+      }}
       className="mb-3.5 overflow-hidden rounded-3xl bg-organic-surface shadow-sm active:opacity-90"
     >
       <View className="flex-row items-center gap-4 p-4">
@@ -102,13 +134,40 @@ function TarjetaSolicitud({ solicitud, vista, onVerDetalle, onResolver }: Tarjet
           </Text>
           <Text className="mt-1 font-cuerpo text-[14px] leading-5 text-organic-neutral-600">
             {referencia}
-            {fecha ? ` · ${aFechaVisible(fecha)}` : ''}
+            {fecha ? `${referencia ? ' · ' : ''}${aFechaVisible(fecha)}` : ''}
           </Text>
-          <ProgresoSolicitud estado={solicitud.estado.nombre} />
+          <View className="mt-1.5">
+            <EtiquetaTipoSolicitud tipo={solicitud.tipoSolicitud} />
+          </View>
+          <ProgresoSolicitud
+            estado={estado}
+            historial={solicitud.historial}
+            vista={quienMira}
+            tamanio="compacto"
+          />
         </View>
 
-        <EstadoSolicitudBadge estado={solicitud.estado.nombre} />
+        <EstadoSolicitudBadge estado={estado} vista={quienMira} />
       </View>
+
+      {faltaRevisar ? (
+        <View className="border-t border-organic-neutral-200 px-3 pb-3 pt-2.5">
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Revisar la solicitud de ${solicitud.solicitante.nombre}`}
+            onPress={() => {
+              vibrar.toque();
+              onVerDetalle();
+            }}
+            className="flex-row items-center justify-center gap-1.5 rounded-xl bg-organic-accent-600 py-2.5 active:opacity-90"
+          >
+            <Ionicons name="reader-outline" size={16} color={PALETA.blanco} />
+            <Text className="font-cuerpo-semi text-sm text-white">
+              {estado === 'Pendiente' ? 'Revisar solicitud' : 'Seguir revisando'}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {sePuedeResolver ? (
         <View className="flex-row gap-2 border-t border-organic-neutral-200 px-3 pb-3 pt-2.5">
@@ -116,7 +175,8 @@ function TarjetaSolicitud({ solicitud, vista, onVerDetalle, onResolver }: Tarjet
             accessibilityRole="button"
             accessibilityLabel={`Aceptar la solicitud de ${solicitud.solicitante.nombre}`}
             onPress={() => onResolver('Aprobada')}
-            className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2.5 active:opacity-90"
+            style={{ backgroundColor: PALETA.estado.exito }}
+            className="flex-1 flex-row items-center justify-center gap-1.5 rounded-xl py-2.5 active:opacity-90"
           >
             <Ionicons name="checkmark" size={15} color={PALETA.blanco} />
             <Text className="font-cuerpo-semi text-sm text-white">Aceptar</Text>
@@ -136,18 +196,15 @@ function TarjetaSolicitud({ solicitud, vista, onVerDetalle, onResolver }: Tarjet
   );
 }
 
-/** Qué decir cuando no hay nada que listar, según el lado y el filtro. */
+/** Qué decir cuando no hay nada que listar, según el lado, la pestaña y el filtro. */
 function textosVacio(
   vista: Vista,
   filtros: FiltrosSolicitudes,
+  pestania: Pestania | null,
 ): { titulo: string; descripcion: string } {
-  const soloElDefault =
-    filtros.estados?.length === 1 &&
-    filtros.estados[0] === 'Pendiente' &&
-    !filtros.fechaDesde &&
-    !filtros.fechaHasta;
+  const hayFiltroDeFecha = Boolean(filtros.fechaDesde || filtros.fechaHasta);
 
-  if (contarFiltrosActivosSolicitudes(filtros) > 0 && !soloElDefault) {
+  if (hayFiltroDeFecha || (vista === 'enviadas' && contarFiltrosActivosSolicitudes(filtros) > 0)) {
     return {
       titulo: 'No hay solicitudes',
       descripcion: 'Probá con otro filtro tocando el ícono de arriba.',
@@ -161,23 +218,52 @@ function textosVacio(
     };
   }
 
-  return {
-    titulo: 'No tenés solicitudes pendientes',
-    descripcion: 'Cuando alguien pida adoptar una de tus mascotas, va a aparecer acá.',
-  };
+  if (pestania === 'revisadas') {
+    return {
+      titulo: 'No hay solicitudes revisadas',
+      descripcion: 'Las que marques como revisadas quedan acá, esperando tu decisión.',
+    };
+  }
+
+  if (pestania === 'resueltas') {
+    return {
+      titulo: 'Todavía no resolviste ninguna',
+      descripcion: 'Acá vas a ver las que aceptaste, rechazaste, o que se cerraron solas.',
+    };
+  }
+
+  return pestania === 'porRevisar'
+    ? {
+        titulo: 'No tenés solicitudes por revisar',
+        descripcion: 'Cuando alguien pida adoptar una de tus mascotas, va a aparecer acá.',
+      }
+    : {
+        titulo: 'No hay solicitudes',
+        descripcion: 'Probá con otro filtro tocando el ícono de arriba.',
+      };
 }
 
 export default function SolicitudesScreen() {
   const router = useRouter();
   const toast = useToast();
-  const { vista: vistaInicial } = useLocalSearchParams<{ vista?: string }>();
+  const {
+    vista: vistaInicial,
+    estados: estadosDeEntrada,
+    tipo: tipoDeEntrada,
+  } = useLocalSearchParams<{ vista?: string; estados?: string; tipo?: string }>();
   const { vistaRefugio } = useSesion();
 
   const [vistaElegida, setVista] = useState<Vista>(
     vistaInicial === 'enviadas' ? 'enviadas' : 'recibidas',
   );
   const vista: Vista = vistaRefugio ? 'recibidas' : vistaElegida;
-  const [filtros, setFiltros] = useState<FiltrosSolicitudes>({ estados: ['Pendiente'] });
+  const [filtros, setFiltros] = useState<FiltrosSolicitudes>(() =>
+    filtrosDeEntrada(
+      vistaInicial === 'enviadas' ? 'enviadas' : 'recibidas',
+      estadosDeEntrada,
+      tipoDeEntrada,
+    ),
+  );
   const [modalFiltros, setModalFiltros] = useState(false);
   const [solicitudes, setSolicitudes] = useState<SolicitudResumen[]>([]);
   const [total, setTotal] = useState(0);
@@ -214,13 +300,13 @@ export default function SolicitudesScreen() {
     }, [cargar]),
   );
 
-  const confirmarResolucion = async (comentario: string): Promise<void> => {
+  const confirmarResolucion = async (comentario: string, motivo?: MotivoRechazo): Promise<void> => {
     if (!aResolver) return;
     const { solicitud, accion } = aResolver;
 
     setResolviendo(true);
     try {
-      await resolverSolicitud(solicitud.id, accion, comentario);
+      await resolverSolicitud(solicitud.id, accion, comentario, motivo);
       setAResolver(null);
       toast.mostrarExito(
         accion === 'Aprobada'
@@ -231,7 +317,7 @@ export default function SolicitudesScreen() {
     } catch (err) {
       setAResolver(null);
 
-      // 409: alguien más (otro miembro del refugio, o el cron de HU-7.6) ya la resolvió.
+      // 409: alguien más (otro miembro del refugio, o el cron) ya la resolvió.
       if (err instanceof ApiError && err.codigo === 'SOLICITUD_YA_RESUELTA') {
         toast.mostrarAdvertencia(err.mensaje);
         await cargar();
@@ -248,23 +334,26 @@ export default function SolicitudesScreen() {
     }
   };
 
-  /** Cambiar de lado vacía la lista: la vieja no tiene nada que ver con la nueva. */
+  /** Cambiar de lado vacía la lista y vuelve al filtro de entrada de ese lado. */
   const cambiarVista = useCallback((siguiente: Vista): void => {
     setVista(siguiente);
+    setFiltros(filtrosIniciales(siguiente));
     setSolicitudes([]);
     setTotal(0);
     setCargando(true);
   }, []);
 
-  const vacio = textosVacio(vista, filtros);
+  const pestania = pestaniaDe(filtros.estados);
+  const vacio = textosVacio(vista, filtros, pestania);
   const filtrosActivos = contarFiltrosActivosSolicitudes(filtros);
+  const quienMira: VistaSolicitud = vista === 'recibidas' ? 'refugio' : 'adoptante';
 
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
         <EncabezadoPantalla
           titulo="Solicitudes"
-          subtitulo={cargando ? 'Cargando…' : subtitulo(total, filtros.estados)}
+          subtitulo={cargando ? 'Cargando…' : subtitulo(total, vista, pestania)}
           onVolver={() =>
             router.canGoBack() ? router.back() : router.replace('/(tabs)/perfil')
           }
@@ -272,7 +361,7 @@ export default function SolicitudesScreen() {
             <BotonCircular
               icono="options-outline"
               etiqueta="Filtros"
-              contador={filtrosActivos}
+              contador={vista === 'recibidas' && pestania ? filtrosActivos - 1 : filtrosActivos}
               onPress={() => setModalFiltros(true)}
             />
           }
@@ -286,6 +375,7 @@ export default function SolicitudesScreen() {
               grande
             />
           )}
+
         </EncabezadoPantalla>
 
         {cargando ? (
@@ -322,13 +412,14 @@ export default function SolicitudesScreen() {
             ListFooterComponent={
               solicitudes.length > 0 ? (
                 <Nota texto="Tocá una solicitud para ver el estado del proceso paso a paso." />
-              ) : null
+              ) : undefined
             }
             contentContainerClassName="px-3.5 py-3.5 pb-10"
             refreshControl={
               <RefreshControl
                 refreshing={refrescando}
                 onRefresh={() => {
+                  vibrar.toque();
                   setRefrescando(true);
                   void cargar();
                 }}
@@ -343,13 +434,16 @@ export default function SolicitudesScreen() {
         accion={aResolver?.accion ?? null}
         nombreSolicitante={aResolver?.solicitud.solicitante.nombre ?? ''}
         nombreMascota={aResolver?.solicitud.mascota.nombre ?? null}
+        esAdopcion={aResolver?.solicitud.tipoSolicitud === 'Adopcion'}
         cargando={resolviendo}
-        onConfirmar={(comentario) => void confirmarResolucion(comentario)}
+        onConfirmar={(comentario, motivo) => void confirmarResolucion(comentario, motivo)}
         onCerrar={() => setAResolver(null)}
       />
 
       <FiltrosSolicitudesModal
         visible={modalFiltros}
+        vista={quienMira}
+        conPestanias={vista === 'recibidas'}
         filtros={filtros}
         onAplicar={(nuevos) => {
           setModalFiltros(false);

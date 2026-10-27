@@ -4,6 +4,8 @@
  * toque" sin repetir el `useSharedValue`/`withSpring` en cada componente.
  */
 import { Pressable, type PressableProps } from 'react-native';
+
+import { vibrar } from '@/lib/haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -16,6 +18,7 @@ interface PressableAnimadoProps extends PressableProps {
 export function PressableAnimado({
   escala = 0.96,
   style,
+  onPress,
   onPressIn,
   onPressOut,
   ...resto
@@ -29,6 +32,16 @@ export function PressableAnimado({
   return (
     <AnimatedPressable
       style={[style as object, estiloAnimado]}
+      // En `onPress` y no en `onPressIn`: al arrastrar para hacer scroll no se llega a soltar
+      // sobre la tarjeta, así que desplazarse no vibra.
+      onPress={
+        onPress
+          ? (evento) => {
+              vibrar.toque();
+              onPress(evento);
+            }
+          : undefined
+      }
       onPressIn={(evento) => {
         presion.value = withTiming(1, { duration: 90 });
         onPressIn?.(evento);

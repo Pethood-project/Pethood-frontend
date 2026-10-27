@@ -14,6 +14,7 @@ export const plata = (n: number | string) =>
 
 const ETIQUETAS_ESTADO: Record<string, string> = {
   En_Revision: "En revisión",
+  Cerrada: "Cerrada",
   Adopcion: "Adopción",
   Transito: "Tránsito",
 };

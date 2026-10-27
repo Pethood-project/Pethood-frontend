@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 
 import { PALETA } from '@/constants/theme';
+import { vibrar } from '@/lib/haptics';
 
 export type VarianteChip =
   /** Etiqueta informativa sobre fondo claro. */
@@ -187,7 +188,14 @@ export function Chip({
           ? { checked: activa, disabled: deshabilitada }
           : { selected: activa, disabled: deshabilitada }
       }
-      onPress={deshabilitada ? undefined : onPress}
+      onPress={
+        deshabilitada
+          ? undefined
+          : () => {
+              vibrar.seleccion();
+              onPress();
+            }
+      }
       className={`${clases} active:opacity-80 ${deshabilitada ? 'opacity-40' : ''}`}
     >
       {contenido}

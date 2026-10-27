@@ -12,6 +12,10 @@ interface TagInputFieldProps {
   etiquetas: string[];
   onChange: (etiquetas: string[]) => void;
   maximoPorEtiqueta: number;
+  /** Cómo se llama cada etiqueta en los mensajes de error ("Cada requisito"). */
+  nombreEtiqueta?: string;
+  /** Aviso al repetir una etiqueta. */
+  mensajeRepetida?: string;
   error?: string;
   /** Letra más grande, para la publicación de mascota. */
   grande?: boolean;
@@ -23,6 +27,8 @@ export function TagInputField({
   etiquetas,
   onChange,
   maximoPorEtiqueta,
+  nombreEtiqueta = 'Cada requisito',
+  mensajeRepetida = 'Ese requisito ya está en la lista',
   error,
   grande,
 }: TagInputFieldProps) {
@@ -35,7 +41,7 @@ export function TagInputField({
 
     const problema = validarTexto(limpia, {
       max: maximoPorEtiqueta,
-      etiqueta: 'Cada requisito',
+      etiqueta: nombreEtiqueta,
     });
 
     if (problema) {
@@ -44,7 +50,7 @@ export function TagInputField({
     }
 
     if (etiquetas.includes(limpia)) {
-      setErrorLocal('Ese requisito ya está en la lista');
+      setErrorLocal(mensajeRepetida);
       return;
     }
 

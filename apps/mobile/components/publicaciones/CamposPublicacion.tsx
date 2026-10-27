@@ -14,9 +14,8 @@ import { PhotosPickerField, type FotoElegida } from '@/components/ui/PhotosPicke
 import { TagInputField } from '@/components/ui/TagInputField';
 import { TextAreaField } from '@/components/ui/TextAreaField';
 import { TextField } from '@/components/ui/TextField';
-import { ToggleField } from '@/components/ui/ToggleField';
 import type { Genero } from '@/services/mascotas';
-import { rasgoSegunGenero, textoSegunGenero } from '@/shared/genero';
+import { rasgoSegunGenero } from '@/shared/genero';
 import { LIMITES } from '@/shared/validation/limits';
 import { validarTexto } from '@/shared/validation/text';
 
@@ -45,7 +44,6 @@ export interface ValoresPublicacion {
   /** En orden: la primera es la portada. */
   fotos: FotoElegida[];
   descripcion: string;
-  desparasitado: boolean;
   personalidad: string[];
   requisitos: string[];
   ubicacion: string;
@@ -54,7 +52,6 @@ export interface ValoresPublicacion {
 export const VALORES_INICIALES: ValoresPublicacion = {
   fotos: [],
   descripcion: '',
-  desparasitado: false,
   personalidad: [],
   requisitos: [],
   ubicacion: '',
@@ -136,15 +133,6 @@ export function CamposPublicacion({
             onBlur={() => onBlur('descripcion')}
             maximo={LIMITES.publicacion.descripcion.max}
             error={errorDe('descripcion')}
-            grande
-          />
-        </FormCardRow>
-
-        <FormCardRow>
-          <ToggleField
-            label={textoSegunGenero(generoMascota, 'Desparasitado', 'Desparasitada')}
-            valor={valores.desparasitado}
-            onChange={(desparasitado) => onChange({ desparasitado })}
             grande
           />
         </FormCardRow>

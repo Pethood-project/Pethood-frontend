@@ -702,7 +702,7 @@ export default function ConversacionScreen() {
                     <View className="py-3">
                       <ActivityIndicator color={PALETA.accent[600]} />
                     </View>
-                  ) : null
+                  ) : undefined
                 }
                 ListEmptyComponent={
                   <EstadoVacio

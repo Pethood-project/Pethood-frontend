@@ -24,6 +24,8 @@ interface ResumenReputacionProps {
   titulo?: string;
   /** Con `true`, debajo del desglose se listan las reseñas con sus comentarios. */
   mostrarLista?: boolean;
+  /** Cuántas reseñas listar, las más recientes primero. Sin esto se listan todas. */
+  limiteLista?: number;
   className?: string;
 }
 
@@ -32,6 +34,7 @@ export function ResumenReputacion({
   id,
   titulo,
   mostrarLista = false,
+  limiteLista,
   className = '',
 }: ResumenReputacionProps) {
   const [resumen, setResumen] = useState<ResumenResenas | null>(null);
@@ -88,7 +91,7 @@ export function ResumenReputacion({
           />
           {mostrarLista ? (
             <View className="mt-2.5">
-              <ListaResenas resenas={resumen.resenas} />
+              <ListaResenas resenas={resumen.resenas.slice(0, limiteLista)} />
             </View>
           ) : null}
         </>

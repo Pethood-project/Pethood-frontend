@@ -10,14 +10,16 @@ interface DonutChartProps {
 
 // Mismos tokens que las badges de KpiCard.tsx, para que el color de un estado se lea igual
 // en toda la pantalla. Las claves son los literales de EstadoSolicitud (backend/prisma/seed.ts:
-// Pendiente, En_Revision, Aprobada, Rechazada, Cancelada) — acá también les damos su etiqueta
+// Pendiente, En_Revision, Revisada, Aprobada, Rechazada, Cancelada, Cerrada) — acá también les damos su etiqueta
 // en español, porque "En_Revision" es un valor técnico, no un texto para mostrar.
 const CONFIG_ESTADO: Record<string, { etiqueta: string; color: string }> = {
   Pendiente: { etiqueta: "Pendiente", color: "var(--color-pethood-accent-600)" },
   En_Revision: { etiqueta: "En revisión", color: "var(--color-pethood-amarillo)" },
+  Revisada: { etiqueta: "Revisada", color: "var(--color-pethood-accent-400)" },
   Aprobada: { etiqueta: "Aprobada", color: "var(--color-pethood-success-600)" },
   Rechazada: { etiqueta: "Rechazada", color: "var(--color-red-500)" },
   Cancelada: { etiqueta: "Cancelada", color: "var(--color-neutral-400)" },
+  Cerrada: { etiqueta: "Cerrada", color: "var(--color-neutral-300)" },
 };
 const CONFIG_RESERVA = { color: "var(--color-pethood-accent-500)" };
 

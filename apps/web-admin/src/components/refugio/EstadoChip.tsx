@@ -9,6 +9,7 @@ const TONO: Record<string, string> = {
   Adoptado: "bg-sky-50 text-sky-700 border-sky-200",
   Pendiente: "bg-amber-50 text-amber-700 border-amber-200",
   En_Revision: "bg-amber-50 text-amber-700 border-amber-200",
+  Revisada: "bg-sky-50 text-sky-700 border-sky-200",
   En_Tratamiento: "bg-amber-50 text-amber-700 border-amber-200",
   En_Transito: "bg-amber-50 text-amber-700 border-amber-200",
   Pausada: "bg-amber-50 text-amber-700 border-amber-200",

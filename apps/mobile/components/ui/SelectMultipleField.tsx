@@ -201,7 +201,7 @@ export function SelectMultipleField<T extends string | number>({
                 }
                 keyboardShouldPersistTaps="handled"
                 ListHeaderComponent={
-                  busqueda ? null : (
+                  busqueda ? undefined : (
                     <FilaOpcion
                       etiqueta={etiquetaTodas}
                       activa={valores.length === 0}

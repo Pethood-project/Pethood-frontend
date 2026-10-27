@@ -10,11 +10,20 @@ import type { Genero, Tamanio } from '@/services/mascotas';
  * Qué es un mensaje. Todo lo que no es `TEXTO` es una tarjeta: `SOLICITUD` y `ANIMAL_PERDIDO`
  * las emite PetHood; `MASCOTA` y `UBICACION_REFUGIO` las manda una persona de la sala.
  */
-export type TipoMensaje = 'TEXTO' | 'SOLICITUD' | 'ANIMAL_PERDIDO' | 'MASCOTA' | 'UBICACION_REFUGIO';
+export type TipoMensaje =
+  | 'TEXTO'
+  | 'SOLICITUD'
+  | 'SOLICITUD_ESTADO'
+  | 'ANIMAL_PERDIDO'
+  | 'MASCOTA'
+  | 'UBICACION_REFUGIO';
 
-/** Las tarjetas que emite PetHood: no son de nadie de la sala, así que no tienen lado. */
+/**
+ * Lo que emite PetHood: no es de nadie de la sala. `SOLICITUD_ESTADO` no es una tarjeta sino una
+ * línea de aviso, con el texto en `contenido`.
+ */
 export function esTarjetaDeSistema(tipo: TipoMensaje): boolean {
-  return tipo === 'SOLICITUD' || tipo === 'ANIMAL_PERDIDO';
+  return tipo === 'SOLICITUD' || tipo === 'SOLICITUD_ESTADO' || tipo === 'ANIMAL_PERDIDO';
 }
 
 /**
@@ -128,17 +137,25 @@ export function listarChats(): Promise<ListaChats> {
  */
 export interface SolicitudEnChat {
   id: number;
+  /** Quien la envió: decide de qué lado de la sala va la tarjeta. */
+  usuarioId: number;
   /** "Adopcion" o "Transito", del catálogo del backend. */
   tipo: string;
   /** Estado vigente ("Pendiente", "Aceptada"…), resuelto al momento del pedido. */
   estado: string;
   /** ISO 8601 crudo: cuándo se envió. */
   fechaAlta: string;
+  /** ISO crudo: cuándo se resolvió. Un backend anterior no lo manda. */
+  fechaRespuesta?: string | null;
+  /** El período ofrecido, solo en un tránsito (`AAAA-MM-DD`). */
+  transito?: { fechaInicio: string; fechaFin: string } | null;
   mascota: {
     id: number;
     /** `null` si la mascota no tiene nombre cargado. */
     nombre: string | null;
     especie: string;
+    /** Un backend anterior no lo manda: el texto cae al masculino. */
+    genero?: Genero;
     /** ISO crudo o `null`. La edad la calcula el cliente. */
     fechaNacimiento: string | null;
     imagenUrl: string | null;

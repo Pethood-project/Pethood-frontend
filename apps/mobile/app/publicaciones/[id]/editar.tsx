@@ -56,7 +56,6 @@ function valoresDe(publicacion: PublicacionFeed): ValoresPublicacion {
   return {
     fotos: fotosExistentes(publicacion.imagenes),
     descripcion: publicacion.descripcion ?? '',
-    desparasitado: publicacion.desparasitado,
     personalidad: publicacion.personalidad,
     requisitos: publicacion.requisitos,
     ubicacion: publicacion.ubicacion ?? '',
@@ -153,7 +152,6 @@ export default function EditarPublicacionScreen() {
           : {}),
         requisitos: valores.requisitos,
         personalidad: valores.personalidad,
-        desparasitado: valores.desparasitado,
         fotos: valores.fotos,
       });
 

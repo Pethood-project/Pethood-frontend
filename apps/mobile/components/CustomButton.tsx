@@ -102,7 +102,11 @@ export function CustomButton({
       {loading ? (
         <ActivityIndicator color={estilo.spinner} />
       ) : (
-        <Text className={`${grande ? 'text-lg' : 'text-base'} font-semibold ${estilo.texto}`}>
+        // Centrado y con aire a los costados: un título largo se parte en dos renglones
+        // parejos en vez de pegarse al borde.
+        <Text
+          className={`px-4 text-center ${grande ? 'text-lg' : 'text-base'} font-semibold ${estilo.texto}`}
+        >
           {title}
         </Text>
       )}

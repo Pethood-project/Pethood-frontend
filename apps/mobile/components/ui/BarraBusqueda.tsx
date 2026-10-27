@@ -47,6 +47,8 @@ interface BarraBusquedaProps {
   onLimpiar?: () => void;
   /** Cambia la lupa por un spinner mientras el filtro está por aplicarse. */
   cargando?: boolean;
+  /** Abre el teclado apenas aparece: para las barras que se despliegan al tocar la lupa. */
+  autoFocus?: boolean;
 }
 
 export function BarraBusqueda({
@@ -58,6 +60,7 @@ export function BarraBusqueda({
   maxLength,
   onLimpiar,
   cargando = false,
+  autoFocus = false,
 }: BarraBusquedaProps) {
   const mostrarLimpiar = !deshabilitada && onLimpiar !== undefined && (valor?.length ?? 0) > 0;
 
@@ -89,6 +92,7 @@ export function BarraBusqueda({
         // `onCambiar`.
         editable={!deshabilitada && onCambiar !== undefined}
         focusable={!deshabilitada}
+        autoFocus={autoFocus}
         value={valor}
         onChangeText={onCambiar}
         maxLength={maxLength}

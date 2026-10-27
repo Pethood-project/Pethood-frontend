@@ -64,8 +64,10 @@ describe('textos de Inicio', () => {
   it('pinta los tramos de la solicitud', () => {
     assert.equal(pasoDeSolicitud('Pendiente'), 1);
     assert.equal(pasoDeSolicitud('En_Revision'), 2);
-    assert.equal(pasoDeSolicitud('Aprobada'), 3);
+    assert.equal(pasoDeSolicitud('Revisada'), 3);
+    assert.equal(pasoDeSolicitud('Aprobada'), 4);
     assert.equal(pasoDeSolicitud('Rechazada'), 0);
+    assert.equal(pasoDeSolicitud('Cerrada'), 0);
   });
 });
 

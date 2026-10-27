@@ -1,5 +1,5 @@
-/** Contrato común de los cuatro pasos del formulario de solicitud (GUI-7.1.1). */
-import type { HogarSolicitante } from '@/services/solicitudes';
+/** Contrato común de los pasos del formulario de solicitud. */
+import type { HogarSolicitante, PreguntaAplicable } from '@/services/solicitudes';
 
 import type { Borrador, Errores, MascotaDeSolicitud } from './borrador';
 
@@ -18,4 +18,6 @@ export interface PasoProps {
   editandoHogar: boolean;
   /** Pasa de resumen a formulario. Precarga ya está puesta desde `borradorInicial`. */
   onEditarHogar: () => void;
+  /** Las preguntas propias del refugio para esta mascota. Solo las usa su paso y el resumen. */
+  preguntas: PreguntaAplicable[];
 }

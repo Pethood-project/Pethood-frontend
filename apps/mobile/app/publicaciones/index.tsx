@@ -39,7 +39,7 @@ import { DetalleAvisoModal } from '@/components/perdidos/DetalleAvisoModal';
 import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { EstadoAnimalPerdidoBadge } from '@/components/ui/EstadoAnimalPerdidoBadge';
 import { EstadoPublicacionBadge } from '@/components/ui/EstadoPublicacionBadge';
-import { FiltroEstados, type OpcionEstado } from '@/components/ui/FiltroEstados';
+import { FiltroEstadosBoton, type OpcionEstado } from '@/components/ui/FiltroEstados';
 import { Segmentado, type OpcionSegmento } from '@/components/ui/Segmentado';
 import { estiloDeEstadoPublicacion } from '@/constants/EstadosPublicacion';
 import { PALETA } from '@/constants/theme';
@@ -329,6 +329,16 @@ export default function MisPublicacionesScreen() {
                 : subtituloContador(items.length)
           }
           onVolver={volver}
+          derecha={
+            vistaRefugio && opcionesEstado.length > 0 ? (
+              <FiltroEstadosBoton
+                titulo="Estado de la publicación"
+                opciones={opcionesEstado}
+                seleccionados={estadosElegidos}
+                onChange={setEstadosElegidos}
+              />
+            ) : undefined
+          }
         />
 
         {vistaRefugio ? null : (
@@ -341,14 +351,6 @@ export default function MisPublicacionesScreen() {
             />
           </View>
         )}
-
-        {vistaRefugio && opcionesEstado.length > 0 ? (
-          <FiltroEstados
-            opciones={opcionesEstado}
-            seleccionados={estadosElegidos}
-            onChange={setEstadosElegidos}
-          />
-        ) : null}
 
         {cargando ? (
           <EstadoCargando />

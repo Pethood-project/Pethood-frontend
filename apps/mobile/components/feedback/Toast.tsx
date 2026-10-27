@@ -27,6 +27,7 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { PALETA } from '@/constants/theme';
+import { vibrar } from '@/lib/haptics';
 
 const ANCHO_PANTALLA = Dimensions.get('window').width;
 
@@ -321,6 +322,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const mostrar = useCallback((tipo: TipoToast, mensaje: MensajeToast, accion?: AccionToast) => {
     const contenido: ContenidoToast = typeof mensaje === 'string' ? { titulo: mensaje } : mensaje;
+
+    // Un solo punto para toda la app: cada aviso se siente como lo que dice.
+    if (tipo === 'exito') vibrar.exito();
+    else if (tipo === 'advertencia') vibrar.advertencia();
+    else vibrar.error();
 
     setActual({
       id: siguienteId.current++,

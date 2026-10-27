@@ -13,9 +13,9 @@ import { PALETA } from '@/constants/theme';
 
 export type TonoNota = 'info' | 'consejo';
 
-const ESTILOS: Record<TonoNota, { icono: keyof typeof Ionicons.glyphMap; color: string }> = {
-  info: { icono: 'information-circle-outline', color: PALETA.accent[500] },
-  consejo: { icono: 'bulb-outline', color: PALETA.accent[500] },
+const ESTILOS: Record<TonoNota, { icono: keyof typeof Ionicons.glyphMap }> = {
+  info: { icono: 'information-circle' },
+  consejo: { icono: 'bulb' },
 };
 
 interface NotaProps {
@@ -28,14 +28,18 @@ interface NotaProps {
 }
 
 export function Nota({ texto, tono = 'info', accion, grande = false }: NotaProps) {
-  const { icono, color } = ESTILOS[tono];
+  const { icono } = ESTILOS[tono];
 
+  // Amarillo, como la opción de tránsito: un aviso que se distingue del resto sin gritar.
   return (
-    <View className="flex-row items-start gap-2 rounded-2xl bg-organic-accent-100 px-3.5 py-3">
-      <Ionicons name={icono} size={grande ? 19 : 15} color={color} style={{ marginTop: 1 }} />
+    <View
+      style={{ backgroundColor: PALETA.calido.amarilloClaro, borderColor: PALETA.calido.amarillo }}
+      className="flex-row items-start gap-2.5 rounded-2xl border-[1.5px] px-3.5 py-3"
+    >
+      <Ionicons name={icono} size={grande ? 20 : 16} color={PALETA.accent[700]} style={{ marginTop: 1 }} />
       <View className="flex-1">
         <Text
-          className={`font-cuerpo text-organic-neutral-700 ${
+          className={`font-cuerpo text-organic-accent-900 ${
             grande ? 'text-[15px] leading-[21px]' : 'text-[12.5px] leading-[18px]'
           }`}
         >

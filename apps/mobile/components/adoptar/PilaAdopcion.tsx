@@ -20,6 +20,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { vibrar } from '@/lib/haptics';
 import type { PublicacionFeed } from '@/services/publicaciones';
 
 import { SelloDecision } from './SelloDecision';
@@ -69,6 +70,7 @@ const TarjetaArrastrable = forwardRef<TarjetaArrastrableRef, TarjetaArrastrableP
     // Mientras dura la animación de salida se ignoran gestos nuevos: sin esto, un segundo
     // swipe sobre la tarjeta que ya se está yendo dispararía dos decisiones.
     const decidiendo = useSharedValue(false);
+    const umbralCruzado = useSharedValue(false);
 
     const estilo = useAnimatedStyle(() => ({
       transform: [
@@ -100,7 +102,18 @@ const TarjetaArrastrable = forwardRef<TarjetaArrastrableRef, TarjetaArrastrableP
       [decidiendo, onDecidir, publicacion, x, y],
     );
 
-    useImperativeHandle(ref, () => ({ decidir: volar }), [volar]);
+    // Desde los botones no hay arrastre que avise: guardar ya vibra con su aviso de éxito y
+    // descartar necesita el suyo.
+    useImperativeHandle(
+      ref,
+      () => ({
+        decidir: (decision) => {
+          if (decision === 'rechazar') vibrar.toque();
+          volar(decision);
+        },
+      }),
+      [volar],
+    );
 
     const arrastre = Gesture.Pan()
       .onUpdate((evento) => {
@@ -108,6 +121,13 @@ const TarjetaArrastrable = forwardRef<TarjetaArrastrableRef, TarjetaArrastrableP
         x.value = evento.translationX;
         // El eje vertical se amortigua: el gesto que decide es el horizontal.
         y.value = evento.translationY * 0.2;
+
+        // Un toque suave al pasar el umbral avisa que soltar ahora decide.
+        const supera = Math.abs(evento.translationX) > UMBRAL_DISTANCIA;
+        if (supera !== umbralCruzado.value) {
+          umbralCruzado.value = supera;
+          if (supera) scheduleOnRN(vibrar.seleccion);
+        }
       })
       .onEnd((evento) => {
         if (decidiendo.value) return;
@@ -118,8 +138,13 @@ const TarjetaArrastrable = forwardRef<TarjetaArrastrableRef, TarjetaArrastrableP
         if (!superaDistancia && !superaVelocidad) {
           x.value = withSpring(0);
           y.value = withSpring(0);
+          umbralCruzado.value = false;
           return;
         }
+
+        // Un flick rápido decide sin haber cruzado el umbral: se avisa igual.
+        if (!umbralCruzado.value) scheduleOnRN(vibrar.seleccion);
+        umbralCruzado.value = false;
 
         // Con un flick rápido la dirección la manda la velocidad, no dónde quedó el dedo.
         const haciaLaDerecha = superaVelocidad ? evento.velocityX > 0 : evento.translationX > 0;

@@ -238,7 +238,6 @@ export interface DatosEdicionPublicacion {
   longitud?: number;
   requisitos: string[];
   personalidad: string[];
-  desparasitado: boolean;
   /**
    * Galería final en orden (la primera es la portada): las que ya estaban traen `remota`, las
    * nuevas no. Vacía, vuelve a usar la foto de la mascota.
@@ -259,7 +258,6 @@ export async function editarPublicacion(
 
   formData.append('descripcion', datos.descripcion);
   formData.append('ubicacion', datos.ubicacion);
-  formData.append('desparasitado', String(datos.desparasitado));
   // Las coordenadas viajan solo si se pudieron capturar: sin ellas, el backend las deja
   // nulas y la publicación queda fuera del filtro por cercanía (sigue visible en el feed).
   if (datos.latitud !== undefined && datos.longitud !== undefined) {

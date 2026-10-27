@@ -93,6 +93,7 @@ export default function EditarMascotaScreen() {
   const [especieId, setEspecieId] = useState<number | null>(null);
   const [razaId, setRazaId] = useState<number | null>(null);
   const [castrado, setCastrado] = useState(false);
+  const [desparasitado, setDesparasitado] = useState(false);
   const [descripcion, setDescripcion] = useState('');
 
   const [especies, setEspecies] = useState<OpcionCatalogo[]>([]);
@@ -136,6 +137,7 @@ export default function EditarMascotaScreen() {
         setEspecieId(mascota.especie.id);
         setRazaId(mascota.raza.id);
         setCastrado(mascota.castrado);
+        setDesparasitado(mascota.desparasitado);
         setDescripcion(mascota.descripcion ?? '');
       } catch (err) {
         setErrorCarga(err instanceof Error ? err.message : 'No pudimos cargar la mascota.');
@@ -221,6 +223,7 @@ export default function EditarMascotaScreen() {
     if (pesoNumero !== null && pesoNumero !== original.peso) resultado.peso = peso.trim();
 
     if (castrado !== original.castrado) resultado.castrado = castrado;
+    if (desparasitado !== original.desparasitado) resultado.desparasitado = desparasitado;
 
     // Vaciar la descripción es un cambio: viaja como '' para que el backend la borre.
     const descripcionLimpia = descripcion.trim();
@@ -239,7 +242,7 @@ export default function EditarMascotaScreen() {
     }
 
     return resultado;
-  }, [original, nombre, fechaNacimiento, genero, tamanio, peso, castrado, descripcion, especieId, razaId]);
+  }, [original, nombre, fechaNacimiento, genero, tamanio, peso, castrado, desparasitado, descripcion, especieId, razaId]);
 
   const hayCambios = Object.keys(cambios).length > 0 || foto !== null;
 
@@ -270,6 +273,7 @@ export default function EditarMascotaScreen() {
       const editada = await editarMascota(original.id, {
         ...cambios,
         castrado,
+        desparasitado,
         foto: foto ?? undefined,
       });
 
@@ -430,6 +434,14 @@ export default function EditarMascotaScreen() {
                   label={textoSegunGenero(genero, 'Castrado / Esterilizado', 'Castrada / Esterilizada')}
                   valor={castrado}
                   onChange={setCastrado}
+                />
+              </FormCardRow>
+
+              <FormCardRow>
+                <ToggleField
+                  label={textoSegunGenero(genero, 'Desparasitado', 'Desparasitada')}
+                  valor={desparasitado}
+                  onChange={setDesparasitado}
                 />
               </FormCardRow>
 

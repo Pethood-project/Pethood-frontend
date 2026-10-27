@@ -9,49 +9,60 @@
  * aplicar en acento al pie. Todo un escalón más grande que el diseño, a pedido: el refugio
  * filtra muchas solicitudes y los chips chicos costaba leerlos y tocarlos.
  *
- * El estado es de selección múltiple: se pueden ver dos o tres estados a la vez.
+ * Lo recibido se agrupa en tres vistas rápidas —por revisar, revisadas y resueltas— que
+ * antes ocupaban dos renglones del encabezado: ahora viven acá arriba, y debajo el estado
+ * exacto, de selección múltiple, para afinar.
  */
-import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState, type ReactNode } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useEffect, useState } from 'react';
+import { View } from 'react-native';
 
+import { Chip } from '@/components/ui/Chip';
 import { DateField } from '@/components/ui/DateField';
 import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { type OpcionSelector } from '@/components/ui/SelectorChips';
 import { SelectorChipsMultiples } from '@/components/ui/SelectorChipsMultiples';
-import { BotonVolver } from '@/components/ui/BotonVolver';
-import { TituloPantalla } from '@/components/ui/EncabezadoPantalla';
-import { PALETA } from '@/constants/theme';
+import { ModalFiltros, SeccionFiltro } from '@/components/ui/ModalFiltros';
+import type { VistaSolicitud } from '@/constants/EstadosSolicitud';
+import { ESTADOS_DE_PESTANIA, OPCIONES_PESTANIA, pestaniaDe } from '@/constants/PestaniasSolicitud';
 import {
   contarFiltrosActivosSolicitudes,
   SIN_FILTROS_SOLICITUDES,
   type EstadoSolicitudNombre,
   type FiltrosSolicitudes,
+  type TipoSolicitud,
 } from '@/services/solicitudes';
 
-const OPCIONES_ESTADO: OpcionSelector<EstadoSolicitudNombre>[] = [
-  { valor: 'Pendiente', etiqueta: 'Pendientes' },
-  { valor: 'En_Revision', etiqueta: 'En revisión' },
-  { valor: 'Aprobada', etiqueta: 'Aprobadas' },
-  { valor: 'Rechazada', etiqueta: 'Rechazadas' },
-  { valor: 'Cancelada', etiqueta: 'Canceladas' },
+/** En plural, porque filtran listas; el rótulo cambia según quién mira (ver `EstadosSolicitud`). */
+const ETIQUETAS_FILTRO: Record<EstadoSolicitudNombre, Record<VistaSolicitud, string>> = {
+  Pendiente: { adoptante: 'Enviadas', refugio: 'Por revisar' },
+  En_Revision: { adoptante: 'En revisión', refugio: 'En revisión' },
+  Revisada: { adoptante: 'Revisadas', refugio: 'Revisadas' },
+  Aprobada: { adoptante: 'Aprobadas', refugio: 'Aprobadas' },
+  Rechazada: { adoptante: 'No aceptadas', refugio: 'Rechazadas' },
+  Cancelada: { adoptante: 'Canceladas', refugio: 'Canceladas' },
+  Cerrada: { adoptante: 'Cerradas', refugio: 'Cerradas' },
+};
+
+/** "Todos" es no filtrar: `undefined`. */
+const OPCIONES_TIPO: { etiqueta: string; valor: TipoSolicitud | undefined }[] = [
+  { etiqueta: 'Todos', valor: undefined },
+  { etiqueta: 'Adopciones', valor: 'Adopcion' },
+  { etiqueta: 'Tránsitos', valor: 'Transito' },
 ];
 
-/** Bloque con rótulo en mayúsculas, como las secciones de la pantalla 33. */
-function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) {
-  return (
-    <View className="mb-7">
-      <Text className="mb-3 font-cuerpo-bold text-[14px] uppercase tracking-[1px] text-organic-neutral-800">
-        {titulo}
-      </Text>
-      {children}
-    </View>
-  );
+function opcionesEstado(vista: VistaSolicitud): OpcionSelector<EstadoSolicitudNombre>[] {
+  return (Object.keys(ETIQUETAS_FILTRO) as EstadoSolicitudNombre[]).map((valor) => ({
+    valor,
+    etiqueta: ETIQUETAS_FILTRO[valor][vista],
+  }));
 }
 
 interface FiltrosSolicitudesModalProps {
   visible: boolean;
+  /** Quién mira: cambia cómo se llaman los estados ("No aceptadas" para quien pidió). */
+  vista: VistaSolicitud;
+  /** Lo recibido ofrece las vistas rápidas (por revisar, revisadas, resueltas). */
+  conPestanias?: boolean;
   /** Filtros aplicados hoy; el borrador se reinicia con ellos cada vez que se abre. */
   filtros: FiltrosSolicitudes;
   onAplicar: (filtros: FiltrosSolicitudes) => void;
@@ -60,11 +71,12 @@ interface FiltrosSolicitudesModalProps {
 
 export function FiltrosSolicitudesModal({
   visible,
+  vista,
+  conPestanias = false,
   filtros,
   onAplicar,
   onCerrar,
 }: FiltrosSolicitudesModalProps) {
-  const insets = useSafeAreaInsets();
   const [borrador, setBorrador] = useState<FiltrosSolicitudes>(filtros);
 
   // Al abrir se descarta cualquier borrador anterior: lo que se ve tiene que ser lo que
@@ -74,100 +86,101 @@ export function FiltrosSolicitudesModal({
   }, [visible, filtros]);
 
   const activos = contarFiltrosActivosSolicitudes(borrador);
+  const pestania = pestaniaDe(borrador.estados);
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={onCerrar} statusBarTranslucent>
-      <View className="flex-1 bg-organic-bg">
-        {/* Margen superior a mano y no con el `SafeAreaView` nativo: dentro de un `Modal`
-            (otra ventana nativa) este no recibe los insets en iOS y el encabezado quedaba
-            debajo de la hora y la batería. `statusBarTranslucent` hace que Android también
-            dibuje debajo de la barra, así el mismo margen sirve en las dos plataformas. */}
-        <View className="flex-1" style={{ paddingTop: insets.top }}>
-          <View className="flex-row items-center justify-between border-b border-organic-neutral-300 bg-organic-neutral-100 px-[22px] pb-3.5 pt-2.5">
-            <View className="flex-row items-center gap-2">
-              <BotonVolver etiqueta="Cerrar filtros" onPress={onCerrar} />
-              <TituloPantalla>Filtros</TituloPantalla>
-            </View>
-
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Limpiar filtros"
-              onPress={() => setBorrador(SIN_FILTROS_SOLICITUDES)}
-              disabled={activos === 0}
-              hitSlop={12}
-              className="py-2 active:opacity-70"
-            >
-              <Text
-                className={`font-cuerpo-semi text-[17px] ${
-                  activos === 0 ? 'text-organic-neutral-400' : 'text-organic-accent-700'
-                }`}
-              >
-                Limpiar
-              </Text>
-            </Pressable>
-          </View>
-
-          <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 22 }}>
-            <Seccion titulo="Estado">
-              <SelectorChipsMultiples
-                prefijo="estado-solicitud"
-                etiquetaSinFiltro="Todos"
-                opciones={OPCIONES_ESTADO}
-                valores={borrador.estados ?? []}
-                onChange={(estados) => setBorrador({ ...borrador, estados })}
+    <ModalFiltros
+      visible={visible}
+      activos={activos}
+      onLimpiar={() => setBorrador(SIN_FILTROS_SOLICITUDES)}
+      onAplicar={() => onAplicar(borrador)}
+      onCerrar={onCerrar}
+    >
+      {conPestanias ? (
+        <SeccionFiltro titulo="Mostrar" ayuda="Elegí qué solicitudes querés ver.">
+          <View className="flex-row flex-wrap gap-2.5">
+            {OPCIONES_PESTANIA.map((opcion) => (
+              <Chip
+                key={opcion.valor}
+                etiqueta={opcion.etiqueta}
                 variante="filtro"
                 amplio
+                activa={pestania === opcion.valor}
+                onPress={() =>
+                  setBorrador({
+                    ...borrador,
+                    estados: ESTADOS_DE_PESTANIA[opcion.valor],
+                  })
+                }
               />
-              <Text className="mt-3 font-cuerpo text-[15px] leading-[21px] text-organic-neutral-600">
-                Podés elegir más de un estado.
-              </Text>
-            </Seccion>
-
-            <Seccion titulo="Fecha de la solicitud">
-              <FormCard>
-                <FormCardRow>
-                  <DateField
-                    label="Desde"
-                    placeholder="Sin límite"
-                    valor={borrador.fechaDesde ?? null}
-                    onChange={(fecha) => setBorrador({ ...borrador, fechaDesde: fecha })}
-                    fechaMaxima={borrador.fechaHasta ?? new Date()}
-                    mostrarEdad={false}
-                    grande
-                  />
-                </FormCardRow>
-                <FormCardRow ultima>
-                  <DateField
-                    label="Hasta"
-                    placeholder="Sin límite"
-                    valor={borrador.fechaHasta ?? null}
-                    onChange={(fecha) => setBorrador({ ...borrador, fechaHasta: fecha })}
-                    fechaMinima={borrador.fechaDesde}
-                    mostrarEdad={false}
-                    grande
-                  />
-                </FormCardRow>
-              </FormCard>
-            </Seccion>
-          </ScrollView>
-
-          {/* Como en la pantalla 33, el botón va sobre el mismo fondo, sin barra propia. El
-              inset va en el padding para que quede arriba de la barra del sistema. */}
-          <View className="px-5 pt-3" style={{ paddingBottom: Math.max(insets.bottom, 16) }}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => onAplicar(borrador)}
-              className="items-center rounded-[20px] bg-organic-accent-600 py-[18px] shadow-md active:opacity-90"
-            >
-              <Text className="font-cuerpo-semi text-[18px] text-white">
-                {activos === 0
-                  ? 'Aplicar filtros'
-                  : `Aplicar filtros (${activos} activo${activos === 1 ? '' : 's'})`}
-              </Text>
-            </Pressable>
+            ))}
+            <Chip
+              etiqueta="Todas"
+              variante="filtro"
+              amplio
+              activa={!borrador.estados || borrador.estados.length === 0}
+              onPress={() => setBorrador({ ...borrador, estados: undefined })}
+            />
           </View>
+        </SeccionFiltro>
+      ) : null}
+
+      <SeccionFiltro
+        titulo={conPestanias ? 'Estado exacto' : 'Estado'}
+        ayuda="Podés elegir más de un estado."
+      >
+        <SelectorChipsMultiples
+          prefijo="estado-solicitud"
+          etiquetaSinFiltro="Todos"
+          opciones={opcionesEstado(vista)}
+          valores={borrador.estados ?? []}
+          onChange={(estados) => setBorrador({ ...borrador, estados })}
+          variante="filtro"
+          amplio
+        />
+      </SeccionFiltro>
+
+      <SeccionFiltro titulo="Tipo" ayuda="Adopciones o tránsitos.">
+        <View className="flex-row flex-wrap gap-2.5">
+          {OPCIONES_TIPO.map((opcion) => (
+            <Chip
+              key={opcion.etiqueta}
+              etiqueta={opcion.etiqueta}
+              variante="filtro"
+              amplio
+              activa={borrador.tipo === opcion.valor}
+              onPress={() => setBorrador({ ...borrador, tipo: opcion.valor })}
+            />
+          ))}
         </View>
-      </View>
-    </Modal>
+      </SeccionFiltro>
+
+      <SeccionFiltro titulo="Fecha de la solicitud">
+        <FormCard>
+          <FormCardRow>
+            <DateField
+              label="Desde"
+              placeholder="Sin límite"
+              valor={borrador.fechaDesde ?? null}
+              onChange={(fecha) => setBorrador({ ...borrador, fechaDesde: fecha })}
+              fechaMaxima={borrador.fechaHasta ?? new Date()}
+              mostrarEdad={false}
+              grande
+            />
+          </FormCardRow>
+          <FormCardRow ultima>
+            <DateField
+              label="Hasta"
+              placeholder="Sin límite"
+              valor={borrador.fechaHasta ?? null}
+              onChange={(fecha) => setBorrador({ ...borrador, fechaHasta: fecha })}
+              fechaMinima={borrador.fechaDesde}
+              mostrarEdad={false}
+              grande
+            />
+          </FormCardRow>
+        </FormCard>
+      </SeccionFiltro>
+    </ModalFiltros>
   );
 }

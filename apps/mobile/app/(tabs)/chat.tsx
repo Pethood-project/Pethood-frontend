@@ -29,6 +29,7 @@ import { FilaConversacion } from '@/components/chat/FilaConversacion';
 import { VisorAdjuntos } from '@/components/chat/VisorAdjuntos';
 import { EstadoCargando, EstadoError, EstadoVacio } from '@/components/feedback/EstadosPantalla';
 import { BarraBusqueda } from '@/components/ui/BarraBusqueda';
+import { BotonCircular } from '@/components/ui/BotonCircular';
 import { TituloPantalla } from '@/components/ui/EncabezadoPantalla';
 import { HojaOpciones } from '@/components/ui/HojaOpciones';
 import { ESPERA_ENTRE_MODALES_MS } from '@/constants/modales';
@@ -126,6 +127,8 @@ export default function ChatScreen() {
 
   /** Lo que se ve tipeado en la barra. La lista se filtra con el valor demorado, no con éste. */
   const [busqueda, setBusqueda] = useState('');
+  /** La barra se despliega al tocar la lupa del encabezado: cerrada no ocupa lugar. */
+  const [buscando, setBuscando] = useState(false);
   /** Contacto que se está reportando (deslizando su fila), o `null` con el modal cerrado. */
   const [reportado, setReportado] = useState<ObjetoReportado | null>(null);
   /** Foto de perfil que se está viendo en grande (se tocó el avatar de una fila). */
@@ -167,7 +170,10 @@ export default function ChatScreen() {
   // hace rato se lee como "me faltan conversaciones", no como "hay una búsqueda activa".
   useFocusEffect(
     useCallback(() => {
-      return () => setBusqueda('');
+      return () => {
+        setBusqueda('');
+        setBuscando(false);
+      };
     }, []),
   );
 
@@ -219,36 +225,51 @@ export default function ChatScreen() {
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
         <View className="border-b border-organic-neutral-300 bg-organic-neutral-100 px-[21px] py-[13px]">
-          {vistaRefugio ? (
-            <>
+          <View className="flex-row items-center justify-between gap-3">
+            <View className="min-w-0 flex-1">
               <TituloPantalla>Mensajes</TituloPantalla>
-              <Text
-                numberOfLines={1}
-                className="mt-[4px] font-cuerpo text-[14px] text-organic-neutral-600"
-              >
-                {subtituloRefugio(sinLeer, usuario?.refugio?.nombre ?? null)}
-              </Text>
-            </>
-          ) : (
-            <TituloPantalla>Mensajes</TituloPantalla>
-          )}
+              {vistaRefugio ? (
+                <Text
+                  numberOfLines={1}
+                  className="mt-[4px] font-cuerpo text-[14px] text-organic-neutral-600"
+                >
+                  {subtituloRefugio(sinLeer, usuario?.refugio?.nombre ?? null)}
+                </Text>
+              ) : null}
+            </View>
 
-          {/* Criterio 1: sin conversaciones el buscador SE MUESTRA, deshabilitado. El
-              placeholder sale del artboard y difiere por rol: la HU pide "Buscar
-              conversaciones..." para las dos pantallas, pero GUI-31 dice "Buscar...". */}
-          <View className="mt-[12px]">
-            <BarraBusqueda
-              placeholder={vistaRefugio ? 'Buscar...' : 'Buscar conversaciones...'}
-              deshabilitada={bandejaVacia}
-              accessibilityLabel="Buscar conversaciones"
-              valor={busqueda}
-              onCambiar={setBusqueda}
-              // Criterio 3: el tope lo pone el input, no un recorte a mano sobre el texto.
-              maxLength={LIMITES.busquedaChat.max}
-              onLimpiar={() => setBusqueda('')}
-              cargando={filtroPendiente}
+            {/* Solo la lupa: la barra ocupaba un renglón entero aunque nadie buscara. Sin
+                conversaciones no hay nada que buscar y la lupa queda sin respuesta. */}
+            <BotonCircular
+              icono={buscando ? 'close' : 'search'}
+              etiqueta={buscando ? 'Cerrar la búsqueda' : 'Buscar conversaciones'}
+              onPress={
+                bandejaVacia
+                  ? undefined
+                  : () => {
+                      if (buscando) setBusqueda('');
+                      setBuscando(!buscando);
+                    }
+              }
             />
           </View>
+
+          {buscando ? (
+            <View className="mt-[12px]">
+              <BarraBusqueda
+                placeholder={vistaRefugio ? 'Buscar...' : 'Buscar conversaciones...'}
+                deshabilitada={bandejaVacia}
+                accessibilityLabel="Buscar conversaciones"
+                valor={busqueda}
+                onCambiar={setBusqueda}
+                // El tope lo pone el input, no un recorte a mano sobre el texto.
+                maxLength={LIMITES.busquedaChat.max}
+                onLimpiar={() => setBusqueda('')}
+                cargando={filtroPendiente}
+                autoFocus
+              />
+            </View>
+          ) : null}
         </View>
 
         {cargando ? (

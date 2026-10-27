@@ -6,19 +6,62 @@
  * puede gestionar acá las solicitudes de una mascota propia. Contrato en
  * `pethood-backend/docs/specs/003-adopcion-favoritos.md`.
  */
-import { get, patch, post } from './api';
+import { get, patch, post, put } from './api';
 import { aFechaISO } from '../shared/validation/dates';
 
 /** Nombres reales del catálogo EstadoSolicitud (prisma/seed.ts del backend). */
 export type EstadoSolicitudNombre =
   | 'Pendiente'
   | 'En_Revision'
+  | 'Revisada'
   | 'Aprobada'
   | 'Rechazada'
-  | 'Cancelada';
+  | 'Cancelada'
+  | 'Cerrada';
 
-/** El refugio/adoptante solo puede resolver una solicitud "Pendiente" hacia uno de estos dos destinos. */
+/** Quien publicó decide con una solicitud abierta hacia uno de estos dos destinos. */
 export type EstadoResolucion = Extract<EstadoSolicitudNombre, 'Aprobada' | 'Rechazada'>;
+
+/**
+ * La causa de un estado final. Cada una pertenece a un solo estado: Rechazada la elige quien
+ * publicó, Cancelada la deja el solicitante y Cerrada es una circunstancia.
+ */
+export type MotivoSolicitud =
+  | 'NO_CUMPLE_REQUISITOS'
+  | 'MASCOTA_CON_HOGAR'
+  | 'SIN_CONTACTO'
+  | 'OTRO'
+  | 'RETIRADA_POR_SOLICITANTE'
+  | 'CUENTA_CERRADA_SOLICITANTE'
+  | 'ADOPTADA_POR_OTRA_PERSONA'
+  | 'MASCOTA_FALLECIDA'
+  | 'PUBLICACION_RETIRADA'
+  | 'PUBLICANTE_CERRO_CUENTA'
+  | 'VENCIDA_SIN_RESPUESTA';
+
+/** Las causas que elige quien rechaza una solicitud. */
+export type MotivoRechazo = Extract<
+  MotivoSolicitud,
+  'NO_CUMPLE_REQUISITOS' | 'MASCOTA_CON_HOGAR' | 'SIN_CONTACTO' | 'OTRO'
+>;
+
+/** Cómo se responde una pregunta propia del refugio. */
+export type TipoPregunta = 'TEXTO' | 'SI_NO' | 'OPCIONES';
+
+/** Una pregunta del refugio tal como la ve quien completa el formulario. */
+export interface PreguntaAplicable {
+  id: number;
+  texto: string;
+  tipo: TipoPregunta;
+  opciones: string[];
+  obligatoria: boolean;
+}
+
+/** Lo que respondió el solicitante, con el texto que se le mostró. */
+export interface RespuestaSolicitud {
+  pregunta: string;
+  respuesta: string;
+}
 
 /** Nombres reales del catálogo TipoSolicitud. Sin tilde: son los valores de la base. */
 export type TipoSolicitud = 'Adopcion' | 'Transito';
@@ -37,16 +80,22 @@ export interface SolicitudResumen {
   solicitante: { id: number; nombre: string; apellido: string };
   tipoSolicitud: string;
   estado: { id: number; nombre: EstadoSolicitudNombre };
+  /** Causa del estado vigente, si es un final que la lleva. */
+  motivo: MotivoSolicitud | null;
   comentario: string | null;
   transito: PeriodoTransito | null;
   fechaAlta: string;
   fechaRespuesta: string | null;
+  /** Por qué estados pasó, del más reciente al más viejo: con esto se pinta el camino. */
+  historial: EstadoSolicitudHistorial[];
 }
 
 /** Una fila del histórico, ordenado del estado más reciente al más viejo. */
 export interface EstadoSolicitudHistorial {
   id: number;
   nombre: EstadoSolicitudNombre;
+  /** Causa, en los estados finales que la llevan. */
+  motivo: MotivoSolicitud | null;
   fecha: string;
 }
 
@@ -95,8 +144,24 @@ export interface CambioDeHogar {
   fechaCambio: string;
 }
 
-export interface SolicitudDetalle extends SolicitudResumen {
+export interface SolicitudDetalle extends Omit<SolicitudResumen, 'mascota' | 'solicitante'> {
+  mascota: SolicitudResumen['mascota'] & {
+    genero: string;
+    /** Lo que pide la mascota, tal como lo escribió quien la publicó. */
+    requisitos: string[];
+  };
+  solicitante: SolicitudResumen['solicitante'] & {
+    imagenUrl: string | null;
+    localidad: string | null;
+    provincia: string | null;
+    verificado: boolean;
+    /** `AAAA-MM-DD`. */
+    miembroDesde: string;
+  };
+  /** El saludo del solicitante, que también salió como primer mensaje del chat. */
   motivacion: string;
+  /** Quién publicó la mascota: el refugio, o la persona si la mascota es particular. */
+  publicador: { nombre: string; imagenUrl: string | null; esRefugio: boolean };
   /**
    * Lo que el solicitante declaró al enviar — lo que se está evaluando. Null en solicitudes
    * anteriores a HU-7.1, cuando el formulario no pedía hogar.
@@ -104,16 +169,20 @@ export interface SolicitudDetalle extends SolicitudResumen {
   hogar: HogarSolicitante | null;
   /** Solo viene si el hogar cambió después de enviar esta solicitud. */
   cambioDeHogar: CambioDeHogar | null;
-  historial: EstadoSolicitudHistorial[];
+  respuestas: RespuestaSolicitud[];
+  /** La conversación con quien publicó, o `null` si la sala no se pudo abrir. */
+  chatId: number | null;
+  /** Solo para el solicitante de una adopción aprobada: la mascota que ahora es suya. */
+  mascotaAdoptadaId: number | null;
+  /** Solo viene para quien publicó la mascota. */
+  notaInterna?: string | null;
 }
 
 /**
- * Lo que devuelve el alta: el detalle más la conversación con quien publicó, que el backend
- * abre (o reusa) con la tarjeta del pedido adentro. `null` si la sala no se pudo abrir.
+ * Lo que devuelve el alta: el detalle, cuyo `chatId` apunta a la conversación que el backend
+ * abre (o reusa) con la tarjeta del pedido adentro.
  */
-export interface SolicitudCreada extends SolicitudDetalle {
-  chatId: number | null;
-}
+export type SolicitudCreada = SolicitudDetalle;
 
 /** Lo que se manda al crear (HU-7.1). Las fechas van solo si el tipo es "Transito". */
 export interface NuevaSolicitud {
@@ -124,6 +193,8 @@ export interface NuevaSolicitud {
   fechaInicioTransito?: string;
   fechaFinTransito?: string;
   hogar: HogarSolicitud;
+  /** Respuestas a las preguntas del refugio. Las opcionales sin responder no viajan. */
+  respuestas?: { preguntaId: number; respuesta: string }[];
 }
 
 /** Por qué el sistema frena la solicitud antes de abrir el formulario. */
@@ -153,6 +224,8 @@ export interface Elegibilidad {
    * mostrando un resumen de lo ya declarado, en vez de ocho campos vacíos.
    */
   hogar: HogarSolicitante | null;
+  /** Las preguntas propias del refugio que le toca responder, ya filtradas por la especie. */
+  preguntas: PreguntaAplicable[];
 }
 
 export interface ListaSolicitudesRecibidas {
@@ -170,6 +243,8 @@ const LIMITE_MAXIMO = 50;
  */
 export interface FiltrosSolicitudes {
   estados?: EstadoSolicitudNombre[];
+  /** Solo adopciones o solo tránsitos. */
+  tipo?: TipoSolicitud;
   fechaDesde?: Date;
   fechaHasta?: Date;
 }
@@ -182,6 +257,7 @@ export function contarFiltrosActivosSolicitudes(filtros: FiltrosSolicitudes): nu
 
   // Elegir varios estados es una sola elección del usuario: cuenta como un filtro.
   if (filtros.estados && filtros.estados.length > 0) activos += 1;
+  if (filtros.tipo) activos += 1;
   // El rango de fecha es una sola elección del usuario aunque viaje en dos campos.
   if (filtros.fechaDesde !== undefined || filtros.fechaHasta !== undefined) activos += 1;
 
@@ -193,6 +269,7 @@ function queryDeFiltros(filtros: FiltrosSolicitudes): string {
   if (filtros.estados && filtros.estados.length > 0) {
     params.set('estados', filtros.estados.join(','));
   }
+  if (filtros.tipo) params.set('tipo', filtros.tipo);
   if (filtros.fechaDesde) params.set('fechaDesde', aFechaISO(filtros.fechaDesde));
   if (filtros.fechaHasta) params.set('fechaHasta', aFechaISO(filtros.fechaHasta));
   return `?${params.toString()}`;
@@ -236,13 +313,36 @@ export function obtenerSolicitud(id: number): Promise<SolicitudDetalle> {
   return get(`/solicitudes/${id}`);
 }
 
+/** Rechazar pide la causa; aceptar no la lleva. */
 export function resolverSolicitud(
   id: number,
   estado: EstadoResolucion,
   comentario: string,
+  motivo?: MotivoRechazo,
 ): Promise<SolicitudDetalle> {
   return patch(`/solicitudes/${id}/estado`, {
     estado,
+    ...(motivo ? { motivo } : {}),
     ...(comentario.trim() ? { comentario: comentario.trim() } : {}),
   });
+}
+
+/** Quien publicó abre la revisión: una solicitud Pendiente pasa a En_Revision. Idempotente. */
+export function iniciarRevision(id: number): Promise<SolicitudDetalle> {
+  return post(`/solicitudes/${id}/revision`, {});
+}
+
+/** Quien publicó terminó de revisarla. */
+export function marcarRevisada(id: number): Promise<SolicitudDetalle> {
+  return post(`/solicitudes/${id}/revisada`, {});
+}
+
+/** El solicitante retira su solicitud mientras siga abierta. */
+export function retirarSolicitud(id: number): Promise<SolicitudDetalle> {
+  return post(`/solicitudes/${id}/retiro`, {});
+}
+
+/** La nota privada de quien publicó. Vacía la borra. */
+export function guardarNota(id: number, texto: string): Promise<SolicitudDetalle> {
+  return put(`/solicitudes/${id}/nota`, { texto: texto.trim() === '' ? null : texto.trim() });
 }

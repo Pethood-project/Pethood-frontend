@@ -7,6 +7,8 @@
  */
 import { Pressable, Text, View } from 'react-native';
 
+import { vibrar } from '@/lib/haptics';
+
 export interface OpcionSegmento<T> {
   valor: T;
   etiqueta: string;
@@ -110,7 +112,10 @@ export function Segmentado<T extends string | number>({
             key={String(opcion.valor)}
             accessibilityRole="radio"
             accessibilityState={{ selected: activa }}
-            onPress={() => onChange(opcion.valor)}
+            onPress={() => {
+              if (!activa) vibrar.seleccion();
+              onChange(opcion.valor);
+            }}
             className={`${clases.opcion} ${fondoOpcion}`}
           >
             <Text className={`${letra} ${texto}`}>{opcion.etiqueta}</Text>

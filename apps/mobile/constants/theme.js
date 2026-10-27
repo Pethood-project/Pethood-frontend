@@ -90,6 +90,10 @@ const ESTADO = {
   error: '#DC2626',
   advertencia: '#D97706',
   exito: '#059669',
+  /** Fondo suave del verde de éxito: pastillas de estado "Activa" y similares. */
+  exitoSuave: '#d6efe2',
+  /** Tinta oscura del verde de éxito, para texto sobre `exitoSuave`. */
+  exitoTinta: '#046c4e',
   /**
    * Verde de "En línea" en la cabecera de la conversación (GUI-14). Es el único verde del
    * diseño y no sale de ninguna rampa: viene tal cual del artboard. No se reusa `exito`

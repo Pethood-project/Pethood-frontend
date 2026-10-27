@@ -1,15 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-// Import interno (expo-router no lo re-exporta): es el mismo botón que la barra usa por
-// defecto. Se reusa en vez de escribir un Pressable propio porque trae el centrado de
-// ícono y label — sustituirlo por uno hecho a mano los desalinea.
-import { PlatformPressable } from 'expo-router/build/react-navigation/elements';
+// Es el mismo botón que la barra usa por defecto. Se reusa en vez de escribir un Pressable
+// propio porque trae el centrado de ícono y label — sustituirlo por uno hecho a mano los
+// desalinea.
+import { PlatformPressable } from 'expo-router/react-navigation';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BotonTabCentral } from '@/components/ui/BotonTabCentral';
 import { IndicadorTabs } from '@/components/ui/IndicadorTabs';
 import { PALETA } from '@/constants/theme';
 import { useSesion } from '@/hooks/useSesion';
+import { vibrar } from '@/lib/haptics';
 
 /**
  * Navegación inferior del área autenticada.
@@ -19,6 +20,11 @@ import { useSesion } from '@/hooks/useSesion';
  *
  * En la vista de refugio no hay botón Adoptar: el refugio no adopta (ver `services/sesion.ts`).
  */
+/** La barra entrega el color como valor genérico de React Native; los íconos piden texto. */
+function colorDelIcono(color: unknown): string | undefined {
+  return typeof color === 'string' ? color : undefined;
+}
+
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { vistaRefugio } = useSesion();
@@ -45,7 +51,16 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontSize: 12, fontWeight: '500', paddingTop: 2, paddingBottom: 0 },
         // Sin ripple: el cambio de color de la pestaña activa ya es feedback suficiente, y
         // el de Android es `borderless` y sin radio, así que se derramaba fuera de la barra.
-        tabBarButton: (props) => <PlatformPressable {...props} pressColor="transparent" />,
+        tabBarButton: (props) => (
+          <PlatformPressable
+            {...props}
+            pressColor="transparent"
+            onPress={(evento) => {
+              vibrar.seleccion();
+              props.onPress?.(evento);
+            }}
+          />
+        ),
       }}
     >
       <Tabs.Screen
@@ -53,7 +68,7 @@ export default function TabsLayout() {
         options={{
           title: 'Inicio',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+            <Ionicons name="home-outline" size={size} color={colorDelIcono(color)} />
           ),
         }}
       />
@@ -61,7 +76,7 @@ export default function TabsLayout() {
         name="mis-mascotas"
         options={{
           title: 'Mascotas',
-          tabBarIcon: ({ color, size }) => <Ionicons name="paw-outline" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="paw-outline" size={size} color={colorDelIcono(color)} />,
         }}
       />
       {/* Es una tab real y no un atajo a otra ruta: la barra inferior queda presente sobre
@@ -91,7 +106,7 @@ export default function TabsLayout() {
         options={{
           title: 'Chat',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble-outline" size={size} color={color} />
+            <Ionicons name="chatbubble-outline" size={size} color={colorDelIcono(color)} />
           ),
         }}
       />
@@ -100,7 +115,7 @@ export default function TabsLayout() {
         options={{
           title: 'Perfil',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+            <Ionicons name="person-outline" size={size} color={colorDelIcono(color)} />
           ),
         }}
       />

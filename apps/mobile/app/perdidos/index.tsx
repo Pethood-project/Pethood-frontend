@@ -6,8 +6,7 @@
  * (pantalla 6b). Pagina por cursor con scroll infinito (`usePaginacionCursor`), y cambiar los
  * filtros (criterio 7) vuelve a arrancar desde la primera página, como pide el contrato.
  *
- * La pastilla "Filtros" va en la fila que el diseño deja vacía bajo el título, arriba a la
- * izquierda como pide la HU.
+ * El ícono de filtros va junto al título, a la derecha, como en el resto de los listados.
  *
  * Con la ubicación del teléfono, cada aviso trae a qué distancia está su lugar (se ve en el
  * detalle) y se puede filtrar por cercanía. Se pide al entrar, sin frenar el portal: si llega
@@ -31,6 +30,7 @@ import { useToast } from '@/components/feedback/Toast';
 import { DetalleAvisoModal } from '@/components/perdidos/DetalleAvisoModal';
 import { FiltrosPerdidosModal } from '@/components/perdidos/FiltrosPerdidosModal';
 import { TarjetaAviso } from '@/components/perdidos/TarjetaAviso';
+import { BotonCircular } from '@/components/ui/BotonCircular';
 import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { BotonFlotante } from '@/components/ui/BotonFlotante';
 import { PALETA } from '@/constants/theme';
@@ -92,47 +92,6 @@ function ListaVacia({ conFiltros, onModificarFiltros }: ListaVaciaProps) {
       titulo="No hay publicaciones de mascotas perdidas/encontradas"
       descripcion="Cuando alguien reporte una mascota perdida o encontrada, la vas a ver acá."
     />
-  );
-}
-
-interface PastillaFiltrosProps {
-  activos: number;
-  onPress: () => void;
-}
-
-/**
- * "Filtros" arriba a la izquierda (HU-13.1). Con los colores del chip `filtro` de la pantalla
- * 33: crema sin filtros, rellena en acento y con la cantidad cuando hay alguno aplicado.
- */
-function PastillaFiltros({ activos, onPress }: PastillaFiltrosProps) {
-  const conFiltros = activos > 0;
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={
-        conFiltros ? `Filtros, ${activos} aplicado${activos === 1 ? '' : 's'}` : 'Filtros'
-      }
-      onPress={onPress}
-      className={`min-h-[44px] flex-row items-center gap-2 self-start rounded-full border px-4 py-2 active:opacity-80 ${
-        conFiltros
-          ? 'border-organic-accent-600 bg-organic-accent-600'
-          : 'border-organic-neutral-300 bg-organic-neutral-100'
-      }`}
-    >
-      <Ionicons
-        name="options-outline"
-        size={18}
-        color={conFiltros ? PALETA.blanco : PALETA.neutral[700]}
-      />
-      <Text
-        className={`text-[16px] ${
-          conFiltros ? 'font-cuerpo-bold text-white' : 'font-cuerpo-semi text-organic-neutral-700'
-        }`}
-      >
-        {conFiltros ? `Filtros (${activos})` : 'Filtros'}
-      </Text>
-    </Pressable>
   );
 }
 
@@ -318,9 +277,19 @@ export default function MascotasPerdidasScreen() {
   return (
     <View className="flex-1 bg-organic-bg">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <EncabezadoPantalla barra titulo="Mascotas Perdidas" onVolver={volver}>
-          <PastillaFiltros activos={filtrosActivos} onPress={() => setModalFiltros(true)} />
-        </EncabezadoPantalla>
+        <EncabezadoPantalla
+          barra
+          titulo="Mascotas Perdidas"
+          onVolver={volver}
+          derecha={
+            <BotonCircular
+              icono="options-outline"
+              etiqueta="Filtros"
+              contador={filtrosActivos}
+              onPress={() => setModalFiltros(true)}
+            />
+          }
+        />
 
         {lista.cargando ? (
           <EstadoCargando />

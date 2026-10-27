@@ -1,9 +1,11 @@
 /**
  * GUI-04 Mascotas Adoptante — listado de las mascotas del perfil activo (las personales, o
  * las del refugio desde la vista de refugio; ver `services/sesion.ts`) y acceso a la creación.
- * Editar y eliminar no viven acá: se hacen desde adentro de la ficha de cada mascota
- * (`mascotas/[id]/index.tsx`), para que la tarjeta quede chica y la baja no esté a un toque
- * de distancia mientras se navega la lista.
+ * Cada tarjeta lleva accesos directos como botones cuadrados, solo ícono: publicación, historia
+ * clínica y seguimiento. Publicación y seguimiento son excluyentes: una mascota adoptada
+ * siempre lleva el seguimiento (haya o no algo para subir hoy) y no se ofrece de nuevo, y una
+ * que no lo es se puede publicar si su estado lo permite. Editar y eliminar no viven acá: se hacen desde adentro de la ficha
+ * (`mascotas/[id]/index.tsx`), para que la baja no esté a un toque mientras se navega la lista.
  *
  * Solo en la vista de refugio, que suele tener muchas, hay un filtro por estado de la
  * mascota con selección múltiple ("Todos", o uno o varios estados). Vive detrás del ícono de
@@ -11,7 +13,7 @@
  */
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Link, useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { FlatList, Image, Pressable, RefreshControl, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -30,45 +32,66 @@ import { conRellenoDeFila, RELLENO } from '@/lib/grilla';
 import { urlAbsoluta } from '@/services/api';
 import { listarEstadosMascota } from '@/services/catalogos';
 import { listarMisMascotas, obtenerMascota, type Mascota } from '@/services/mascotas';
+import { listarMisSeguimientos, type SolicitudEnSeguimiento } from '@/services/seguimiento';
 
 /** Referencia estable para "sin filtro": un `[]` nuevo en cada render recrearía `cargar`. */
 const SIN_FILTRO: number[] = [];
 
-interface AccionTarjetaProps {
-  etiqueta: string;
-  accessibilityLabel: string;
+/** Los botones se miden contra tres columnas, aunque haya menos: así son siempre del mismo tamaño. */
+const ACCIONES_POR_FILA = 3;
+const SEPARACION_ACCIONES = 8;
+
+interface AccionDeTarjeta {
+  clave: string;
+  accesibilidad: string;
   icono: ReactNode;
-  claseFondo: string;
-  claseTexto: string;
   onPress: () => void;
 }
 
-/** Cuadradito de acción al pie de la tarjeta: ícono arriba y una palabra abajo. */
-function AccionTarjeta({
-  etiqueta,
-  accessibilityLabel,
-  icono,
-  claseFondo,
-  claseTexto,
-  onPress,
-}: AccionTarjetaProps) {
+/** Botón cuadrado de la tarjeta: solo ícono y borde marcado. */
+function AccionTarjeta({ accion, lado }: { accion: AccionDeTarjeta; lado: number }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      onPress={onPress}
-      className={`flex-1 items-center justify-center gap-1 rounded-2xl py-2.5 active:opacity-70 ${claseFondo}`}
+      accessibilityLabel={accion.accesibilidad}
+      onPress={accion.onPress}
+      className="items-center justify-center rounded-2xl border-[1.5px] border-organic-accent-600 bg-organic-calido-amarilloClaro active:opacity-70"
+      style={{ width: lado, height: lado }}
     >
-      {icono}
-      <Text numberOfLines={1} className={`font-cuerpo-semi text-[12.5px] ${claseTexto}`}>
-        {etiqueta}
-      </Text>
+      {accion.icono}
     </Pressable>
+  );
+}
+
+/** Las acciones en cuadrados parejos, alineados al pie de la tarjeta. */
+function AccionesTarjeta({ acciones }: { acciones: AccionDeTarjeta[] }) {
+  const [ancho, setAncho] = useState(0);
+  // La tarjeta es media pantalla y varía con el teléfono: se mide en vez de fijar un tamaño.
+  const lado = Math.floor(
+    (ancho - SEPARACION_ACCIONES * (ACCIONES_POR_FILA - 1)) / ACCIONES_POR_FILA,
+  );
+
+  return (
+    <View className="mt-auto px-1 pb-1 pt-3">
+      <View
+        onLayout={(evento) => setAncho(evento.nativeEvent.layout.width)}
+        className="flex-row"
+        style={{ gap: SEPARACION_ACCIONES }}
+      >
+        {ancho > 0
+          ? acciones.map((accion) => (
+              <AccionTarjeta key={accion.clave} accion={accion} lado={lado} />
+            ))
+          : null}
+      </View>
+    </View>
   );
 }
 
 interface TarjetaMascotaProps {
   mascota: Mascota;
+  /** Solo en una mascota adoptada (o en tránsito) con seguimiento. */
+  onVerSeguimiento?: () => void;
   onVer: () => void;
   onVerHistoriaClinica: () => void;
   onVerPublicacion: () => void;
@@ -76,6 +99,7 @@ interface TarjetaMascotaProps {
 
 function TarjetaMascota({
   mascota,
+  onVerSeguimiento,
   onVer,
   onVerHistoriaClinica,
   onVerPublicacion,
@@ -85,13 +109,49 @@ function TarjetaMascota({
   const edadTexto = etiquetaEdad(mascota.fechaNacimiento);
   const tamanio = etiquetaTamanio(mascota.tamanio);
 
+  // Publicación y seguimiento no van juntos: con seguimiento la mascota ya fue adoptada.
+  const acciones: AccionDeTarjeta[] = [
+    ...(mascota.habilitaPublicacion && !onVerSeguimiento
+      ? [
+          {
+            clave: 'publicacion',
+            accesibilidad: `Publicación de ${nombre}`,
+            icono: <Ionicons name="megaphone-outline" size={21} color={PALETA.accent[700]} />,
+            onPress: onVerPublicacion,
+          },
+        ]
+      : []),
+    {
+      clave: 'historia',
+      accesibilidad: `Historia clínica de ${nombre}`,
+      icono: (
+        <MaterialCommunityIcons
+          name="clipboard-pulse-outline"
+          size={22}
+          color={PALETA.accent[700]}
+        />
+      ),
+      onPress: onVerHistoriaClinica,
+    },
+    ...(onVerSeguimiento
+      ? [
+          {
+            clave: 'seguimiento',
+            accesibilidad: `Seguimiento de ${nombre}`,
+            icono: <Ionicons name="footsteps-outline" size={21} color={PALETA.accent[700]} />,
+            onPress: onVerSeguimiento,
+          },
+        ]
+      : []),
+  ];
+
   // Misma tarjeta que Favoritos (GUI-12), sin lo que allá dice de quién es la mascota, el
   // corazón ni el botón de solicitar: acá todas son del perfil activo.
   return (
     <View className="flex-1">
       {/* Foto, datos y acciones son Pressables hermanos, no uno dentro de otro: anidados,
           en web (React 19) disparan onPress apenas se montan, como documenta favoritos.tsx. */}
-      <View className="rounded-[22px] bg-organic-surface p-2 shadow-sm">
+      <View className="flex-1 rounded-[22px] bg-organic-surface p-2 shadow-sm">
         <View
           className="w-full overflow-hidden rounded-2xl bg-organic-neutral-200"
           style={{ aspectRatio: 1 }}
@@ -150,37 +210,16 @@ function TarjetaMascota({
 
           <View className="mt-2 flex-row items-center gap-1">
             <Ionicons name="paw-outline" size={13} color={PALETA.accent[600]} />
-            <Text numberOfLines={1} className="flex-1 font-cuerpo text-[12px] text-organic-neutral-600">
+            <Text
+              numberOfLines={1}
+              className="flex-1 font-cuerpo text-[12px] text-organic-neutral-600"
+            >
               {mascota.especie.nombre} · {mascota.raza.nombre}
             </Text>
           </View>
         </Pressable>
 
-        <View className="flex-row gap-2 px-1 pb-1 pt-3">
-          <AccionTarjeta
-            etiqueta="Historia"
-            accessibilityLabel={`Historia clínica de ${nombre}`}
-            icono={
-              <MaterialCommunityIcons
-                name="clipboard-pulse-outline"
-                size={20}
-                color={PALETA.accent[600]}
-              />
-            }
-            claseFondo="bg-organic-calido-amarilloClaro"
-            claseTexto="text-organic-accent-700"
-            onPress={onVerHistoriaClinica}
-          />
-
-          <AccionTarjeta
-            etiqueta="Publicación"
-            accessibilityLabel={`Publicación de ${nombre}`}
-            icono={<Ionicons name="megaphone-outline" size={19} color={PALETA.neutral[700]} />}
-            claseFondo="bg-organic-neutral-200"
-            claseTexto="text-organic-neutral-700"
-            onPress={onVerPublicacion}
-          />
-        </View>
+        <AccionesTarjeta acciones={acciones} />
       </View>
     </View>
   );
@@ -239,6 +278,9 @@ export default function MisMascotasScreen() {
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  /** Los seguimientos del perfil activo: de ahí sale a cuál llevar el acceso de cada tarjeta. */
+  const [seguimientos, setSeguimientos] = useState<SolicitudEnSeguimiento[]>([]);
+
   const [opcionesEstado, setOpcionesEstado] = useState<OpcionEstado[]>([]);
   const [estadosElegidos, setEstadosElegidos] = useState<number[]>([]);
   /** El filtro es solo del refugio: desde el perfil personal siempre se ve todo. */
@@ -267,6 +309,51 @@ export default function MisMascotasScreen() {
       }
     }
   }, [filtro]);
+
+  /**
+   * Mascota → solicitud cuyo seguimiento abrir. El refugio las tiene bajo su propia mascota; el
+   * adoptante, bajo la que quedó en su perfil al aprobarse la adopción (no es la misma). Si hay
+   * más de una, la que sigue en curso.
+   */
+  const seguimientoDe = useMemo(() => {
+    const porMascota = new Map<number, SolicitudEnSeguimiento>();
+
+    for (const item of seguimientos) {
+      const mascotaId = item.rol === 'ADOPTANTE' ? item.mascotaAdoptadaId : item.mascota.id;
+      if (mascotaId == null) continue;
+
+      const actual = porMascota.get(mascotaId);
+      const mejora =
+        !actual ||
+        (actual.finalizado && !item.finalizado) ||
+        (actual.finalizado === item.finalizado && item.solicitudId > actual.solicitudId);
+      if (mejora) porMascota.set(mascotaId, item);
+    }
+
+    return porMascota;
+  }, [seguimientos]);
+
+  /**
+   * El acceso está siempre en una mascota adoptada, haya o no algo para subir hoy. Si no se
+   * encuentra a qué adopción pertenece (se está cargando, o es una adoptada fuera de la app),
+   * se avisa en vez de dejar el toque sin respuesta.
+   */
+  const abrirSeguimiento = useCallback(
+    (mascota: Mascota): void => {
+      const seguimiento = seguimientoDe.get(mascota.id);
+
+      if (!seguimiento) {
+        toast.mostrarAdvertencia('Todavía no encontramos el seguimiento de esta adopción.');
+        return;
+      }
+
+      router.push({
+        pathname: '/seguimientos/[solicitudId]',
+        params: { solicitudId: seguimiento.solicitudId },
+      });
+    },
+    [router, seguimientoDe, toast],
+  );
 
   // Esta tab sigue montada al cambiar de vista: al volver al refugio arranca sin filtro, y el
   // catálogo se pide recién la primera vez que hace falta. Si falla, el filtro no se muestra
@@ -311,7 +398,9 @@ export default function MisMascotasScreen() {
         });
       } catch (err) {
         toast.mostrarError(
-          err instanceof Error ? err.message : 'No pudimos abrir la publicación. Intentalo de nuevo.',
+          err instanceof Error
+            ? err.message
+            : 'No pudimos abrir la publicación. Intentalo de nuevo.',
         );
       }
     },
@@ -323,6 +412,10 @@ export default function MisMascotasScreen() {
   useFocusEffect(
     useCallback(() => {
       void cargar();
+      // Aparte y sin frenar la lista: si falla, las tarjetas solo quedan sin ese acceso.
+      listarMisSeguimientos()
+        .then(setSeguimientos)
+        .catch(() => setSeguimientos([]));
     }, [cargar]),
   );
 
@@ -372,9 +465,12 @@ export default function MisMascotasScreen() {
               ) : (
                 <TarjetaMascota
                   mascota={item}
-                  onVer={() =>
-                    router.push({ pathname: '/mascotas/[id]', params: { id: item.id } })
+                  onVerSeguimiento={
+                    item.estado.nombre === 'Adoptado' || seguimientoDe.has(item.id)
+                      ? () => abrirSeguimiento(item)
+                      : undefined
                   }
+                  onVer={() => router.push({ pathname: '/mascotas/[id]', params: { id: item.id } })}
                   onVerPublicacion={() => void abrirPublicacion(item)}
                   onVerHistoriaClinica={() =>
                     router.push({

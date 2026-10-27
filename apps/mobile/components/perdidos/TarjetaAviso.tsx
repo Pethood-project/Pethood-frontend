@@ -1,9 +1,10 @@
 /**
  * Tarjeta de la grilla del portal de mascotas perdidas (GUI-06, pantalla 06 del diseño).
  *
- * Como en el diseño, muestra lo justo para reconocer al animal: foto con el estado encima,
- * nombre y "especie · hace cuánto". La descripción, el lugar y el botón para escribirle a
- * quien lo publicó van en el popup de detalle (pantalla 6b), que se abre al tocarla.
+ * Muestra lo justo para reconocer al animal: foto cuadrada con el estado encima, dentro de un
+ * marco rectangular, y abajo, como en una polaroid, el nombre y "especie · hace cuánto". La
+ * descripción, el lugar y el botón para escribirle a quien lo publicó van en el popup de
+ * detalle (pantalla 6b), que se abre al tocarla.
  *
  * En un aviso resuelto, debajo del subtítulo va "Volvió con su dueño" (HU-13.2): el badge de
  * la foto dice el estado y esta línea dice qué pasó, que es lo que pide la HU.
@@ -38,9 +39,12 @@ export function TarjetaAviso({ aviso, onPress }: TarjetaAvisoProps) {
       accessibilityRole="button"
       accessibilityLabel={`${nombre}, ${estiloDeEstadoAnimalPerdido(aviso.estado.nombre).etiqueta}. Ver el aviso`}
       onPress={onPress}
-      className="flex-1 overflow-hidden rounded-[20px] bg-organic-surface active:opacity-90"
+      className="flex-1 rounded-[22px] border border-organic-accent-800 bg-organic-surface p-2 shadow-sm active:opacity-90"
     >
-      <View className="w-full bg-organic-neutral-200" style={{ aspectRatio: 5 / 4 }}>
+      <View
+        className="w-full overflow-hidden rounded-2xl bg-organic-neutral-200"
+        style={{ aspectRatio: 1 }}
+      >
         {foto ? (
           <Image source={{ uri: foto }} className="h-full w-full" resizeMode="cover" />
         ) : (
@@ -54,8 +58,11 @@ export function TarjetaAviso({ aviso, onPress }: TarjetaAvisoProps) {
         </View>
       </View>
 
-      <View className="px-3 pb-3 pt-2.5">
-        <Text numberOfLines={1} className="font-cuerpo-bold text-[16px] text-organic-neutral-900">
+      <View className="px-1 pb-1 pt-3">
+        <Text
+          numberOfLines={1}
+          className="font-titulo text-[19px] leading-[23px] text-organic-neutral-900"
+        >
           {nombre}
         </Text>
         <Text numberOfLines={1} className="mt-0.5 font-cuerpo text-[13px] text-organic-neutral-600">

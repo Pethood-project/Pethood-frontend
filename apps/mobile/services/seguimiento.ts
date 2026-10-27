@@ -67,6 +67,11 @@ export interface SolicitudEnSeguimiento {
   tipo: TipoSeguimiento;
   rol: RolSeguimiento;
   mascota: MascotaSeguimiento;
+  /**
+   * La mascota que quedó en el perfil del adoptante al aprobarse la adopción (no es la de
+   * `mascota`, que es la del refugio). Un backend anterior no la manda.
+   */
+  mascotaAdoptadaId?: number | null;
   adoptante: AdoptanteSeguimiento;
   totales: { completados: number; vencidos: number; pendientes: number };
   /** El pedido que se puede responder ahora, o `null` si no hay ninguno. */

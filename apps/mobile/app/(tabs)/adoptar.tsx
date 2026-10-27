@@ -26,11 +26,9 @@ import {
   EstadoVacio,
 } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
-import { BarraBusqueda } from '@/components/ui/BarraBusqueda';
 import { BotonCircular } from '@/components/ui/BotonCircular';
 import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
 import { PALETA } from '@/constants/theme';
-import { useDebounce } from '@/hooks/useDebounce';
 import { useSesion } from '@/hooks/useSesion';
 import { ApiError } from '@/services/api';
 import { agregarFavorito } from '@/services/favoritos';
@@ -42,7 +40,6 @@ import {
   type FiltrosAdopcion,
   type PublicacionFeed,
 } from '@/services/publicaciones';
-import { LIMITES } from '@/shared/validation/limits';
 
 /** Con menos tarjetas que esto en el mazo se pide la página siguiente. */
 const UMBRAL_PRECARGA = 4;
@@ -65,7 +62,6 @@ function MazoAdopcion() {
   const [publicaciones, setPublicaciones] = useState<PublicacionFeed[]>([]);
   const [total, setTotal] = useState(0);
   const [filtros, setFiltros] = useState<FiltrosAdopcion>(SIN_FILTROS);
-  const [busqueda, setBusqueda] = useState('');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalFiltros, setModalFiltros] = useState(false);
@@ -78,18 +74,6 @@ function MazoAdopcion() {
     setModalFiltros(true);
     router.setParams({ filtros: undefined });
   }, [pedidoFiltros, router]);
-
-  // La barra de búsqueda filtra por texto libre (HU-11.4). Se debouncea para no pedir el
-  // feed en cada tecla; vaciar el campo es inmediato.
-  const busquedaDebounced = useDebounce(busqueda, 350, (valor) => valor.trim() === '');
-
-  useEffect(() => {
-    setFiltros((actual) => {
-      const texto = busquedaDebounced.trim() || undefined;
-      if (actual.texto === texto) return actual;
-      return { ...actual, texto };
-    });
-  }, [busquedaDebounced]);
 
   /**
    * Cuántas tarjetas descartó el usuario en esta sesión de la pantalla.
@@ -245,20 +229,6 @@ function MazoAdopcion() {
           }
         />
 
-        {/* Barra de búsqueda por texto libre (HU-11.4). Visible también en el estado vacío,
-            para que se pueda corregir la búsqueda sin salir de la pantalla. */}
-        {!cargando ? (
-          <View className="px-[22px] pb-3.5">
-            <BarraBusqueda
-              placeholder="Buscar por nombre, descripción o rasgo"
-              valor={busqueda}
-              onCambiar={setBusqueda}
-              onLimpiar={() => setBusqueda('')}
-              maxLength={LIMITES.publicacion.busqueda.max}
-            />
-          </View>
-        ) : null}
-
         {cargando ? (
           <EstadoCargando />
         ) : error ? (
@@ -283,10 +253,7 @@ function MazoAdopcion() {
                 <CustomButton
                   title="Quitar todos los filtros"
                   variant="acento-borde"
-                  onPress={() => {
-                    setBusqueda('');
-                    setFiltros(SIN_FILTROS);
-                  }}
+                  onPress={() => setFiltros(SIN_FILTROS)}
                 />
               </>
             ) : null}

@@ -32,6 +32,8 @@ export interface OpcionHoja {
   etiqueta: string;
   /** Sin esto la opción se ve igual pero no responde. */
   onPress?: () => void;
+  /** Para cuando la hoja es un selector: la opción vigente lleva borde y una tilde. */
+  activa?: boolean;
 }
 
 interface HojaOpcionesProps {
@@ -59,13 +61,21 @@ function Opcion({ opcion }: { opcion: OpcionHoja }) {
         <Ionicons name={opcion.icono} size={19} color={PALETA.accent[700]} />
       </View>
 
-      <Text className="font-cuerpo-semi text-[14px] text-organic-neutral-900">
+      <Text className="flex-1 font-cuerpo-semi text-[14px] text-organic-neutral-900">
         {opcion.etiqueta}
       </Text>
+
+      {opcion.activa ? (
+        <Ionicons name="checkmark-circle" size={20} color={PALETA.accent[600]} />
+      ) : null}
     </>
   );
 
-  const clases = 'flex-row items-center gap-3 rounded-[17px] bg-organic-bg px-[13px] py-3';
+  const clases = `flex-row items-center gap-3 rounded-[17px] border-[1.5px] px-[13px] py-3 ${
+    opcion.activa
+      ? 'border-organic-accent-600 bg-organic-accent-100'
+      : 'border-transparent bg-organic-bg'
+  }`;
 
   if (!opcion.onPress) {
     return (
@@ -92,7 +102,13 @@ function Opcion({ opcion }: { opcion: OpcionHoja }) {
   );
 }
 
-export function HojaOpciones({ visible, titulo, subtitulo, opciones, onCerrar }: HojaOpcionesProps) {
+export function HojaOpciones({
+  visible,
+  titulo,
+  subtitulo,
+  opciones,
+  onCerrar,
+}: HojaOpcionesProps) {
   return (
     <Modal
       visible={visible}

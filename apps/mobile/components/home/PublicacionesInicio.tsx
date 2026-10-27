@@ -74,7 +74,7 @@ export function PublicacionesInicio({ publicaciones, error }: PublicacionesInici
           accessibilityRole="button"
           accessibilityLabel="Nueva publicación"
           onPress={() => router.push('/publicaciones/crear')}
-          className="h-[166px] w-[104px] items-center justify-center gap-2 rounded-[22px] active:opacity-80"
+          className="h-[170px] w-[104px] items-center justify-center gap-2 rounded-[22px] active:opacity-80"
           style={{
             backgroundColor: PALETA.bg,
             borderWidth: 2,
@@ -97,7 +97,7 @@ export function PublicacionesInicio({ publicaciones, error }: PublicacionesInici
         </Pressable>
 
         {publicaciones && publicaciones.length === 0 ? (
-          <View className="h-[166px] w-[200px] justify-center">
+          <View className="h-[170px] w-[200px] justify-center">
             <Text className="font-cuerpo text-[13px] leading-[18px]" style={{ color: PALETA.neutral[700] }}>
               Publicá una mascota para que la vean los adoptantes.
             </Text>
@@ -123,12 +123,17 @@ function TarjetaPublicacion({ publicacion }: { publicacion: PublicacionPropia })
       accessibilityRole="button"
       accessibilityLabel={`${nombre}, publicación ${estiloDeEstadoPublicacion(publicacion.estado.nombre).etiqueta}`}
       onPress={() => router.push({ pathname: '/publicaciones/[id]', params: { id: publicacion.id } })}
-      // Cada tarjeta lleva su propio borde: sin él, las fotos claras se pierden en el fondo.
-      className="w-[124px] rounded-[22px] p-1.5 active:opacity-85"
-      style={{ backgroundColor: PALETA.bg, borderWidth: 2, borderColor: PALETA.accent[400] }}
+      // Cada tarjeta lleva su propio fondo y borde: sin ellos, las fotos claras se pierden en el
+      // de la sección. El relleno es parejo para que la foto quede centrada.
+      className="w-[128px] rounded-[22px] p-2 active:opacity-85"
+      style={{
+        backgroundColor: PALETA.blanco,
+        borderWidth: 1.5,
+        borderColor: PALETA.neutral[400],
+      }}
     >
       <View
-        className="h-[104px] w-[112px] overflow-hidden rounded-[16px]"
+        className="h-[104px] w-full overflow-hidden rounded-[16px]"
         style={{ backgroundColor: PALETA.neutral[200] }}
       >
         {foto ? (
@@ -141,12 +146,12 @@ function TarjetaPublicacion({ publicacion }: { publicacion: PublicacionPropia })
       </View>
       <Text
         numberOfLines={1}
-        className="mt-[7px] font-titulo text-[14.5px] leading-[18px]"
+        className="mt-[7px] px-0.5 font-titulo text-[14.5px] leading-[18px]"
         style={{ color: PALETA.accent[900] }}
       >
         {nombre}
       </Text>
-      <View className="mt-[3px] self-start rounded-full px-2 py-0.5" style={{ backgroundColor: pastilla.fondo }}>
+      <View className="ml-0.5 mt-[3px] self-start rounded-full px-2 py-0.5" style={{ backgroundColor: pastilla.fondo }}>
         <Text numberOfLines={1} className="font-cuerpo-bold text-[11px]" style={{ color: pastilla.tinta }}>
           {estiloDeEstadoPublicacion(publicacion.estado.nombre).etiqueta}
         </Text>

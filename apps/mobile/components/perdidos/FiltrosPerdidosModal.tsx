@@ -125,7 +125,7 @@ interface Opciones {
 function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
     <View className="mb-7">
-      <Text className="mb-3 font-cuerpo-bold text-[14px] uppercase tracking-[1px] text-organic-neutral-800">
+      <Text className="mb-2.5 font-cuerpo-bold text-[13px] uppercase tracking-[1px] text-organic-neutral-800">
         {titulo}
       </Text>
       {children}
@@ -136,7 +136,7 @@ function Seccion({ titulo, children }: { titulo: string; children: ReactNode }) 
 function Ayuda({ texto, advertencia = false }: { texto: string; advertencia?: boolean }) {
   return (
     <Text
-      className={`mt-3 font-cuerpo text-[15px] leading-[21px] ${
+      className={`mt-2.5 font-cuerpo text-[13px] leading-[18px] ${
         advertencia ? 'text-organic-accent-700' : 'text-organic-neutral-600'
       }`}
     >
@@ -353,7 +353,6 @@ export function FiltrosPerdidosModal({
                   valores={borrador.estados}
                   onChange={(estados) => setBorrador({ ...borrador, estados })}
                   variante="filtro"
-                  amplio
                 />
                 <Ayuda texto="Podés elegir más de un estado." />
               </Seccion>
@@ -366,7 +365,6 @@ export function FiltrosPerdidosModal({
                   valores={borrador.especies}
                   onChange={(especies) => setBorrador({ ...borrador, especies })}
                   variante="filtro"
-                  amplio
                 />
               </Seccion>
 
@@ -382,7 +380,6 @@ export function FiltrosPerdidosModal({
                           onChange={elegirProvincias}
                           etiquetaTodas="Todas"
                           textoVarias={enPluralSeleccionadas}
-                          grande
                         />
                       </FormCardRow>
                       <FormCardRow ultima>
@@ -395,7 +392,6 @@ export function FiltrosPerdidosModal({
                           textoVarias={enPluralSeleccionadas}
                           maximo={MAXIMO_LOCALIDADES}
                           buscable
-                          grande
                         />
                       </FormCardRow>
                     </FormCard>
@@ -414,12 +410,11 @@ export function FiltrosPerdidosModal({
                   valor={borrador.radioKm}
                   onChange={(radioKm) => void elegirRadio(radioKm)}
                   variante="filtro"
-                  amplio
                 />
                 {buscandoUbicacion ? (
                   <View className="mt-3 flex-row items-center gap-2">
                     <ActivityIndicator size="small" color={PALETA.accent[600]} />
-                    <Text className="font-cuerpo text-[15px] text-organic-neutral-600">
+                    <Text className="font-cuerpo text-[13px] text-organic-neutral-600">
                       Buscando tu ubicación…
                     </Text>
                   </View>
@@ -435,7 +430,7 @@ export function FiltrosPerdidosModal({
                     hitSlop={8}
                     className="mt-2 self-start active:opacity-60"
                   >
-                    <Text className="font-cuerpo-semi text-[15px] text-organic-accent-700">
+                    <Text className="font-cuerpo-semi text-[13px] text-organic-accent-700">
                       Actualizar mi ubicación
                     </Text>
                   </Pressable>
@@ -453,7 +448,6 @@ export function FiltrosPerdidosModal({
                       fechaMaxima={borrador.fechaHasta ?? new Date()}
                       mostrarEdad={false}
                       error={errorFecha}
-                      grande
                     />
                   </FormCardRow>
                   <FormCardRow ultima>
@@ -465,7 +459,6 @@ export function FiltrosPerdidosModal({
                       fechaMinima={borrador.fechaDesde}
                       fechaMaxima={new Date()}
                       mostrarEdad={false}
-                      grande
                     />
                   </FormCardRow>
                 </FormCard>

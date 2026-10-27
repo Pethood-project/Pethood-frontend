@@ -32,9 +32,9 @@ import type { Conversacion, TipoMensaje } from '@/services/chats';
 import { tiempoRelativo } from '@/shared/validation/dates';
 
 /** Lado del avatar en la fila. El diseño lo da en 42px sobre una maqueta de 262px de ancho. */
-const AVATAR = 56;
+const AVATAR = 46;
 /** Iniciales del avatar: 13px en el artboard. */
-const AVATAR_TEXTO = 17;
+const AVATAR_TEXTO = 15;
 
 /**
  * Lo que dice la fila cuando lo último de la sala es una tarjeta: no tiene texto propio, así
@@ -142,7 +142,7 @@ export function FilaConversacion({
       onLongPress={onMantener}
       delayLongPress={400}
       disabled={!onPress && !onMantener}
-      className={`flex-row items-center gap-[13px] px-[21px] py-[15px] ${
+      className={`flex-row items-center gap-[11px] px-[18px] py-[8px] ${
         onPress ? 'active:bg-black/5' : ''
       }`}
     >

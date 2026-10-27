@@ -1,9 +1,4 @@
-import {
-  ActivityIndicator,
-  Pressable,
-  Text,
-  type PressableProps,
-} from 'react-native';
+import { ActivityIndicator, Pressable, Text, type PressableProps } from 'react-native';
 
 import { PALETA } from '@/constants/theme';
 
@@ -12,7 +7,8 @@ import { PALETA } from '@/constants/theme';
  * `acento`/`neutro` son del rediseño Organic (solicitud, carteles): mismo componente,
  * distinta paleta, para no tener dos botones que se comporten diferente.
  */
-export type VarianteBoton = 'primary' | 'secondary' | 'acento' | 'acento-borde' | 'neutro';
+export type VarianteBoton =
+  'primary' | 'secondary' | 'acento' | 'acento-borde' | 'neutro' | 'amarillo';
 
 /** Clases de fondo/borde y de texto por variante. */
 const VARIANTES: Record<VarianteBoton, { contenedor: string; texto: string; spinner: string }> = {
@@ -40,6 +36,14 @@ const VARIANTES: Record<VarianteBoton, { contenedor: string; texto: string; spin
     contenedor: 'border border-organic-neutral-300 bg-organic-surface active:opacity-80',
     texto: 'text-organic-neutral-700',
     spinner: PALETA.neutral[700],
+  },
+  // El amarillo de la marca con borde y texto en el marrón oscuro: la acción principal de los
+  // formularios del refugio.
+  amarillo: {
+    contenedor:
+      'border-[1.5px] border-organic-accent-800 bg-organic-calido-amarillo active:opacity-90',
+    texto: 'text-organic-accent-900',
+    spinner: PALETA.accent[900],
   },
 };
 

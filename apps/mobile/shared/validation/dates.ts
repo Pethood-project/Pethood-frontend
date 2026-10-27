@@ -71,7 +71,7 @@ export function edadEnTexto(fechaNacimiento: Date, hoy: Date = new Date()): stri
     (hoy.getMonth() - fechaNacimiento.getMonth()) -
     (hoy.getDate() < fechaNacimiento.getDate() ? 1 : 0);
 
-  if (meses < 1) return 'Recién nacido';
+  if (meses < 1) return 'Bebé';
   if (meses < 12) return `${meses} ${meses === 1 ? 'mes' : 'meses'}`;
 
   const anios = Math.floor(meses / 12);

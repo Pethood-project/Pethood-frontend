@@ -13,6 +13,7 @@ import { CustomButton } from '@/components/CustomButton';
 import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantalla';
 import { useToast } from '@/components/feedback/Toast';
 import { EncabezadoPantalla } from '@/components/ui/EncabezadoPantalla';
+import { FormCard, FormCardRow } from '@/components/ui/FormCard';
 import { FormularioConTeclado } from '@/components/ui/FormularioConTeclado';
 import { SegmentedField } from '@/components/ui/SegmentedField';
 import { TagInputField } from '@/components/ui/TagInputField';
@@ -90,7 +91,8 @@ export default function FormularioPreguntaScreen() {
     void cargar();
   }, [cargar]);
 
-  const volver = (): void => (router.canGoBack() ? router.back() : router.replace('/preguntas-adopcion' as Href));
+  const volver = (): void =>
+    router.canGoBack() ? router.back() : router.replace('/preguntas-adopcion' as Href);
 
   const validar = (): Errores => {
     const problemas: Errores = {};
@@ -171,69 +173,85 @@ export default function FormularioPreguntaScreen() {
           />
         ) : (
           <FormularioConTeclado contentContainerClassName="gap-4 px-4 pb-10 pt-3">
-            <TextAreaField
-              label="Pregunta"
-              placeholder="Por ejemplo: ¿Qué harías si el perro se escapa?"
-              value={texto}
-              onChangeText={(valor) => {
-                setTexto(valor);
-                setErrores((previos) => ({ ...previos, texto: undefined }));
-              }}
-              maximo={LIMITES.preguntaAdopcion.texto.max}
-              obligatorio
-              error={errores.texto}
-              variante="pregunta"
-              editable={!guardando}
-            />
+            {/* La tarjeta Organic le da a todos los campos la paleta del rediseño; sin ella
+                caen en la clásica, con el naranja viejo. */}
+            <FormCard organic>
+              <FormCardRow>
+                <TextAreaField
+                  label="Pregunta"
+                  placeholder="Por ejemplo: ¿Qué harías si el perro se escapa?"
+                  value={texto}
+                  onChangeText={(valor) => {
+                    setTexto(valor);
+                    setErrores((previos) => ({ ...previos, texto: undefined }));
+                  }}
+                  maximo={LIMITES.preguntaAdopcion.texto.max}
+                  obligatorio
+                  error={errores.texto}
+                  editable={!guardando}
+                  grande
+                />
+              </FormCardRow>
 
-            <SegmentedField
-              label="¿Cómo se responde?"
-              opciones={OPCIONES_TIPO_PREGUNTA}
-              valor={tipo}
-              onChange={(valor) => {
-                setTipo(valor);
-                setErrores((previos) => ({ ...previos, opciones: undefined }));
-              }}
-              varianteCampo="pregunta"
-            />
+              <FormCardRow>
+                <SegmentedField
+                  label="¿Cómo se responde?"
+                  opciones={OPCIONES_TIPO_PREGUNTA}
+                  valor={tipo}
+                  onChange={(valor) => {
+                    setTipo(valor);
+                    setErrores((previos) => ({ ...previos, opciones: undefined }));
+                  }}
+                  variante="amarilla"
+                  grande
+                />
+              </FormCardRow>
 
-            {tipo === 'OPCIONES' ? (
-              <TagInputField
-                label="Opciones"
-                placeholder="Escribí una opción"
-                etiquetas={opciones}
-                onChange={(valor) => {
-                  setOpciones(valor);
-                  setErrores((previos) => ({ ...previos, opciones: undefined }));
-                }}
-                maximoPorEtiqueta={LIMITES.preguntaAdopcion.opciones.largo}
-                nombreEtiqueta="Cada opción"
-                mensajeRepetida="Esa opción ya está en la lista"
-                error={errores.opciones}
-              />
-            ) : null}
+              {tipo === 'OPCIONES' ? (
+                <FormCardRow>
+                  <TagInputField
+                    label="Opciones"
+                    placeholder="Escribí una opción"
+                    etiquetas={opciones}
+                    onChange={(valor) => {
+                      setOpciones(valor);
+                      setErrores((previos) => ({ ...previos, opciones: undefined }));
+                    }}
+                    maximoPorEtiqueta={LIMITES.preguntaAdopcion.opciones.largo}
+                    nombreEtiqueta="Cada opción"
+                    mensajeRepetida="Esa opción ya está en la lista"
+                    error={errores.opciones}
+                    grande
+                  />
+                </FormCardRow>
+              ) : null}
 
-            <ToggleField
-              label="Es obligatoria"
-              valor={obligatoria}
-              onChange={setObligatoria}
-              variante="caja"
-              grande
-            />
+              <FormCardRow ultima={especies.length === 0}>
+                <ToggleField
+                  label="Es obligatoria"
+                  valor={obligatoria}
+                  onChange={setObligatoria}
+                  grande
+                />
+              </FormCardRow>
 
-            {especies.length > 0 ? (
-              <SegmentedField
-                label="¿Para qué mascotas?"
-                opciones={opcionesAlcance}
-                valor={especieId}
-                onChange={setEspecieId}
-                varianteCampo="pregunta"
-              />
-            ) : null}
+              {especies.length > 0 ? (
+                <FormCardRow ultima>
+                  <SegmentedField
+                    label="¿Para qué mascotas?"
+                    opciones={opcionesAlcance}
+                    valor={especieId}
+                    onChange={setEspecieId}
+                    variante="amarilla"
+                    grande
+                  />
+                </FormCardRow>
+              ) : null}
+            </FormCard>
 
             <CustomButton
               title={preguntaId === null ? 'Agregar pregunta' : 'Guardar cambios'}
-              variant="acento"
+              variant="amarillo"
               loading={guardando}
               onPress={() => void guardar()}
             />

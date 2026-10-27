@@ -18,10 +18,13 @@ type NombreIcono = keyof typeof Ionicons.glyphMap;
  */
 type VarianteBoton = 'organic' | 'neutro' | 'clasico';
 
-/** Amarillo de la marca con borde e ícono en el marrón oscuro: el botón de acción del rediseño. */
+/**
+ * Amarillo suave y marrón claro —los mismos de los íconos del menú del perfil—: el botón de
+ * acción del rediseño.
+ */
 const ESTILO_ORGANIC = {
-  backgroundColor: PALETA.tabCentral.amarillo,
-  borderColor: PALETA.accent[800],
+  backgroundColor: PALETA.calido.amarilloClaro,
+  borderColor: PALETA.accent[500],
   borderWidth: 1.5,
 };
 
@@ -31,7 +34,7 @@ const VARIANTES: Record<
 > = {
   organic: {
     contenedor: 'h-[42px] w-[42px]',
-    color: PALETA.accent[800],
+    color: PALETA.accent[600],
     tamanoIcono: 20,
     estilo: ESTILO_ORGANIC,
   },
@@ -54,7 +57,7 @@ const VARIANTES_GRANDE: Record<
 > = {
   organic: {
     contenedor: 'h-[50px] w-[50px]',
-    color: PALETA.accent[800],
+    color: PALETA.accent[600],
     tamanoIcono: 24,
     estilo: ESTILO_ORGANIC,
   },
@@ -99,9 +102,9 @@ export function BotonCircular({
       {contador ? (
         <View
           className="absolute -right-0.5 -top-0.5 h-[18px] min-w-[18px] items-center justify-center rounded-full px-1"
-          style={{ backgroundColor: PALETA.accent[800] }}
+          style={{ backgroundColor: PALETA.accent[600] }}
         >
-          <Text className="font-cuerpo-bold text-[10px]" style={{ color: PALETA.tabCentral.amarillo }}>
+          <Text className="font-cuerpo-bold text-[10px]" style={{ color: PALETA.calido.amarilloClaro }}>
             {contador}
           </Text>
         </View>

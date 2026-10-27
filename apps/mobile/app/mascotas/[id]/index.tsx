@@ -18,7 +18,6 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { GaleriaFotos } from '@/components/adoptar/GaleriaFotos';
 import { EstadoCargando, EstadoError } from '@/components/feedback/EstadosPantalla';
-import { useToast } from '@/components/feedback/Toast';
 import {
   CajaDescripcion,
   CuadranteSalud,
@@ -29,20 +28,19 @@ import {
   Subtitulo,
   TarjetaFicha,
 } from '@/components/publicaciones/FichaPublicacion';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { EstadoMascotaBadge } from '@/components/ui/EstadoMascotaBadge';
 import { PressableAnimado } from '@/components/ui/PressableAnimado';
 import { VacunasMascota } from '@/components/vacunas/VacunasMascota';
 import { BotonVolver } from '@/components/ui/BotonVolver';
 import { PALETA } from '@/constants/theme';
+import { useBajaMascota } from '@/hooks/useBajaMascota';
 import { useSesion } from '@/hooks/useSesion';
 import { ApiError } from '@/services/api';
-import { eliminarMascota, obtenerMascota, type FichaMascota } from '@/services/mascotas';
+import { obtenerMascota, type FichaMascota } from '@/services/mascotas';
 
 export default function FichaMascotaScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const toast = useToast();
   const insets = useSafeAreaInsets();
   const { usuario } = useSesion();
 
@@ -51,11 +49,6 @@ export default function FichaMascotaScreen() {
   const [mascota, setMascota] = useState<FichaMascota | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [confirmarEliminar, setConfirmarEliminar] = useState(false);
-  const [eliminando, setEliminando] = useState(false);
-  /** Mensaje del 409: la baja quedó bloqueada por solicitudes sin responder. */
-  const [bloqueo, setBloqueo] = useState<string | null>(null);
 
   const cargar = useCallback(async (): Promise<void> => {
     if (!Number.isInteger(mascotaId) || mascotaId <= 0) {
@@ -89,40 +82,7 @@ export default function FichaMascotaScreen() {
 
   const esPropia = mascota !== null && mascota.usuarioId === usuario?.id;
 
-  const confirmarBaja = async (): Promise<void> => {
-    if (!mascota) return;
-
-    const nombre = mascota.nombre ?? 'La mascota';
-    setEliminando(true);
-
-    try {
-      const resultado = await eliminarMascota(mascota.id);
-      setConfirmarEliminar(false);
-
-      toast.mostrarExito(
-        resultado.publicacionesDadasDeBaja > 0
-          ? `Eliminamos a ${nombre} y retiramos su publicación en adopción.`
-          : `Eliminamos a ${nombre} de tus mascotas.`,
-      );
-
-      router.back();
-    } catch (err) {
-      setConfirmarEliminar(false);
-
-      // El 409 no es un error del usuario sino un bloqueo con salida: se explica en un
-      // diálogo aparte en vez de un toast rojo (mismo criterio que mis-mascotas.tsx).
-      if (err instanceof ApiError && err.codigo === 'SOLICITUDES_ABIERTAS') {
-        setBloqueo(err.message);
-        return;
-      }
-
-      toast.mostrarError(
-        err instanceof Error ? err.message : 'No pudimos eliminar la mascota. Intentalo de nuevo.',
-      );
-    } finally {
-      setEliminando(false);
-    }
-  };
+  const { pedirBaja, dialogos } = useBajaMascota(() => router.back());
 
   if (cargando) {
     return (
@@ -241,6 +201,29 @@ export default function FichaMascotaScreen() {
               </PressableAnimado>
             ) : null}
 
+            {/* Una mascota que se puede ofrecer y todavía no está publicada lleva directo al
+                formulario de la publicación en adopción; si ya la tiene, el botón de abajo
+                lleva a ella. */}
+            {mascota.publicacionActivaId === null && mascota.habilitaPublicacion ? (
+              <PressableAnimado
+                accessibilityRole="button"
+                accessibilityLabel={`Publicar a ${mascota.nombre ?? 'esta mascota'} para adopción`}
+                onPress={() =>
+                  router.push({
+                    pathname: '/publicaciones/crear',
+                    params: { mascotaId: String(mascota.id), origen: 'publicaciones' },
+                  })
+                }
+                escala={0.97}
+                className="flex-row items-center justify-center gap-2 rounded-2xl border-[1.5px] border-organic-accent-800 bg-organic-calido-amarillo py-4"
+              >
+                <Ionicons name="megaphone" size={20} color={PALETA.accent[900]} />
+                <Text className="font-cuerpo-semi text-lg text-organic-accent-900">
+                  Publicar para adopción
+                </Text>
+              </PressableAnimado>
+            ) : null}
+
             {mascota.publicacionActivaId !== null ? (
               <PressableAnimado
                 accessibilityRole="button"
@@ -265,7 +248,7 @@ export default function FichaMascotaScreen() {
               <PressableAnimado
                 accessibilityRole="button"
                 accessibilityLabel={`Eliminar ${mascota.nombre ?? 'esta mascota'}`}
-                onPress={() => setConfirmarEliminar(true)}
+                onPress={() => pedirBaja(mascota)}
                 escala={0.98}
                 className="items-center py-3"
               >
@@ -292,32 +275,7 @@ export default function FichaMascotaScreen() {
         }}
       />
 
-      <ConfirmDialog
-        visible={confirmarEliminar}
-        tono="peligro"
-        titulo={`¿Eliminar a ${mascota.nombre ?? 'esta mascota'}?`}
-        mensaje="Se va a retirar de la plataforma junto con su publicación en adopción, si tiene una."
-        detalle="Esta acción no se puede deshacer desde la app."
-        textoConfirmar="Eliminar"
-        cargando={eliminando}
-        onConfirmar={() => void confirmarBaja()}
-        onCerrar={() => setConfirmarEliminar(false)}
-      />
-
-      <ConfirmDialog
-        visible={bloqueo !== null}
-        tono="advertencia"
-        titulo="No se puede eliminar todavía"
-        mensaje={bloqueo ?? ''}
-        detalle="Resolvélas desde la bandeja de solicitudes para poder eliminarla."
-        textoConfirmar="Ver solicitudes"
-        textoCancelar="Entendido"
-        onConfirmar={() => {
-          setBloqueo(null);
-          router.push('/solicitudes');
-        }}
-        onCerrar={() => setBloqueo(null)}
-      />
+      {dialogos}
     </View>
   );
 }

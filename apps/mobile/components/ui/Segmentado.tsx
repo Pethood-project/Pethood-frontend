@@ -26,7 +26,9 @@ export type VarianteSegmentado =
    * Riel de la paleta Organic: fondo crema y la opción elegida en `accent-700`. Es el
    * "Perdida / Encontrada" de GUI-25 (pantalla 26 del diseño).
    */
-  | 'organica';
+  | 'organica'
+  /** Como `organica`, pero la opción elegida va en amarillo con borde y texto marrón oscuro. */
+  | 'amarilla';
 
 const CLASES_RIEL: Record<VarianteSegmentado, { riel: string; opcion: string }> = {
   riel: {
@@ -42,6 +44,10 @@ const CLASES_RIEL: Record<VarianteSegmentado, { riel: string; opcion: string }> 
     riel: 'flex-row gap-1 rounded-[20px] border p-1',
     opcion: 'flex-1 items-center rounded-2xl py-3 active:opacity-80',
   },
+  amarilla: {
+    riel: 'flex-row gap-1 rounded-[20px] border p-1',
+    opcion: 'flex-1 items-center rounded-2xl border-[1.5px] py-3 active:opacity-80',
+  },
 };
 
 /** Fondo del riel y colores de cada opción, según la variante y si está elegida. */
@@ -53,6 +59,20 @@ function colores(variante: VarianteSegmentado, activa: boolean, conError: boolea
         : 'border-organic-neutral-200 bg-organic-neutral-200',
       opcion: activa ? 'bg-organic-accent-700' : '',
       texto: activa ? 'font-cuerpo-bold text-white' : 'font-cuerpo-semi text-organic-neutral-700',
+    };
+  }
+
+  if (variante === 'amarilla') {
+    return {
+      riel: conError
+        ? 'border-red-300 bg-red-50'
+        : 'border-organic-neutral-200 bg-organic-neutral-200',
+      opcion: activa
+        ? 'border-organic-accent-800 bg-organic-calido-amarillo'
+        : 'border-transparent',
+      texto: activa
+        ? 'font-cuerpo-bold text-organic-accent-900'
+        : 'font-cuerpo-semi text-organic-neutral-700',
     };
   }
 

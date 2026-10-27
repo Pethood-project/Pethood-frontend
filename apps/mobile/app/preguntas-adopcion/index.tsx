@@ -228,7 +228,7 @@ export default function PreguntasAdopcionScreen() {
             titulo="Todavía no hiciste ninguna pregunta"
             descripcion="Sumá lo que te ayude a conocer a quien quiere adoptar. Aparecen al final del formulario de solicitud."
           >
-            <CustomButton title="Agregar pregunta" variant="acento" onPress={() => irAlFormulario('nueva')} />
+            <CustomButton title="Agregar pregunta" variant="amarillo" onPress={() => irAlFormulario('nueva')} />
           </EstadoVacio>
         ) : (
           <ScrollView contentContainerClassName="px-4 pb-10 pt-3" showsVerticalScrollIndicator={false}>
@@ -257,7 +257,7 @@ export default function PreguntasAdopcionScreen() {
             <View className="mt-5">
               <CustomButton
                 title={completas ? 'Ya tenés el máximo de preguntas activas' : 'Agregar pregunta'}
-                variant="acento"
+                variant="amarillo"
                 disabled={completas}
                 onPress={() => irAlFormulario('nueva')}
               />

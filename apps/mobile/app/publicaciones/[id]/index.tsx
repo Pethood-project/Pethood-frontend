@@ -417,6 +417,13 @@ export default function FichaPublicacionScreen() {
             id={publicacion.refugio.id}
             titulo="Reseñas del refugio"
             mostrarLista
+            limiteInicial={3}
+            onVerMas={() =>
+              router.push({
+                pathname: '/resenas',
+                params: { tipo: 'refugio', id: String(publicacion.refugio!.id) },
+              })
+            }
             className="mx-3 mt-5"
           />
         ) : null}

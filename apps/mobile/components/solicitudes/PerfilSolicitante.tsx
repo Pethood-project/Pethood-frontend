@@ -26,6 +26,8 @@ interface PerfilSolicitanteProps {
 
 export function PerfilSolicitante({ solicitante, fechaSolicitud }: PerfilSolicitanteProps) {
   const router = useRouter();
+  const irAlPerfil = (): void =>
+    router.push({ pathname: '/perfiles/usuario/[id]', params: { id: solicitante.id } });
   const miembroDesde = parsearFecha(solicitante.miembroDesde);
   const solicito = parsearFecha(fechaSolicitud);
   const ubicacion = etiquetaUbicacion({
@@ -75,9 +77,7 @@ export function PerfilSolicitante({ solicitante, fechaSolicitud }: PerfilSolicit
 
         <Pressable
           accessibilityRole="button"
-          onPress={() =>
-            router.push({ pathname: '/perfiles/usuario/[id]', params: { id: solicitante.id } })
-          }
+          onPress={irAlPerfil}
           className="mt-3.5 flex-row items-center gap-1 self-start active:opacity-60"
         >
           <Text className="font-cuerpo-semi text-[14px] text-organic-accent-700">
@@ -92,7 +92,8 @@ export function PerfilSolicitante({ solicitante, fechaSolicitud }: PerfilSolicit
         tipo="usuario"
         id={solicitante.id}
         mostrarLista
-        limiteLista={RESENAS_VISIBLES}
+        limiteInicial={RESENAS_VISIBLES}
+        onVerMas={irAlPerfil}
         className="mt-2.5"
       />
     </View>

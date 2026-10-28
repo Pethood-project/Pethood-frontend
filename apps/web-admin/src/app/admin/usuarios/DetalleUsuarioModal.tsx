@@ -14,6 +14,7 @@ import {
 import { EstadoBadge } from "@/components/ui/EstadoBadge";
 import { RolBadge } from "@/components/ui/RolBadge";
 import { obtenerUsuario, verificarUsuario } from "@/services/admin-usuarios";
+
 import type { DetalleUsuario } from "@/types/admin-usuarios";
 
 /** Lo que le falta al usuario para poder verificarlo (mismas reglas que el 409 del backend). */
@@ -60,8 +61,7 @@ export function DetalleUsuarioModal({
       onCerrar={onCerrar}
     >
       {({ usuario: u, resumen, resenas }) => (
-        <>
-          <div className="space-y-4">
+        <div className="space-y-4">
             <div className="flex gap-4">
               <Avatar url={u.imagenUrl} nombre={u.nombre} />
               <div className="min-w-0 flex-1 space-y-2">
@@ -86,7 +86,7 @@ export function DetalleUsuarioModal({
               <Dato k="Alta" v={dia(u.fechaAlta)} />
               <Dato k="Refugio" v={u.refugio?.nombre} />
             </dl>
-            {(onVerificado || u.documentos.dniImagenUrl || u.documentos.selfieUrl) && (
+            {(!!onVerificado || !!u.documentos.dniImagenUrl || !!u.documentos.selfieUrl) && (
               <FotosVerificacion
                 fotos={{ dni: u.documentos.dniImagenUrl, selfie: u.documentos.selfieUrl }}
               />
@@ -107,7 +107,6 @@ export function DetalleUsuarioModal({
               </>
             )}
           </div>
-        </>
       )}
     </DetalleModal>
   );

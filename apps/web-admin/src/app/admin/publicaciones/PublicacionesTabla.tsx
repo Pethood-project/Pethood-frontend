@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { CircleCheck, Eye, Pause, Play, RotateCcw, Trash2 } from "lucide-react";
+import { useState } from "react";
+
 import { MotivoModal } from "@/components/admin/MotivoModal";
 import { AccionButton } from "@/components/ui/AccionButton";
 import { Feedback } from "@/components/ui/Feedback";
@@ -12,7 +13,9 @@ import {
   cambiarEstadoPublicacion,
   reactivarPublicacion,
 } from "@/services/admin-moderacion";
+
 import { DetallePublicacionModal } from "./DetallePublicacionModal";
+
 import type { AccionPublicacion, FiltrosModeracion, Lista, PublicacionAdmin } from "@/types/admin-moderacion";
 
 const CAMPO = "w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 sm:w-auto";
@@ -38,11 +41,11 @@ export function PublicacionesTabla({
   const [modal, setModal] = useState<ModalMotivo | null>(null);
   const [detalle, setDetalle] = useState<number | null>(null);
 
-  const cambiarEstado = (p: PublicacionAdmin, accion: AccionPublicacion, verbo: string, exito: string) =>
+  const cambiarEstado = (p: PublicacionAdmin, accion: AccionPublicacion, verbo: string, mensajeExito: string) =>
     setModal({
       titulo: `${verbo} «${p.titulo}»`,
       id: p.id,
-      exito,
+      exito: mensajeExito,
       accion: (motivo) => cambiarEstadoPublicacion(p.id, accion, motivo, token),
     });
 

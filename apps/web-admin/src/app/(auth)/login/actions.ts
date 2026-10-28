@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+
 import { AUTH_COOKIE, decodeSesion, opcionesCookieSesion, tieneRol } from "@/lib/auth";
 import { ApiError } from "@/services/api";
 import { login } from "@/services/auth";
@@ -14,8 +15,12 @@ export interface EstadoLogin {
 // puede loguearse con las mismas credenciales pero no tiene lugar acá, así que se
 // rechaza acá aunque el backend haya autenticado bien.
 export async function loginAction(_estadoPrevio: EstadoLogin, formData: FormData): Promise<EstadoLogin> {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+  const campo = (nombre: string) => {
+    const valor = formData.get(nombre);
+    return typeof valor === "string" ? valor : "";
+  };
+  const email = campo("email").trim();
+  const password = campo("password");
 
   if (!email || !password) {
     return { error: "Completá email y contraseña para continuar." };

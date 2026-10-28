@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import { ErrorCampo } from "@/components/ui/ErrorCampo";
 import { Feedback } from "@/components/ui/Feedback";
 import { useTocados } from "@/lib/useTocados";
@@ -37,7 +38,7 @@ export function ContactoForm() {
     "aria-describedby": `${id}-error`,
   });
 
-  async function enviar(e: React.FormEvent<HTMLFormElement>) {
+  async function enviar(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     intentarEnviar();
     if (hayErrores(errores)) return;

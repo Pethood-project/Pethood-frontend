@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Modal } from "@/components/ui/Modal";
-import { Feedback } from "@/components/ui/Feedback";
-import { obtenerRefugio, verificarRefugio } from "@/services/admin-usuarios";
-import { ApiError } from "@/services/api";
+
 import { PieVerificar, Resenas } from "@/components/admin/Detalle";
-import { urlArchivo } from "@/services/api";
+import { Feedback } from "@/components/ui/Feedback";
+import { Modal } from "@/components/ui/Modal";
+import { obtenerRefugio, verificarRefugio } from "@/services/admin-usuarios";
+import { ApiError, urlArchivo } from "@/services/api";
+
 import type { DetalleRefugio } from "@/types/admin-usuarios";
 
 // Modal de revisión previa a verificar un refugio (spec 002 §5) — datos + miembros + resumen.
@@ -42,11 +43,11 @@ export function DetalleRefugioModal({
       })
       .catch((err) => {
         if (!cancelado)
-          setError(
+          {setError(
             err instanceof ApiError
               ? err.message
               : "No pudimos cargar el refugio.",
-          );
+          );}
       })
       .finally(() => {
         if (!cancelado) setCargando(false);

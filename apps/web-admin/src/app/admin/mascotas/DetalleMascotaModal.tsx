@@ -1,7 +1,7 @@
 "use client";
 
-import { Dato, DetalleModal, Galeria, Seccion, dia, siNo } from "@/components/admin/Detalle";
 import { edad } from "@/app/admin/moderacion/VistaObjeto";
+import { Dato, DetalleModal, Galeria, Seccion, dia, siNo } from "@/components/admin/Detalle";
 import { obtenerMascota } from "@/services/admin-moderacion";
 import { urlArchivo } from "@/services/api";
 
@@ -16,7 +16,7 @@ export function DetalleMascotaModal({ id, token, onCerrar }: { id: number; token
               <div>
                 <p className="font-heading text-lg text-neutral-900">{m.nombre}</p>
                 <p className="text-sm text-neutral-600">
-                  {m.fechaBaja ? "De baja" : (m.estado?.nombre ?? "—")} · {m.duenio.tipo === "REFUGIO" ? "refugio" : "adoptante"} {m.duenio.nombre}
+                  {m.fechaBaja ? "De baja" : (m.estado.nombre)} · {m.duenio.tipo === "REFUGIO" ? "refugio" : "adoptante"} {m.duenio.nombre}
                 </p>
               </div>
               <dl className="grid grid-cols-2 gap-x-3 gap-y-2">

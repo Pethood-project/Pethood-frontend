@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+
 import { ErrorCampo } from "@/components/ui/ErrorCampo";
 import { Feedback } from "@/components/ui/Feedback";
-import { ApiError } from "@/services/api";
-import { registrarRefugio } from "@/services/auth";
 import { useTocados } from "@/lib/useTocados";
 import {
   hayErrores,
@@ -17,6 +16,8 @@ import {
   validarTelefono,
   validarTexto,
 } from "@/lib/validation";
+import { ApiError } from "@/services/api";
+import { registrarRefugio } from "@/services/auth";
 
 const VACIO = { nombre: "", apellido: "", email: "", pass: "", pass2: "", rnombre: "", rprov: "", rloc: "", rcalle: "", rtel: "", remail: "", rdesc: "" };
 type Campo = keyof typeof VACIO;
@@ -106,7 +107,7 @@ export function RegistroRefugioForm() {
           setExito("¡Listo! Recibimos tu solicitud. Un administrador va a revisar tu refugio y, cuando lo apruebe, vas a poder ingresar con tu email y contraseña.");
           setV(VACIO);
           setImagen(null);
-          (e.target as HTMLFormElement).reset();
+          e.target.reset();
           reiniciar();
         } catch (err) {
           setError(err instanceof ApiError ? err.message : "No pudimos enviar tu solicitud. Intentá de nuevo.");

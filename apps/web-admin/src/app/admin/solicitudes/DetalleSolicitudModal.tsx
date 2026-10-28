@@ -13,7 +13,7 @@ export function DetalleSolicitudModal({ id, token, onCerrar }: { id: number; tok
             <Dato k="Solicitante" v={s.solicitante.nombre} />
             <Dato k="Refugio" v={s.refugio?.nombre} />
             <Dato k="Tipo" v={s.tipo} />
-            <Dato k="Estado" v={s.estado?.nombre} />
+            <Dato k="Estado" v={s.estado.nombre} />
             <Dato k="Creada" v={diaHora(s.fechaAlta)} />
             <Dato k="Respuesta" v={s.fechaRespuesta ? diaHora(s.fechaRespuesta) : null} />
             <Dato k="Tránsito" v={s.fechaInicioTransito ? `${dia(s.fechaInicioTransito)} – ${s.fechaFinTransito ? dia(s.fechaFinTransito) : "…"}` : null} />
@@ -22,8 +22,8 @@ export function DetalleSolicitudModal({ id, token, onCerrar }: { id: number; tok
           {s.comentario && <Seccion titulo="Comentario"><p className="whitespace-pre-wrap rounded-md bg-neutral-50 p-2">{s.comentario}</p></Seccion>}
           <Seccion titulo="Historial de estados">
             <ol className="space-y-1">
-              {s.historialEstados.map((h, i) => (
-                <li key={i} className="flex justify-between rounded-md bg-neutral-50 px-2 py-1">
+              {s.historialEstados.map((h) => (
+                <li key={`${h.estado}-${h.fechaAlta}`} className="flex justify-between rounded-md bg-neutral-50 px-2 py-1">
                   <span className="text-neutral-900">{h.estado}</span>
                   <span className="text-xs text-neutral-500">{diaHora(h.fechaAlta)}</span>
                 </li>

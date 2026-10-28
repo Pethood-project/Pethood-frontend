@@ -6,9 +6,9 @@
  * compartida es lo único que lo dice: la misma sala puede tener una solicitud de adopción y dos
  * avisos distintos, y sin la tarjeta todo sería la misma lista de mensajes con la misma persona.
  *
- * Misma anatomía que `TarjetaSolicitudChat` —no es una burbuja, ocupa todo el ancho, la emite
- * el sistema, va precedida por la firma "PetHood · hh:mm" y lleva su propia acción— con tres
- * diferencias por lo que el aviso tiene y la solicitud no:
+ * Misma anatomía que `TarjetaSolicitudChat` —no es una burbuja, es angosta y va pegada al lado
+ * izquierdo, la emite el sistema, va precedida por la firma "PetHood · hh:mm", lleva su propia
+ * acción y la foto es cuadrada— con tres diferencias por lo que el aviso tiene y la solicitud no:
  *
  * - La pastilla de estado es `EstadoAnimalPerdidoBadge`, el mismo componente del portal, en
  *   vez de un mapa de colores propio: los tres estados ya tienen su color decidido ahí.
@@ -21,12 +21,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Image, Pressable, Text, View } from 'react-native';
 
+import { useAnchoTarjetaChat } from '@/components/chat/TarjetaSolicitudChat';
 import { EstadoAnimalPerdidoBadge } from '@/components/ui/EstadoAnimalPerdidoBadge';
 import { urlAbsoluta } from '@/services/api';
 import type { AvisoEnChat } from '@/services/chats';
 import { aFechaVisible, horaVisible, parsearFecha } from '@/shared/validation/dates';
-
-const ALTO_FOTO = 109;
 
 /**
  * El título: el nombre del animal o, si el aviso no lo tiene, la especie.
@@ -59,15 +58,17 @@ export function TarjetaAvisoChat({ aviso, fecha, onVerAviso }: TarjetaAvisoChatP
   const titulo = tituloAviso(aviso);
   const detalle = subtitulo(aviso);
   const foto = urlAbsoluta(aviso.imagenUrl);
+  const ancho = useAnchoTarjetaChat();
 
   return (
-    <View className="w-full">
+    <View className="w-full items-start">
       <Text className="mb-1 font-cuerpo text-[11px] text-organic-neutral-600">
         {`PetHood${fecha ? ` · ${horaVisible(new Date(fecha))}` : ''}`}
       </Text>
 
       <View
         style={{
+          width: ancho,
           shadowColor: '#966850',
           shadowOffset: { width: 0, height: 3 },
           shadowOpacity: 0.12,
@@ -87,7 +88,7 @@ export function TarjetaAvisoChat({ aviso, fecha, onVerAviso }: TarjetaAvisoChatP
         ) : null}
 
         <View
-          style={{ height: ALTO_FOTO, borderRadius: 17 }}
+          style={{ width: '100%', aspectRatio: 1, borderRadius: 17 }}
           className="mt-[9px] items-center justify-center overflow-hidden bg-organic-calido-naranja"
         >
           {foto ? (

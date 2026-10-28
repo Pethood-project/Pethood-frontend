@@ -26,6 +26,13 @@ import { aFechaVisible, edadEnTexto, horaVisible, parsearFecha } from '@/shared/
 const PROPORCION_ANCHO = 0.78;
 const ANCHO_MAXIMO = 320;
 
+/** El ancho de las tarjetas de sistema de la sala (solicitud, aviso): la misma para todas. */
+export function useAnchoTarjetaChat(): number {
+  const { width } = useWindowDimensions();
+
+  return Math.min(ANCHO_MAXIMO, width * PROPORCION_ANCHO);
+}
+
 /**
  * Colores de la píldora de estado.
  *
@@ -70,8 +77,7 @@ export function TarjetaSolicitudChat({
   propia = false,
   onVerSolicitud,
 }: TarjetaSolicitudChatProps) {
-  const { width: anchoPantalla } = useWindowDimensions();
-  const ancho = Math.min(ANCHO_MAXIMO, anchoPantalla * PROPORCION_ANCHO);
+  const ancho = useAnchoTarjetaChat();
   const estado = ESTILO_ESTADO[solicitud.estado] ?? ESTILO_POR_DEFECTO;
   const enviada = parsearFecha(solicitud.fechaAlta);
   const foto = urlAbsoluta(solicitud.mascota.imagenUrl);

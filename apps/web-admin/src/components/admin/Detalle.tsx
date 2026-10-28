@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { BadgeCheck, CreditCard, UserRound, type LucideIcon } from "lucide-react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
+
 import { Button } from "@/components/ui/Button";
 import { Feedback } from "@/components/ui/Feedback";
 import { Modal } from "@/components/ui/Modal";
 import { ApiError, urlArchivo } from "@/services/api";
+
 import type { ResumenResenas } from "@/types/admin-usuarios";
 
 // Piezas compartidas por los modales de detalle de admin (y por el detalle del reporte).
@@ -185,7 +187,7 @@ export interface FotosVerificacionUsuario {
   selfie?: string | null;
 }
 
-const TILES: { clave: keyof FotosVerificacionUsuario; etiqueta: string; icono: LucideIcon }[] = [
+const TILES: Array<{ clave: keyof FotosVerificacionUsuario; etiqueta: string; icono: LucideIcon }> = [
   { clave: "dni", etiqueta: "DNI", icono: CreditCard },
   { clave: "selfie", etiqueta: "Selfie (cámara en el momento)", icono: UserRound },
 ];
@@ -215,17 +217,16 @@ function Ampliada({
 
   return (
     <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={etiqueta}
+      role="presentation"
       onClick={onCerrar}
-      className="animate-modal-fondo fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-black/85 p-4"
+      className="animate-modal-fondo fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-4"
     >
+      <div role="dialog" aria-modal="true" aria-label={etiqueta} className="flex max-w-full flex-col items-center justify-center gap-3">
       <button
         type="button"
         onClick={onCerrar}
         aria-label="Cerrar"
-        className="absolute right-3 top-3 rounded-md p-2 text-white/80 hover:bg-white/10"
+        className="fixed right-3 top-3 rounded-md p-2 text-white/80 hover:bg-white/10"
       >
         ✕
       </button>
@@ -239,6 +240,7 @@ function Ampliada({
         </div>
       )}
       <p className="text-sm text-white/80">{etiqueta}</p>
+      </div>
     </div>
   );
 }

@@ -1,23 +1,26 @@
 "use client";
 
+import { BadgeCheck, Eye, RotateCcw, ShieldOff, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BadgeCheck, Eye, RotateCcw, ShieldOff, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Feedback } from "@/components/ui/Feedback";
-import { EstadoBadge } from "@/components/ui/EstadoBadge";
-import { Pagination } from "@/components/ui/Pagination";
-import { AccionButton } from "@/components/ui/AccionButton";
+
 import { MotivoModal } from "@/components/admin/MotivoModal";
+import { AccionButton } from "@/components/ui/AccionButton";
+import { Button } from "@/components/ui/Button";
+import { EstadoBadge } from "@/components/ui/EstadoBadge";
+import { Feedback } from "@/components/ui/Feedback";
+import { Pagination } from "@/components/ui/Pagination";
 import {
   bajaRefugio,
   reactivarRefugio,
   suspenderRefugio,
 } from "@/services/admin-usuarios";
 import { ApiError } from "@/services/api";
-import type { FiltrosRefugios, ListaRefugios, RefugioAdmin } from "@/types/admin-usuarios";
+
 import { AltaRefugioModal } from "./AltaRefugioModal";
 import { DetalleRefugioModal } from "./DetalleRefugioModal";
+
+import type { FiltrosRefugios, ListaRefugios, RefugioAdmin } from "@/types/admin-usuarios";
 
 export function RefugiosTabla({
   lista,
@@ -75,8 +78,8 @@ export function RefugiosTabla({
       <div className="flex flex-wrap items-end justify-between gap-3 rounded-lg border border-neutral-200 bg-white p-4">
         <div className="flex flex-wrap items-end gap-3">
           <div className="w-full sm:w-auto">
-            <label className="mb-1 block text-xs font-medium text-neutral-600">Buscar</label>
-            <input
+            <label htmlFor="refugios-q" className="mb-1 block text-xs font-medium text-neutral-600">Buscar</label>
+            <input id="refugios-q"
               type="text"
             maxLength={100}
               defaultValue={filtros.q ?? ""}
@@ -89,8 +92,8 @@ export function RefugiosTabla({
           </div>
 
           <div className="w-full sm:w-auto">
-            <label className="mb-1 block text-xs font-medium text-neutral-600">Estado</label>
-            <select
+            <label htmlFor="refugios-estado" className="mb-1 block text-xs font-medium text-neutral-600">Estado</label>
+            <select id="refugios-estado"
               defaultValue={filtros.estado ?? ""}
               className="w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 sm:w-auto"
               onChange={(e) =>
@@ -106,8 +109,8 @@ export function RefugiosTabla({
           </div>
 
           <div className="w-full sm:w-auto">
-            <label className="mb-1 block text-xs font-medium text-neutral-600">Verificado</label>
-            <select
+            <label htmlFor="refugios-verificado" className="mb-1 block text-xs font-medium text-neutral-600">Verificado</label>
+            <select id="refugios-verificado"
               defaultValue={filtros.verificado ?? ""}
               className="w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 sm:w-auto"
               onChange={(e) =>

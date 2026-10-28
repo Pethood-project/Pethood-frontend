@@ -1,14 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { Heart, Home, type LucideIcon } from "lucide-react";
+import { useState } from "react";
+
+import { BuscadorRefugio } from "@/components/admin/BuscadorRefugio";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { BuscadorRefugio } from "@/components/admin/BuscadorRefugio";
+
 import type { RolesBody, UsuarioAdmin } from "@/types/admin-usuarios";
 import type { RolUsuario } from "@/types/auth";
 
-const ROLES: { valor: RolUsuario; etiqueta: string; icono: LucideIcon; descripcion: string }[] = [
+const ROLES: Array<{ valor: RolUsuario; etiqueta: string; icono: LucideIcon; descripcion: string }> = [
   { valor: "ADOPTANTE", etiqueta: "Adoptante", icono: Heart, descripcion: "Todos los usuarios lo son, no se puede quitar" },
   { valor: "MIEMBRO_REFUGIO", etiqueta: "Refugio", icono: Home, descripcion: "Gestiona mascotas de un refugio" },
 ];
@@ -106,7 +108,7 @@ export function RolesModal({
 
         {seleccionados.has("MIEMBRO_REFUGIO") && (
           <div className="rounded-lg border border-neutral-200 bg-neutral-50 p-3">
-            <label className="mb-1 block text-sm font-medium text-neutral-700">Refugio</label>
+            <span className="mb-1 block text-sm font-medium text-neutral-700">Refugio</span>
             <BuscadorRefugio
               token={token}
               refugioId={refugioId}

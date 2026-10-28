@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { Chips, Dato, Galeria, dia, plata, siNo } from "@/components/admin/Detalle";
-import { EstadoBadge, type EstadoCiclo } from "@/components/ui/EstadoBadge";
-import { urlArchivo } from "@/services/api";
+import { EstadoBadge } from "@/components/ui/EstadoBadge";
 import { obtenerPublicacion } from "@/services/admin-moderacion";
 import { obtenerRefugio } from "@/services/admin-usuarios";
+import { urlArchivo } from "@/services/api";
+
 import type { DetallePublicacionAdmin } from "@/types/admin-moderacion";
-import type { DetalleRefugio } from "@/types/admin-usuarios";
 import type { TipoReporte, VistaObjetoReporte } from "@/types/admin-reportes";
+import type { DetalleRefugio } from "@/types/admin-usuarios";
 
 export function edad(iso: string | null): string | null {
   if (!iso) return null;
@@ -63,7 +65,7 @@ function Refugio({ d }: { d: DetalleRefugio }) {
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-heading text-lg text-neutral-900">{r.nombre}</p>
-          <EstadoBadge estado={r.estado as EstadoCiclo} />
+          <EstadoBadge estado={r.estado} />
           {r.verificado && <span className="text-xs text-green-700">Verificado</span>}
         </div>
         <dl className="grid grid-cols-2 gap-x-3 gap-y-2">
@@ -85,7 +87,7 @@ function Refugio({ d }: { d: DetalleRefugio }) {
 function Generica({ v }: { v: VistaObjetoReporte }) {
   let fotos: string[] = [];
   let titulo = "";
-  let datos: [string, string | null][] = [];
+  let datos: Array<[string, string | null]> = [];
   let texto: string | null = null;
 
   if (v.tipo === "USUARIO") {

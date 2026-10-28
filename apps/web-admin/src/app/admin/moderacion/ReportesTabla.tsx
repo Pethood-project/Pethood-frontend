@@ -2,23 +2,17 @@
 
 import { Eye } from "lucide-react";
 import { useState } from "react";
+
 import { AccionButton } from "@/components/ui/AccionButton";
 import { Feedback } from "@/components/ui/Feedback";
 import { Pagination } from "@/components/ui/Pagination";
 import { useTablaAdmin } from "@/lib/useTablaAdmin";
 import { urlArchivo } from "@/services/api";
-import type { FiltrosReportes, ListaReportes, TipoReporte } from "@/types/admin-reportes";
-import { DetalleReporteModal } from "./DetalleReporteModal";
 
-export const TIPOS: Record<TipoReporte, string> = {
-  PUBLICACION: "Publicación",
-  USUARIO: "Persona",
-  REFUGIO: "Refugio",
-  RESENA: "Reseña",
-  ANIMAL_PERDIDO: "Aviso de mascota perdida",
-  CAMPANIA: "Campaña",
-  MENSAJE: "Mensaje",
-};
+import { DetalleReporteModal } from "./DetalleReporteModal";
+import { TIPOS } from "./tipos";
+
+import type { FiltrosReportes, ListaReportes } from "@/types/admin-reportes";
 
 const CAMPO = "w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 sm:w-auto";
 
@@ -117,7 +111,7 @@ export function ReportesTabla({ lista, filtros, token }: { lista: ListaReportes;
           id={abierto}
           token={token}
           onCerrar={() => setAbierto(null)}
-          onCambio={(mensaje) => ejecutar(abierto, async () => undefined, mensaje)}
+          onCambio={(mensaje) => ejecutar(abierto, () => Promise.resolve(), mensaje)}
         />
       )}
     </div>

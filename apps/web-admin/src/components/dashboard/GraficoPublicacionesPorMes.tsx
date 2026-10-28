@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
+
 import type { PublicacionPorMes } from "@/types/dashboard";
+import type { ReactNode } from "react";
 
 const COLOR_PUBLICACIONES = "var(--color-pethood-accent-600)";
 const COLOR_ADOPCIONES = "var(--color-pethood-success-600)";

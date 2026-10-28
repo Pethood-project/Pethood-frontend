@@ -1,4 +1,6 @@
 import { apiFetch, API_URL, forzarLogoutSiNoAutenticado } from "./api";
+
+import type { ApiErrorBody } from "@/types/api";
 import type {
   DashboardAdmin,
   DashboardRefugio,
@@ -6,7 +8,6 @@ import type {
   EntidadExportableRefugio,
   PeriodoDashboard,
 } from "@/types/dashboard";
-import type { ApiErrorBody } from "@/types/api";
 
 export function obtenerDashboard(token: string): Promise<DashboardAdmin> {
   return apiFetch<DashboardAdmin>("/admin/dashboard", { token });
@@ -23,7 +24,7 @@ export async function descargarExportacion(entidad: EntidadExportable, token: st
   });
 
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as ApiErrorBody | null;
+    const body = (await res.json().catch(() => null)) as Partial<ApiErrorBody> | null;
     await forzarLogoutSiNoAutenticado(res.status, body?.error?.codigo);
     throw new Error(body?.error?.mensaje ?? "No se pudo generar la exportación.");
   }
@@ -60,7 +61,7 @@ export async function descargarExportacionRefugio(
   );
 
   if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as ApiErrorBody | null;
+    const body = (await res.json().catch(() => null)) as Partial<ApiErrorBody> | null;
     await forzarLogoutSiNoAutenticado(res.status, body?.error?.codigo);
     throw new Error(body?.error?.mensaje ?? "No se pudo generar la exportación.");
   }

@@ -1,7 +1,9 @@
 import { cookies } from "next/headers";
+
 import { AUTH_COOKIE } from "@/lib/auth";
 import { listarCatalogo } from "@/services/admin-catalogos";
 import { CATALOGOS, type Catalogo, type FiltrosCatalogo } from "@/types/admin-catalogos";
+
 import { CatalogosTabla } from "./CatalogosTabla";
 
 interface PageProps {

@@ -1,8 +1,11 @@
 import { cookies } from "next/headers";
+
 import { AUTH_COOKIE } from "@/lib/auth";
 import { listarRefugios } from "@/services/admin-usuarios";
-import type { FiltrosRefugios } from "@/types/admin-usuarios";
+
 import { RefugiosTabla } from "./RefugiosTabla";
+
+import type { FiltrosRefugios } from "@/types/admin-usuarios";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;

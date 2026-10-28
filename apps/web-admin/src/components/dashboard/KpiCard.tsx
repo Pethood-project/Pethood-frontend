@@ -1,5 +1,6 @@
-import type { LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+
+import type { LucideIcon } from "lucide-react";
 
 // Mismos tonos que los íconos de KPI de GUI-15.1.1: círculo amarillo pálido + marrón/naranja
 // para métricas de crecimiento, gris cálido para conteos simples, verde oliva para positivas,

@@ -1,8 +1,9 @@
 "use client";
 
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+
 import { AccionButton } from "@/components/ui/AccionButton";
 import { Button } from "@/components/ui/Button";
 import { CampoTexto } from "@/components/ui/CampoTexto";
@@ -12,6 +13,7 @@ import { useTocados } from "@/lib/useTocados";
 import { hayErrores, LIMITES, validarEntero, validarTexto } from "@/lib/validation";
 import { ApiError } from "@/services/api";
 import { bajaCategoria, bajaFaq, crearCategoria, crearFaq, editarCategoria, editarFaq } from "@/services/soporte";
+
 import type { Categoria, FaqPublica } from "@/types/soporte";
 
 type CategoriaConFaqs = Categoria & { faqs: FaqPublica[] };

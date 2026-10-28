@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { AlertTriangle, Clock, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+
 import { Pagination } from "@/components/ui/Pagination";
 import { useTablaAdmin } from "@/lib/useTablaAdmin";
 

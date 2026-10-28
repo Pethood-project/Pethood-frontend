@@ -1,5 +1,7 @@
 import { randomBytes } from "node:crypto";
+
 import { NextResponse } from "next/server";
+
 import { OAUTH_NONCE_COOKIE } from "@/lib/auth";
 import { urlLoginGoogle } from "@/services/auth";
 

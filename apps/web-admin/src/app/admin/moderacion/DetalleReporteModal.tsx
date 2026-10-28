@@ -1,16 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+
 import { Button } from "@/components/ui/Button";
 import { Feedback } from "@/components/ui/Feedback";
 import { Modal } from "@/components/ui/Modal";
 import { LIMITES, validarTexto } from "@/lib/validation";
-import { ApiError, urlArchivo } from "@/services/api";
 import { obtenerReporte, resolverReporte } from "@/services/admin-reportes";
-import type { DetalleReporte, EstadoObjeto } from "@/types/admin-reportes";
-import { TIPOS } from "./ReportesTabla";
+import { ApiError, urlArchivo } from "@/services/api";
+
+
 import { AccionesObjeto } from "./AccionesObjeto";
+import { TIPOS } from "./tipos";
 import { VistaObjeto } from "./VistaObjeto";
+
+import type { DetalleReporte, EstadoObjeto } from "@/types/admin-reportes";
 
 const ES_VIDEO = /\.(mp4|mov|webm)$/i;
 

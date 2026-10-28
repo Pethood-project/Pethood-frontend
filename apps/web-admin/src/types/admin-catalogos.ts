@@ -11,7 +11,7 @@ export type Catalogo =
   | "estados-animal-perdido"
   | "tipos-solicitud";
 
-export const CATALOGOS: { id: Catalogo; label: string }[] = [
+export const CATALOGOS: Array<{ id: Catalogo; label: string }> = [
   { id: "especies", label: "Especies" },
   { id: "razas", label: "Razas" },
   { id: "vacunas", label: "Vacunas" },
@@ -40,7 +40,7 @@ export interface ItemCatalogo {
   secuenciaDias?: number;
   /** Solo vacunas (spec 029): código estable, no editable, y especies vigentes. */
   codigo?: string;
-  especies?: { id: number; nombre: string }[];
+  especies?: Array<{ id: number; nombre: string }>;
 }
 
 export interface ListaCatalogo {

@@ -1,17 +1,20 @@
-import { cookies } from "next/headers";
 import { Users, PawPrint, ShieldCheck, Megaphone, Heart, Flag, HandCoins, AlertTriangle } from "lucide-react";
+import { cookies } from "next/headers";
+
+import { BarList } from "@/components/dashboard/BarList";
+import { DashboardVacio } from "@/components/dashboard/DashboardVacio";
+import { DonutChart } from "@/components/dashboard/DonutChart";
+import { ExportacionAdmin } from "@/components/dashboard/ExportacionAdmin";
+import { GraficoPublicacionesPorMes } from "@/components/dashboard/GraficoPublicacionesPorMes";
+import { KpiCard } from "@/components/dashboard/KpiCard";
 import { AUTH_COOKIE } from "@/lib/auth";
 import { obtenerDashboard, esDashboardVacio } from "@/services/dashboard";
-import { KpiCard } from "@/components/dashboard/KpiCard";
-import { BarList } from "@/components/dashboard/BarList";
-import { DonutChart } from "@/components/dashboard/DonutChart";
-import { GraficoPublicacionesPorMes } from "@/components/dashboard/GraficoPublicacionesPorMes";
-import { ExportacionAdmin } from "@/components/dashboard/ExportacionAdmin";
-import { DashboardVacio } from "@/components/dashboard/DashboardVacio";
 
-const CONFIG_KPI: Record<
-  string,
-  { etiqueta: string; icono: typeof Users; color: "naranja" | "verde" | "celeste" | "rojo"; href?: string }
+const CONFIG_KPI: Partial<
+  Record<
+    string,
+    { etiqueta: string; icono: typeof Users; color: "naranja" | "verde" | "celeste" | "rojo"; href?: string }
+  >
 > = {
   usuariosActivos: { etiqueta: "Usuarios activos", icono: Users, color: "celeste", href: "/admin/usuarios" },
   mascotasRegistradas: { etiqueta: "Mascotas registradas", icono: PawPrint, color: "naranja", href: "/admin/mascotas" },
@@ -37,7 +40,7 @@ export default async function DashboardAdminPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {Object.entries(dashboard.kpis).map(([clave, valor]) => {
+        {Object.entries<number>({ ...dashboard.kpis }).map(([clave, valor]) => {
           const config = CONFIG_KPI[clave];
           return (
             <KpiCard

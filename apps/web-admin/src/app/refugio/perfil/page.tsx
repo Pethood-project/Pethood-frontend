@@ -1,11 +1,12 @@
-import { cookies } from "next/headers";
 import { BadgeCheck, Mail, MapPin, Phone } from "lucide-react";
+import { cookies } from "next/headers";
+
+import { EditarPerfilRefugio } from "@/components/refugio/EditarPerfilRefugio";
+import { Card } from "@/components/ui/Card";
 import { AUTH_COOKIE } from "@/lib/auth";
 import { dia } from "@/lib/formato";
 import { urlArchivo } from "@/services/api";
 import { listarResenasRefugio, obtenerPerfilPublicoRefugio, obtenerPerfilRefugio } from "@/services/refugio";
-import { Card } from "@/components/ui/Card";
-import { EditarPerfilRefugio } from "@/components/refugio/EditarPerfilRefugio";
 
 function Estrellas({ n }: { n: number }) {
   return (

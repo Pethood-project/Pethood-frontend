@@ -1,14 +1,16 @@
 "use client";
 
+import { CheckCheck, Eye, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { CheckCheck, Eye, Trash2 } from "lucide-react";
+
 import { AccionButton } from "@/components/ui/AccionButton";
 import { Button } from "@/components/ui/Button";
 import { Feedback } from "@/components/ui/Feedback";
 import { Modal } from "@/components/ui/Modal";
 import { ApiError } from "@/services/api";
 import { bajaConsulta, resolverConsulta } from "@/services/soporte";
+
 import type { Consulta } from "@/types/soporte";
 
 const fecha = (iso: string) => new Date(iso).toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" });
@@ -54,8 +56,8 @@ export function ConsultasTabla({
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-neutral-200 bg-white p-4">
-        <label className="mb-1 block text-xs font-medium text-neutral-600">Estado</label>
-        <select
+        <label htmlFor="consultas-estado" className="mb-1 block text-xs font-medium text-neutral-600">Estado</label>
+        <select id="consultas-estado"
           defaultValue={filtro}
           className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900"
           onChange={(e) => router.push(e.target.value ? `/admin/consultas?resuelta=${e.target.value}` : "/admin/consultas")}

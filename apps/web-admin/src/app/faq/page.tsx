@@ -1,11 +1,13 @@
-import type { Metadata } from "next";
 import { Foto, type FotoData } from "@/components/landing/Foto";
 import { FOTO_FAQ_GATO, FOTO_FAQ_GOLDEN } from "@/components/landing/fotos";
 import { SiteFooter } from "@/components/landing/SiteFooter";
 import { SiteHeader } from "@/components/landing/SiteHeader";
 import { listarFaqsPublicas } from "@/services/soporte";
-import type { CategoriaPublica } from "@/types/soporte";
+
 import { ContactoForm } from "./ContactoForm";
+
+import type { CategoriaPublica } from "@/types/soporte";
+import type { Metadata } from "next";
 
 // Fotos de la página, en orden: cada una acompaña a `grupos` categorías seguidas y alterna de lado.
 // El resto de las categorías (y el formulario de contacto) van a ancho completo.
@@ -18,7 +20,7 @@ export const metadata: Metadata = { title: "PetHood — Preguntas frecuentes" };
 
 // Reparte las categorías entre las fotos (en orden) y deja el resto sin foto.
 function segmentar(categorias: CategoriaPublica[]) {
-  const segmentos: { foto?: FotoData; categorias: CategoriaPublica[] }[] = [];
+  const segmentos: Array<{ foto?: FotoData; categorias: CategoriaPublica[] }> = [];
   let desde = 0;
   for (const { foto, grupos } of FOTOS) {
     if (desde >= categorias.length) break;
@@ -64,7 +66,7 @@ export default async function FaqPage() {
           ));
           if (!seg.foto) return grupos;
           return (
-            <div key={i} className={`con-foto${i % 2 ? " izquierda" : ""}`}>
+            <div key={seg.categorias.map((c) => c.id).join("-")} className={`con-foto${i % 2 ? " izquierda" : ""}`}>
               {grupos}
               <aside className={seg.categorias.length > 1 ? "alta" : undefined} style={{ "--filas": seg.categorias.length } as React.CSSProperties}>
                 <Foto {...seg.foto} />

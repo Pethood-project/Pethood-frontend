@@ -1,4 +1,5 @@
 import { apiFetch, aQueryString } from "./api";
+
 import type { DetalleCampanaAdmin, FiltrosCampanas, ListaCampanas } from "@/types/admin-campanas";
 
 export const listarCampanas = (f: FiltrosCampanas, token: string): Promise<ListaCampanas> =>

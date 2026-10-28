@@ -1,8 +1,8 @@
 "use client";
 
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
 
 // Desktop: links en línea. ≤960px: se ocultan y el botón hamburguesa despliega el panel.
 export function SiteNav({ panel }: { panel?: string }) {
@@ -21,14 +21,14 @@ export function SiteNav({ panel }: { panel?: string }) {
       >
         {abierto ? <X size={24} /> : <Menu size={24} />}
       </button>
-      <nav id="site-nav" className={abierto ? "open" : undefined} onClick={cerrar}>
-        <Link href="/#funciones">Qué hacemos</Link>
-        <Link href="/#registro">Registrá tu refugio</Link>
-        <Link href="/faq">Preguntas frecuentes</Link>
-        <Link href="/equipo">Equipo</Link>
-        <Link href="/equipo#contacto">Contacto</Link>
-        <Link href="/descargar">Descargá la app</Link>
-        <Link href={panel ?? "/login"} className="btn">
+      <nav id="site-nav" className={abierto ? "open" : undefined}>
+        <Link href="/#funciones" onClick={cerrar}>Qué hacemos</Link>
+        <Link href="/#registro" onClick={cerrar}>Registrá tu refugio</Link>
+        <Link href="/faq" onClick={cerrar}>Preguntas frecuentes</Link>
+        <Link href="/equipo" onClick={cerrar}>Equipo</Link>
+        <Link href="/equipo#contacto" onClick={cerrar}>Contacto</Link>
+        <Link href="/descargar" onClick={cerrar}>Descargá la app</Link>
+        <Link href={panel ?? "/login"} onClick={cerrar} className="btn">
           {panel ? "Ir al panel" : "Ingresar"}
         </Link>
       </nav>

@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { Eye } from "lucide-react";
+import { useState } from "react";
+
 import { AccionButton } from "@/components/ui/AccionButton";
 import { Feedback } from "@/components/ui/Feedback";
 import { Pagination } from "@/components/ui/Pagination";
 import { useTablaAdmin } from "@/lib/useTablaAdmin";
 import { validarRangoFechas } from "@/lib/validation";
+
 import { DetalleSolicitudModal } from "./DetalleSolicitudModal";
+
 import type { FiltrosModeracion, Lista, SolicitudAdmin } from "@/types/admin-moderacion";
 
 const CAMPO = "w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 sm:w-auto";

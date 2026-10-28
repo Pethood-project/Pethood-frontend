@@ -1,10 +1,11 @@
-import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { AUTH_COOKIE, decodeSesion, tieneRol } from "@/lib/auth";
-import { RefugioSidebar } from "@/components/layout/RefugioSidebar";
+import { redirect } from "next/navigation";
+
 import { MenuMovilProvider } from "@/components/layout/MenuMovil";
+import { RefugioSidebar } from "@/components/layout/RefugioSidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { ToastProvider } from "@/components/ui/Toast";
+import { AUTH_COOKIE, decodeSesion, tieneRol } from "@/lib/auth";
 
 // El proxy (src/proxy.ts) ya filtra por UX; esta verificación server-side es la segunda
 // capa recomendada por Next.js para no depender solo del proxy (ver docs/proxy.md).

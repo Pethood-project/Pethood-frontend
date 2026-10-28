@@ -1,14 +1,15 @@
 import { cookies } from "next/headers";
-import { AUTH_COOKIE } from "@/lib/auth";
+
 import { ExportacionRefugio } from "@/components/dashboard/ExportacionRefugio";
-import { periodoPorDefecto } from "@/lib/periodo";
-import { dia, diasDesde, etiquetaEstado } from "@/lib/formato";
-import { contarSolicitudesRecibidas, listarSolicitudesRecibidas, SOLICITUDES_POR_PAGINA } from "@/services/refugio";
-import { ESTADOS_SOLICITUD, ESTADOS_SOLICITUD_ABIERTA, type FiltrosSolicitudesRecibidas } from "@/types/refugio";
-import { ConFoto, TablaListado } from "@/components/refugio/TablaListado";
+import { AccionesSolicitud } from "@/components/refugio/AccionesFilas";
 import { EstadoChip } from "@/components/refugio/EstadoChip";
 import { FiltroEstado, PaginacionUrl } from "@/components/refugio/FiltroEstado";
-import { AccionesSolicitud } from "@/components/refugio/AccionesFilas";
+import { ConFoto, TablaListado } from "@/components/refugio/TablaListado";
+import { AUTH_COOKIE } from "@/lib/auth";
+import { dia, diasDesde, etiquetaEstado } from "@/lib/formato";
+import { periodoPorDefecto } from "@/lib/periodo";
+import { contarSolicitudesRecibidas, listarSolicitudesRecibidas, SOLICITUDES_POR_PAGINA } from "@/services/refugio";
+import { ESTADOS_SOLICITUD, ESTADOS_SOLICITUD_ABIERTA, type FiltrosSolicitudesRecibidas } from "@/types/refugio";
 
 interface PageProps {
   searchParams: Promise<{ estado?: string; page?: string }>;

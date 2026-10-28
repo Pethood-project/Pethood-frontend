@@ -96,7 +96,7 @@ export interface DetalleMascotaAdmin extends MascotaAdmin {
   castrado: boolean | null;
   descripcion: string | null;
   imagenUrl: string | null;
-  historiaClinica: {
+  historiaClinica: Array<{
     id: number;
     fechaVisita: string;
     titulo: string;
@@ -104,7 +104,7 @@ export interface DetalleMascotaAdmin extends MascotaAdmin {
     vacunacion: boolean;
     tipoVacuna: string | null;
     documentoUrl: string | null;
-  }[];
+  }>;
 }
 
 /** `GET /admin/solicitudes/:id`. */
@@ -116,5 +116,5 @@ export interface DetalleSolicitudAdmin extends SolicitudAdmin {
   fechaInicioTransito: string | null;
   fechaFinTransito: string | null;
   fechaBaja: string | null;
-  historialEstados: { estado: string; fechaAlta: string; fechaBaja: string | null; usuarioAlta: unknown }[];
+  historialEstados: Array<{ estado: string; fechaAlta: string; fechaBaja: string | null; usuarioAlta: unknown }>;
 }

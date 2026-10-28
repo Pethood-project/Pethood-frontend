@@ -2,15 +2,17 @@
 
 import { Ban, Trash2 } from "lucide-react";
 import { useState } from "react";
+
 import { MotivoModal } from "@/components/admin/MotivoModal";
 import { AccionButton } from "@/components/ui/AccionButton";
 import { Button } from "@/components/ui/Button";
 import { Feedback } from "@/components/ui/Feedback";
 import { Modal } from "@/components/ui/Modal";
-import { ApiError } from "@/services/api";
 import { bajaPublicacion } from "@/services/admin-moderacion";
 import { bajaAvisoPerdido, bajaResena } from "@/services/admin-reportes";
 import { suspenderRefugio, suspenderUsuario } from "@/services/admin-usuarios";
+import { ApiError } from "@/services/api";
+
 import type { DetalleReporte } from "@/types/admin-reportes";
 
 interface Accion {
@@ -81,8 +83,8 @@ function accionDe(r: DetalleReporte): Accion | null {
         ejecutar: (m, t) => suspenderUsuario(autor.id, m, t),
       };
     }
-    default:
-      return null; // CAMPANIA: no hay baja hasta el Módulo 12 (HU-12.5).
+    case "CAMPANIA":
+      return null; // no hay baja hasta el Módulo 12 (HU-12.5).
   }
 }
 

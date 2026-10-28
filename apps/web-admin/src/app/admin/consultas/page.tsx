@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
+
 import { AUTH_COOKIE } from "@/lib/auth";
 import { listarConsultas } from "@/services/soporte";
+
 import { ConsultasTabla } from "./ConsultasTabla";
 
 interface PageProps {

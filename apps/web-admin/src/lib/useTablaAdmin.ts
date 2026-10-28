@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+
 import { ApiError } from "@/services/api";
 
 // Estado común de las tablas de admin: filtros/paginación por URL + ejecución de acciones

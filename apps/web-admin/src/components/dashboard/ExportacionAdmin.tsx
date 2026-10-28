@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { Download } from "lucide-react";
+import { useState } from "react";
+
 import { descargarExportacion } from "@/services/dashboard";
-import { type EntidadExportable } from "@/types/dashboard";
+
+import type { EntidadExportable } from "@/types/dashboard";
 
 const ETIQUETAS: Record<EntidadExportable, string> = {
   usuarios: "Usuarios",

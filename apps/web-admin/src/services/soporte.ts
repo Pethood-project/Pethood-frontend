@@ -1,4 +1,5 @@
 import { apiFetch } from "./api";
+
 import type {
   Categoria,
   CategoriaBody,

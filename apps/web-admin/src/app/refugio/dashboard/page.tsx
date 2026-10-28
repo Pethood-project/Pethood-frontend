@@ -1,17 +1,19 @@
-import { cookies } from "next/headers";
 import { HeartHandshake, ClipboardList, PawPrint, AlertTriangle } from "lucide-react";
-import { AUTH_COOKIE } from "@/lib/auth";
-import { obtenerDashboardRefugio, esDashboardRefugioVacio } from "@/services/dashboard";
-import { periodoPorDefecto, etiquetaPeriodo } from "@/lib/periodo";
-import { KpiCard } from "@/components/dashboard/KpiCard";
-import { DonutChart } from "@/components/dashboard/DonutChart";
-import { BarList } from "@/components/dashboard/BarList";
-import { DonacionesChart } from "@/components/dashboard/DonacionesChart";
+import { cookies } from "next/headers";
+
 import { AlertasSolicitudes } from "@/components/dashboard/AlertasSolicitudes";
-import { PublicacionesAntiguas } from "@/components/dashboard/PublicacionesAntiguas";
-import { PeriodoSelector } from "@/components/dashboard/PeriodoSelector";
-import { ExportacionRefugio } from "@/components/dashboard/ExportacionRefugio";
+import { BarList } from "@/components/dashboard/BarList";
 import { DashboardVacio } from "@/components/dashboard/DashboardVacio";
+import { DonacionesChart } from "@/components/dashboard/DonacionesChart";
+import { DonutChart } from "@/components/dashboard/DonutChart";
+import { ExportacionRefugio } from "@/components/dashboard/ExportacionRefugio";
+import { KpiCard } from "@/components/dashboard/KpiCard";
+import { PeriodoSelector } from "@/components/dashboard/PeriodoSelector";
+import { PublicacionesAntiguas } from "@/components/dashboard/PublicacionesAntiguas";
+import { AUTH_COOKIE } from "@/lib/auth";
+import { periodoPorDefecto, etiquetaPeriodo } from "@/lib/periodo";
+import { obtenerDashboardRefugio, esDashboardRefugioVacio } from "@/services/dashboard";
+
 import type { MesISO } from "@/types/dashboard";
 
 // GUI-38 — Dashboard Refugio (HU-14.2). Contrato de spec 010 (APROBADA, ver types/dashboard.ts).

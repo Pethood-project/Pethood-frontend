@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
+
 import type { PeriodoDashboard } from "@/types/dashboard";
 
 // GUI-38 — selector de rango mensual (desde/hasta) para el dashboard de refugio. Actualiza

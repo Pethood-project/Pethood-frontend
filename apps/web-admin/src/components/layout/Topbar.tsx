@@ -1,6 +1,7 @@
 import { LogOut, UserRound } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+
 import { BotonCerrarSesion } from "./BotonCerrarSesion";
 import { BotonMenu } from "./MenuMovil";
 

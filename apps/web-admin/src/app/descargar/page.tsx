@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
 import Image from "next/image";
-import type { FotoData } from "@/components/landing/Foto";
+
 import { FOTO_DESCARGAR_BEAGLE, FOTO_DESCARGAR_GATO } from "@/components/landing/fotos";
 import { SiteFooter } from "@/components/landing/SiteFooter";
 import { SiteHeader } from "@/components/landing/SiteHeader";
+
+import type { FotoData } from "@/components/landing/Foto";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "PetHood — Descargá la app" };
 

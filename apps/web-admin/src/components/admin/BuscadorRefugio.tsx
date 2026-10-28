@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+
 import { listarRefugios, obtenerRefugio } from "@/services/admin-usuarios";
+
 import type { RefugioAdmin } from "@/types/admin-usuarios";
 
 const DEBOUNCE_MS = 300;
@@ -30,7 +32,7 @@ export function BuscadorRefugio({
     if (!refugioId) return;
     obtenerRefugio(refugioId, token)
       .then((detalle) => setQuery(detalle.refugio.nombre))
-      .catch(() => {});
+      .catch(() => undefined); // sin nombre precargado el input queda vacío y se puede buscar a mano
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

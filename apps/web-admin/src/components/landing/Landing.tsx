@@ -1,4 +1,5 @@
 import Image from "next/image";
+
 import { Foto } from "./Foto";
 import { FOTO_REGISTRO } from "./fotos";
 import { RegistroRefugioForm } from "./RegistroRefugioForm";

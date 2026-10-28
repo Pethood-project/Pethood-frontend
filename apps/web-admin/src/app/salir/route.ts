@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+
 import { AUTH_COOKIE } from "@/lib/auth";
 
 const ATRIBUTOS_COOKIE = {

@@ -1,8 +1,11 @@
 import { cookies } from "next/headers";
+
 import { AUTH_COOKIE } from "@/lib/auth";
 import { listarReportes } from "@/services/admin-reportes";
-import type { EstadoReporte, FiltrosReportes, TipoReporte } from "@/types/admin-reportes";
+
 import { ReportesTabla } from "./ReportesTabla";
+
+import type { EstadoReporte, FiltrosReportes, TipoReporte } from "@/types/admin-reportes";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;

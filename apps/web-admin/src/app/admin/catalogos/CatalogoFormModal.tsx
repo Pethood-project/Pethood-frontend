@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
+
 import { Button } from "@/components/ui/Button";
-import { Feedback } from "@/components/ui/Feedback";
 import { CampoTexto } from "@/components/ui/CampoTexto";
 import { ErrorCampo } from "@/components/ui/ErrorCampo";
+import { Feedback } from "@/components/ui/Feedback";
 import { Modal } from "@/components/ui/Modal";
 import { useTocados } from "@/lib/useTocados";
 import { hayErrores, LIMITES, validarEntero, validarTexto } from "@/lib/validation";
+
 import type { BodyCatalogo, Catalogo, ItemCatalogo } from "@/types/admin-catalogos";
 
 const INPUT = "w-full rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900";

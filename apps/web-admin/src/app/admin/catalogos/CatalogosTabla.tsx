@@ -1,9 +1,10 @@
 "use client";
 
+import { ChevronDown, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+
 import { AccionButton } from "@/components/ui/AccionButton";
 import { Button } from "@/components/ui/Button";
 import { ConfirmarModal } from "@/components/ui/ConfirmarModal";
@@ -17,8 +18,10 @@ import {
   reactivarItemCatalogo,
 } from "@/services/admin-catalogos";
 import { CATALOGOS } from "@/types/admin-catalogos";
-import type { BodyCatalogo, Catalogo, FiltrosCatalogo, ItemCatalogo, ListaCatalogo } from "@/types/admin-catalogos";
+
 import { CatalogoFormModal } from "./CatalogoFormModal";
+
+import type { BodyCatalogo, Catalogo, FiltrosCatalogo, ItemCatalogo, ListaCatalogo } from "@/types/admin-catalogos";
 
 // Solo estos admiten reactivar (api-admin-catalogos.md).
 const REACTIVABLES: Catalogo[] = ["especies", "razas", "vacunas"];

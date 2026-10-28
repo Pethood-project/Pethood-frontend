@@ -1,14 +1,16 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { use, useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { Eye, EyeOff } from "lucide-react";
+
 import { Button } from "@/components/ui/Button";
 import { bordeCampo, ErrorCampo } from "@/components/ui/ErrorCampo";
 import { useTocados } from "@/lib/useTocados";
 import { validarEmail, validarPasswordIngreso } from "@/lib/validation";
+
 import { loginAction, type EstadoLogin } from "./actions";
 
 const ESTADO_INICIAL: EstadoLogin = {};

@@ -50,7 +50,7 @@ type PersonaRef = { id: number; nombre: string; apellido: string };
 
 /** `objeto.vista` de `GET /admin/reportes/:id` (spec 008 §4). Solo USUARIO, RESENA, ANIMAL_PERDIDO y CAMPANIA; el resto viene `undefined`. */
 export type VistaObjetoReporte =
-  | { tipo: "USUARIO"; nombre: string; apellido: string; email: string; telefono: string | null; imagenUrl: string | null; verificado: boolean; estado: string; fechaAlta: string; provincia: string | null; localidad: string | null; refugios: { id: number; nombre: string }[] }
+  | { tipo: "USUARIO"; nombre: string; apellido: string; email: string; telefono: string | null; imagenUrl: string | null; verificado: boolean; estado: string; fechaAlta: string; provincia: string | null; localidad: string | null; refugios: Array<{ id: number; nombre: string }> }
   | { tipo: "RESENA"; puntuacion: number; comentario: string | null; fecha: string; autor: PersonaRef; receptor: { tipo: "REFUGIO" | "PERSONA"; id: number; nombre: string } }
   | { tipo: "ANIMAL_PERDIDO"; nombre: string | null; estado: string; descripcion: string; imagenes: string[]; ubicacion: string | null; fechaSuceso: string; reportante: PersonaRef }
   | { tipo: "CAMPANIA"; titulo: string; descripcion: string; estado: string; montoObjetivo: number; montoActual: number; fechaInicio: string; fechaFin: string; imagenes: string[]; refugio: { id: number; nombre: string } };

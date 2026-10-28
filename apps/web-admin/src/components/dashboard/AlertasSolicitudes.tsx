@@ -1,5 +1,7 @@
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
+
 import { Card } from "@/components/ui/Card";
+
 import type { SolicitudDemorada } from "@/types/dashboard";
 
 // spec 010 §7.7 — solicitudes Pendiente/En_Revision con 5+ días sin cambiar de estado, foto

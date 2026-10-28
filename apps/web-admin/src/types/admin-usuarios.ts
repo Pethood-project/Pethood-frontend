@@ -1,5 +1,5 @@
-import type { RolUsuario } from "@/types/auth";
 import type { EstadoCiclo } from "@/components/ui/EstadoBadge";
+import type { RolUsuario } from "@/types/auth";
 
 // Contrato: apps/web-admin/API.ADMIN.md "Gestión de Usuarios" / "Gestión de Refugios"
 // + spec 002 (pethood-backend/docs/specs/002-admin-usuarios-refugios.md).
@@ -114,7 +114,7 @@ export interface ResenaAdmin {
 export interface ResumenResenas {
   promedio: number | null;
   cantidad: number;
-  distribucion: { puntuacion: number; cantidad: number }[];
+  distribucion: Array<{ puntuacion: number; cantidad: number }>;
   resenas: ResenaAdmin[];
 }
 

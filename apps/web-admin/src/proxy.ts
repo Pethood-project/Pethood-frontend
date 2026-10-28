@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+
 import { AUTH_COOKIE, decodeSesion, tieneRol } from "@/lib/auth";
+
+import type { NextRequest } from "next/server";
 
 // Guard de routing por rol entre el panel de administrador y el de refugio.
 // Redirige por UX; el backend es quien rechaza de verdad los endpoints sin permiso.

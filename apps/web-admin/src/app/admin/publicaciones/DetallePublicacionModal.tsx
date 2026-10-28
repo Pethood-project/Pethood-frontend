@@ -1,7 +1,7 @@
 "use client";
 
-import { DetalleModal, Seccion, diaHora } from "@/components/admin/Detalle";
 import { Publicacion } from "@/app/admin/moderacion/VistaObjeto";
+import { DetalleModal, Seccion, diaHora } from "@/components/admin/Detalle";
 import { obtenerPublicacion } from "@/services/admin-moderacion";
 
 export function DetallePublicacionModal({ id, token, onCerrar }: { id: number; token: string; onCerrar: () => void }) {

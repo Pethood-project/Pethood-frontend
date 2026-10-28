@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+
 import { AUTH_COOKIE, OAUTH_NONCE_COOKIE, decodeSesion, opcionesCookieSesion, tieneRol } from "@/lib/auth";
 import { canjearCodigoGoogle } from "@/services/auth";
 

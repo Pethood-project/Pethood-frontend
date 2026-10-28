@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
 import Link from "next/link";
+
+import type { ReactNode } from "react";
 
 // Radio, borde y sombra tomados de GUI-15.1.1 (pantallas/PetHood App (standalone).html): radio
 // 16px, borde neutral-300 y sombra tintada cálida (no gris) en vez del shadow-sm/md por defecto.

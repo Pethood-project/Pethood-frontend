@@ -1,6 +1,8 @@
 import { Heart, Home, ShieldCheck, type LucideIcon } from "lucide-react";
-import type { RolUsuario } from "@/types/auth";
+
 import { ETIQUETA_ROL } from "@/types/auth";
+
+import type { RolUsuario } from "@/types/auth";
 
 const ICONO: Record<RolUsuario, LucideIcon> = {
   ADMIN: ShieldCheck,

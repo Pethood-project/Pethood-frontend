@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
+
 import type { DonacionPorMes } from "@/types/dashboard";
+import type { ReactNode } from "react";
 
 // Verde claro de donaciones (globals.css): el mes en curso un tono más fuerte que el resto.
 const COLOR_BARRA = "var(--color-pethood-donacion-300)";

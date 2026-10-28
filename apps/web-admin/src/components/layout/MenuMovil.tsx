@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react";
 import { Menu } from "lucide-react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 
 // Estado del drawer de la sidebar en pantallas chicas, compartido entre Topbar (botón) y Sidebar.
 const Ctx = createContext<{
@@ -9,7 +9,7 @@ const Ctx = createContext<{
   setAbierto: (v: boolean) => void;
 }>({
   abierto: false,
-  setAbierto: () => {},
+  setAbierto: () => undefined,
 });
 
 export const useMenuMovil = () => useContext(Ctx);

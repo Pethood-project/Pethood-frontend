@@ -1,6 +1,7 @@
+import { Geist_Mono, Figtree, Caprasimo } from "next/font/google";
+
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Geist_Mono, Figtree, Caprasimo } from "next/font/google";
 import "./globals.css";
 
 const figtree = Figtree({

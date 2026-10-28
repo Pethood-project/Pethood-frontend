@@ -52,6 +52,7 @@ export function Modal({ titulo, onCerrar, children, ancho = "max-w-lg", pie }: M
 
   return (
     <div
+      role="presentation"
       className={`fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4 ${saliendo ? "animate-modal-fondo-salida" : "animate-modal-fondo"}`}
       // mousedown (no click): arrastrar para seleccionar texto y soltar afuera no cierra.
       onMouseDown={(e) => e.target === e.currentTarget && cerrar()}

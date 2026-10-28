@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { Check, CheckCheck, CircleStop, Pause, Play, X } from "lucide-react";
+import { useState } from "react";
+
 import {
   cambiarEstadoCampania,
   cambiarEstadoPublicacion,
@@ -9,6 +10,7 @@ import {
   resolverSolicitud,
 } from "@/services/refugio";
 import { ESTADOS_SOLICITUD_ABIERTA, MOTIVOS_RECHAZO, type MotivoRechazo } from "@/types/refugio";
+
 import { AccionesConConfirmacion, type AccionFila } from "./AccionesConConfirmacion";
 
 // Acciones por fila de Publicaciones, Solicitudes y Campañas. Qué acción se ofrece en cada

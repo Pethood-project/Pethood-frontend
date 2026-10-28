@@ -1,4 +1,5 @@
 import { apiFetch, aQueryString } from "./api";
+
 import type { BodyCatalogo, Catalogo, FiltrosCatalogo, ItemCatalogo, ListaCatalogo } from "@/types/admin-catalogos";
 
 const base = (c: Catalogo) => `/admin/catalogos/${c}`;

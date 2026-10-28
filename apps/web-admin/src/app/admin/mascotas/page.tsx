@@ -1,9 +1,12 @@
 import { cookies } from "next/headers";
-import { AUTH_COOKIE } from "@/lib/auth";
+
 import { ExportacionAdmin } from "@/components/dashboard/ExportacionAdmin";
+import { AUTH_COOKIE } from "@/lib/auth";
 import { listarMascotas } from "@/services/admin-moderacion";
-import type { FiltrosModeracion } from "@/types/admin-moderacion";
+
 import { MascotasTabla } from "./MascotasTabla";
+
+import type { FiltrosModeracion } from "@/types/admin-moderacion";
 
 interface PageProps {
   searchParams: Promise<Record<string, string | undefined>>;

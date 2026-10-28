@@ -1,5 +1,7 @@
 import { Clock, CheckCircle2 } from "lucide-react";
+
 import { Card } from "@/components/ui/Card";
+
 import type { PublicacionDemasiadoAntigua } from "@/types/dashboard";
 
 // spec 010 §7.8 — publicaciones activas o pausadas con 60+ días publicadas, foto actual del catálogo (no

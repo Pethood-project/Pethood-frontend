@@ -1,12 +1,13 @@
 import { cookies } from "next/headers";
-import { AUTH_COOKIE } from "@/lib/auth";
+
 import { ExportacionRefugio } from "@/components/dashboard/ExportacionRefugio";
-import { periodoPorDefecto } from "@/lib/periodo";
-import { etiquetaEstado } from "@/lib/formato";
-import { listarMascotasRefugio } from "@/services/refugio";
-import { ConFoto, TablaListado } from "@/components/refugio/TablaListado";
 import { EstadoChip } from "@/components/refugio/EstadoChip";
 import { FiltroEstado } from "@/components/refugio/FiltroEstado";
+import { ConFoto, TablaListado } from "@/components/refugio/TablaListado";
+import { AUTH_COOKIE } from "@/lib/auth";
+import { etiquetaEstado } from "@/lib/formato";
+import { periodoPorDefecto } from "@/lib/periodo";
+import { listarMascotasRefugio } from "@/services/refugio";
 
 interface PageProps {
   searchParams: Promise<{ estado?: string }>;

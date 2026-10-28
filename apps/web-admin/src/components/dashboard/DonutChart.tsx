@@ -1,11 +1,12 @@
-import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
+
+import type { ReactNode } from "react";
 
 interface DonutChartProps {
   titulo: string;
   /** Slot opcional a la derecha del título (ej. botón de exportación). */
   accion?: ReactNode;
-  items: { etiqueta: string; valor: number }[];
+  items: Array<{ etiqueta: string; valor: number }>;
 }
 
 // Mismos tokens que las badges de KpiCard.tsx, para que el color de un estado se lea igual

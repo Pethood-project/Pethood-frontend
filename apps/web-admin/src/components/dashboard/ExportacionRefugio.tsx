@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { Download } from "lucide-react";
+import { useState } from "react";
+
 import { descargarExportacionRefugio } from "@/services/dashboard";
-import { type EntidadExportableRefugio, type PeriodoDashboard } from "@/types/dashboard";
+
+import type { EntidadExportableRefugio, PeriodoDashboard } from "@/types/dashboard";
 
 const ETIQUETAS: Record<EntidadExportableRefugio, string> = {
   mascotas: "Mascotas",

@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
 import { urlArchivo } from "@/services/api";
+
+import type { ReactNode } from "react";
 
 /** Primera celda con miniatura (mascota, publicación, campaña). Sin foto, la inicial. */
 export function ConFoto({ imagenUrl, texto }: { imagenUrl: string | null; texto: string }) {
@@ -23,7 +24,7 @@ interface TablaListadoProps {
   descripcion: string;
   columnas: string[];
   /** Una fila por elemento: `celdas` en el mismo orden que `columnas`. */
-  filas: { clave: number | string; celdas: ReactNode[] }[];
+  filas: Array<{ clave: number | string; celdas: ReactNode[] }>;
   /** Texto cuando no hay filas (sin datos o sin coincidencias con el filtro). */
   vacio: string;
   /** Slot a la derecha del título (ej. botón de exportación). */
@@ -71,6 +72,7 @@ export function TablaListado({ titulo, descripcion, columnas, filas, vacio, acci
             {filas.map((fila) => (
               <tr key={fila.clave} className="hover:bg-white/60">
                 {fila.celdas.map((celda, j) => (
+                  // eslint-disable-next-line react/no-array-index-key -- celdas posicionales: la columna es su identidad
                   <td key={j} data-label={columnas[j]} className="px-4 py-3">
                     {celda}
                   </td>

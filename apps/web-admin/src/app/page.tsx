@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { AUTH_COOKIE, decodeSesion } from "@/lib/auth";
+
 import Landing from "@/components/landing/Landing";
+import { AUTH_COOKIE, decodeSesion } from "@/lib/auth";
 
 export default async function Home() {
   const token = (await cookies()).get(AUTH_COOKIE)?.value;

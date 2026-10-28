@@ -1,6 +1,8 @@
 import { cookies } from "next/headers";
+
 import { AUTH_COOKIE } from "@/lib/auth";
 import { listarCategorias, listarFaqsPublicas } from "@/services/soporte";
+
 import { FaqsAdmin } from "./FaqsAdmin";
 
 // HU-15.3 — ABM de categorías y FAQs. No hay listado admin de FAQs: se cruza el público

@@ -1,7 +1,9 @@
+import { cookies } from "next/headers";
 import Image from "next/image";
 import Link from "next/link";
-import { cookies } from "next/headers";
+
 import { AUTH_COOKIE, decodeSesion, tieneRol } from "@/lib/auth";
+
 import "./landing.css";
 import { SiteNav } from "./SiteNav";
 

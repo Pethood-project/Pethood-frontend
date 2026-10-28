@@ -1,11 +1,12 @@
-import type { ReactNode } from "react";
 import { Card } from "@/components/ui/Card";
+
+import type { ReactNode } from "react";
 
 interface BarListProps {
   titulo: string;
   /** Slot opcional a la derecha del título (ej. botón de exportación). */
   accion?: ReactNode;
-  items: { etiqueta: string; valor: number }[];
+  items: Array<{ etiqueta: string; valor: number }>;
 }
 
 // Barras con CSS puro, sin librería de gráficos — alcance de spec 009 no pide interactividad.

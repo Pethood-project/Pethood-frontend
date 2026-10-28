@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import { Eye, RotateCcw, Trash2 } from "lucide-react";
+import { useState } from "react";
+
 import { MotivoModal } from "@/components/admin/MotivoModal";
 import { AccionButton } from "@/components/ui/AccionButton";
 import { Feedback } from "@/components/ui/Feedback";
 import { Pagination } from "@/components/ui/Pagination";
 import { useTablaAdmin } from "@/lib/useTablaAdmin";
 import { bajaMascota, reactivarMascota } from "@/services/admin-moderacion";
+
 import { DetalleMascotaModal } from "./DetalleMascotaModal";
+
 import type { FiltrosModeracion, Lista, MascotaAdmin } from "@/types/admin-moderacion";
 
 const CAMPO = "w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 sm:w-auto";

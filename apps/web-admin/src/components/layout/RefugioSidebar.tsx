@@ -1,4 +1,5 @@
 import { LayoutDashboard, Megaphone, Building2, PawPrint, Newspaper, ClipboardList } from "lucide-react";
+
 import { Sidebar } from "./Sidebar";
 
 const ICONO = "h-5 w-5 shrink-0";

@@ -1,13 +1,15 @@
 "use client";
 
+import { BadgeCheck, BadgeX, Eye, RotateCcw, ShieldOff, UserCog, UserX } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BadgeCheck, BadgeX, Eye, RotateCcw, ShieldOff, UserCog, UserX } from "lucide-react";
-import { Feedback } from "@/components/ui/Feedback";
-import { EstadoBadge } from "@/components/ui/EstadoBadge";
-import { RolBadge } from "@/components/ui/RolBadge";
-import { Pagination } from "@/components/ui/Pagination";
+
+import { MotivoModal } from "@/components/admin/MotivoModal";
 import { AccionButton } from "@/components/ui/AccionButton";
+import { EstadoBadge } from "@/components/ui/EstadoBadge";
+import { Feedback } from "@/components/ui/Feedback";
+import { Pagination } from "@/components/ui/Pagination";
+import { RolBadge } from "@/components/ui/RolBadge";
 import {
   bajaUsuario,
   gestionarRoles,
@@ -16,10 +18,12 @@ import {
   suspenderUsuario,
 } from "@/services/admin-usuarios";
 import { ApiError } from "@/services/api";
-import type { FiltrosUsuarios, ListaUsuarios, UsuarioAdmin } from "@/types/admin-usuarios";
-import { MotivoModal } from "@/components/admin/MotivoModal";
+
 import { DetalleUsuarioModal } from "./DetalleUsuarioModal";
 import { RolesModal } from "./RolesModal";
+
+import type { FiltrosUsuarios, ListaUsuarios, UsuarioAdmin } from "@/types/admin-usuarios";
+
 
 export function UsuariosTabla({
   lista,
@@ -77,8 +81,8 @@ export function UsuariosTabla({
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3 rounded-lg border border-neutral-200 bg-white p-4">
         <div className="w-full sm:w-auto">
-          <label className="mb-1 block text-xs font-medium text-neutral-600">Buscar</label>
-          <input
+          <label htmlFor="usuarios-q" className="mb-1 block text-xs font-medium text-neutral-600">Buscar</label>
+          <input id="usuarios-q"
             type="text"
             maxLength={100}
             defaultValue={filtros.q ?? ""}
@@ -91,8 +95,8 @@ export function UsuariosTabla({
         </div>
 
         <div className="w-full sm:w-auto">
-          <label className="mb-1 block text-xs font-medium text-neutral-600">Rol</label>
-          <select
+          <label htmlFor="usuarios-rol" className="mb-1 block text-xs font-medium text-neutral-600">Rol</label>
+          <select id="usuarios-rol"
             defaultValue={filtros.rol ?? ""}
             className="w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 sm:w-auto"
             onChange={(e) => aplicarFiltros({ rol: (e.target.value || undefined) as FiltrosUsuarios["rol"] })}
@@ -105,8 +109,8 @@ export function UsuariosTabla({
         </div>
 
         <div className="w-full sm:w-auto">
-          <label className="mb-1 block text-xs font-medium text-neutral-600">Estado</label>
-          <select
+          <label htmlFor="usuarios-estado" className="mb-1 block text-xs font-medium text-neutral-600">Estado</label>
+          <select id="usuarios-estado"
             defaultValue={filtros.estado ?? ""}
             className="w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 sm:w-auto"
             onChange={(e) => aplicarFiltros({ estado: (e.target.value || undefined) as FiltrosUsuarios["estado"] })}
@@ -120,8 +124,8 @@ export function UsuariosTabla({
         </div>
 
         <div className="w-full sm:w-auto">
-          <label className="mb-1 block text-xs font-medium text-neutral-600">Verificado</label>
-          <select
+          <label htmlFor="usuarios-verificado" className="mb-1 block text-xs font-medium text-neutral-600">Verificado</label>
+          <select id="usuarios-verificado"
             defaultValue={filtros.verificado ?? ""}
             className="w-full rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 sm:w-auto"
             onChange={(e) =>

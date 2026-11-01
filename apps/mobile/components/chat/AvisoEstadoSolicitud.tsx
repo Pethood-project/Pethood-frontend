@@ -66,7 +66,7 @@ function periodoDeTransito(solicitud: SolicitudEnChat): string | null {
 
 /** Marco de la polaroid: parejo arriba y a los costados, ancho abajo para el pie. */
 const MARCO = 12;
-const PIE = 92;
+const PIE = 72;
 
 function Polaroid({
   solicitud,
@@ -143,7 +143,7 @@ function Polaroid({
                 numberOfLines={2}
                 adjustsFontSizeToFit
                 minimumFontScale={0.65}
-                className="text-center font-titulo text-[30px] leading-[34px] text-organic-neutral-900"
+                className="text-center font-titulo text-[22px] leading-[26px] text-organic-neutral-900"
               >
                 {nombre}{' '}
                 <Text style={{ color: PALETA.accent[600] }} className="font-titulo">
@@ -151,7 +151,7 @@ function Polaroid({
                 </Text>
               </Text>
               {leyenda ? (
-                <Text className="mt-1 text-center font-cuerpo-semi text-[15px] text-organic-neutral-600">
+                <Text className="mt-0.5 text-center font-cuerpo-semi text-[13px] text-organic-neutral-600">
                   {leyenda}
                 </Text>
               ) : null}
